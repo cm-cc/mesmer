@@ -121,7 +121,7 @@ pack: # use only to release MESMER
 	cp -ra LoopTools-$(LTVER)-clean/ $(RELEASEDIR)/LoopTools-$(LTVER) &&\
 	cp -ra collier/COLLIER-1.2.5-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.5 &&\
         cp -ra root-interface/ write-root-events MuEtreeDict_rdict.pcm Makefile README.md input-example\
-        distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h\
+        distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h LICENSE.md\
         main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat muemue1g1Lud.F\
         vacuumpolarization.F cuts.F sv.F routines.f sampling.f phasespacemue.F $(VPKNT).f recola_int.F\
         rngs.F hadr5n12.f hadr5n17.f hadr5x19.f hadr5n.f ranlux.f userinterface.F\
