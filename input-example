@@ -1,0 +1,21 @@
+seed 4
+path test-run
+nev 1000000
+mode weighted
+arun on
+hadoff no
+wnorm 1337.22467386
+sdmax 13000.0
+ord alpha
+Ebeam 150.d0
+Qmu 1
+Eemin 1.d0
+bspr  0.d0
+radchs 1 1
+thmumin 0.
+thmumax 100.
+themax 100.
+store no
+storemode 0
+acoplcut no 5.
+run

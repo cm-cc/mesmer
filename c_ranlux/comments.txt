@@ -1,0 +1,1 @@
+Here I replaced int8_t everywere (ranlux.h and ranlux_common.c) with myint8_t. This should be portable to Mac.
