@@ -231,6 +231,7 @@ $(CLLDIR)/lib/libcollier.a:
 	@echo " "
 	@echo "Building Collier"
 	@echo " "
+	mkdir $(CLLDIR)/build/
 	cd $(CLLDIR)/build/ && cmake .. -DCMAKE_INSTALL_PREFIX=.. -Dstatic=ON && make && make install
 
 handyg: $(HANDYGDIR)/lib/libhandyg.a
