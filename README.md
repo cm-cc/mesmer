@@ -16,10 +16,10 @@ A `Makefile` is provided and the executable `mesmer` is build by simply issuing 
 ### Authors
 **MESMER** is developed at INFN, Sezione di Pavia (Italy) by
 
-Carlo M. Carloni Calame (carlo.carloni.calame[THIS IS A AT]pv.infn.it)
-Ettore Budassi
-Clara L. Del Pio
-Syed M. Hasan
-Guido Montagna
-Oreste Nicrosini
-Fulvio Piccinini
+Carlo M. Carloni Calame (carlo.carloni.calame[THIS IS A AT]pv.infn.it)  
+Ettore Budassi  
+Clara L. Del Pio  
+Syed M. Hasan  
+Guido Montagna  
+Oreste Nicrosini  
+Fulvio Piccinini  
