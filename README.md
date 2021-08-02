@@ -17,7 +17,7 @@ Oreste Nicrosini             (oreste.nicrosini[THIS IS A AT]pv.infn.it)
 Fulvio Piccinini             (fulvio.piccinini[THIS IS A AT]pv.infn.it)  
 
 ## Prerequisites & Compilation
-The program is mainly written in Fortran 77 and it has been tested with GCC compilers.
+The program is mainly written in `Fortran 77` and it has been tested with `GCC` compilers.
 
 Three external libraries are used, [`LoopTools`](http://www.feynarts.de/looptools/), [`Collier`](https://collier.hepforge.org/) and
 the `C` implementation of [`RANLUX`](https://luscher.web.cern.ch/luscher/ranlux/), shipped with the code under GPLs licences. The `Collier` library
