@@ -14,7 +14,7 @@ We'd be grateful if you could cite the following papers when using the **`MESMER
 2. [Alacevich *et al.*, Muon-electron scattering at NLO, JHEP 02 (2019) 155](https://inspirehep.net/literature/1703989)
 
 ## Prerequisites & Compilation
-The program is mainly written in `Fortran 77` and it has been tested with `GCC` compilers.
+The program is mainly written in `Fortran 77` and it has been extensively tested with `GCC` compilers on `GNU/Linux`.
 
 Three external libraries are used, [`LoopTools`](http://www.feynarts.de/looptools/), [`Collier`](https://collier.hepforge.org/) and
 the `C` implementation of [`RANLUX`](https://luscher.web.cern.ch/luscher/ranlux/), shipped with the code under GPL-like licences. To be compiled,
@@ -25,10 +25,16 @@ The interface to Cern ROOT event format requires the [`ROOT`](https://root.cern/
 A `Makefile` is provided and the executable `mesmer` is build by simply issuing the command `make`.
 
 ## Running the code
+Once compiled, **`MESMER`** is run by issuing in the working directory the command `./mesmer`, which displays a command prompt
+where parameters for the run can be set.  
+Alternatively, an [input data card (`input-example`)](input-example) is provided and it can be fed as input
+by piping `./mesmer < input-example`.  
+The order in which the input parameters and values are inserted in the data card or at the prompt is indifferent.
+If a parameter/value is missing, defaults are used. The only rule is that the last input must be `run`.
 
+The **`MESMER`** prompy looks like:
 
 ```
-./mesmer 
   *************************************************************
   ********                                             ********
   ******               Welcome to MESMER                 ******
@@ -38,10 +44,6 @@ A `Makefile` is provided and the executable `mesmer` is build by simply issuing 
   ******        Multiple Electromagnetic Radiation       ******
   ********                                             ********
   *************************************************************
-    Questo è quel pezzo / di calamita:
-    pietra mesmerica, / ch'ebbe l'origine
-    nell'Alemagna, / Che poi sì celebre / là in Francia fu.
-           Mozart/Da Ponte, Così Fan Tutte, Act II, Scene XVI
   
  Principal parameters:
    [ type "run" to start generation, "help" for help or "quit" to abort ]
@@ -78,6 +80,8 @@ A `Makefile` is provided and the executable `mesmer` is build by simply issuing 
   
  Insert "parameter value" or "run" or "quit": 
 ```
+
+By typing `help` at the prompt, a short description of the parameters that can be set is displayed:
 
 ```
  Principal parameters:
