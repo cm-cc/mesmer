@@ -27,7 +27,7 @@ A `Makefile` is provided and the executable `mesmer` is build by simply issuing 
 ## Running the code
 
 
-```bash
+```
 ./mesmer 
   *************************************************************
   ********                                             ********
@@ -53,7 +53,7 @@ A `Makefile` is provided and the executable `mesmer` is build by simply issuing 
    [ thmumin   ] Minimum muon LAB angle = 0. mrad
    [ thmumax   ] Maximum muon LAB angle = 100. mrad
    [ acoplcut  ] Apply acoplanarity cut (and value) = no (3.5 mrad)
-   [ elastcut  ] Apply "elasticity" cut (and value) = no (0.200000000000000011 mrad)
+   [ elastcut  ] Apply "elasticity" cut (and value) = no (0.2 mrad)
    [ ord       ] Simulation at "alpha" order
    [ arun      ] alpha running is on
    [ hadoff    ] Hadronic VP is off: no
@@ -77,4 +77,47 @@ A `Makefile` is provided and the executable `mesmer` is build by simply issuing 
    [ sync      ] random numbers sequence syncronization: 0 [0/1]
   
  Insert "parameter value" or "run" or "quit": 
+```
+
+```
+ Principal parameters:
+ Qmu       ---> incoming muon charge in e+ charge units [-1/1]
+ Ebeam     ---> nominal muon beam energy (GeV)
+ bspr      ---> beam energy spread percentage (%)
+ Eemin     ---> minimum electron energy in the LAB (GeV)
+ themax    ---> maximum electron angle in the LAB (mrad)
+ thmumin   ---> minimum muon angle in the LAB (mrad)
+ thmumax   ---> maximum muon angle in the LAB (mrad)
+ acoplcut  ---> if applying acoplanarity cut and to which value [yes/no mrad]
+ elastcut  ---> if applying distance-from-elasticity-curve cut and to which value [yes/no mrad]
+ ord       ---> to which order simulate events [born/alpha/alpha2] for [LO/NLO/NNLO]
+ arun      ---> if running of alpha must be used [off/on/hadr5/nsk/knt]
+ hadoff    ---> if switching off hadronic VP [yes/no]
+ nev       ---> number of events to generate
+ store     ---> if events have to be stored [yes/no]
+ storemode ---> which mode to use to store events [0/1/2]
+             └> [0] plain ascii file 
+             └> [1] root file (see README)
+             └> [2] on-the-fly xz compressed ascii file
+ path      ---> path where to store outputs
+ seed      ---> pseudo-RNG seed ("small" int)
+  
+ Internal tweaks:
+ mode      ---> if stored events are weighted or unweighted [weighted/unweighted]
+ radchs    ---> "radiative" charges of the muon and electron leg, to switch on/off gauge invariants subsets [0/1 0/1]
+ eps       ---> minimum photon CM energy of the emitted photons in sqrt(s)/2 units. A.k.a. soft/hard separator
+ phmass    ---> photon mass (IR regulator) (GeV)
+ nphot     ---> drives maximum number of hard photons (> eps) and real pair emission [int]
+             └> [ < 0 ] maximum possible (up to 2)
+             └> [ 0 | 1 | 2 ] exactly this number of photons
+             └> [ 1000 ] both real electron and muon pairs
+             └> [ 1001 ] only real electron pairs
+             └> [ 1002 ] only real muon pairs
+             └> [-1000 ] all possible final states
+ nwrite    ---> files are dumped every nwrite generated events [int] (negative integer means files written every -nwrite seconds)
+ nwarmup   ---> after nwarmup events, also unweighted generation is started [int]. Plays with wnorm.
+ ndistr    ---> if writing distributions also at different orders [1/2/3]
+ sdmax     ---> maximum integrand for unweightening
+ wnorm     ---> typical integrated cross section within applied cuts, used for storage in ROOT format
+ sync      ---> syncronization mode for random numbers (see README) [0/1]
 ```
