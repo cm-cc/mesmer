@@ -7,7 +7,7 @@
 ### Authors
 **MESMER** is developed at INFN, Sezione di Pavia, and Department of Physics, Università di Pavia.
 
-Authors are listed in the file [AUTHORS](AUTHORS.md).
+Authors are listed in the file [`AUTHORS`](AUTHORS.md).
 
 ## Prerequisites & Compilation
 The program is mainly written in `Fortran 77` and it has been tested with `GCC` compilers.
