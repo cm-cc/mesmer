@@ -2,11 +2,12 @@
 
 ***THIS README.md FILE IS UNDER CONSTRUCTION.***
 
-**`MESMER`** (Muon Electron Scattering with Multiple Electromagnetic Radiation) is a Monte Carlo event generator for high-precision simulation of muon-electron scattering at low enegies
+**`MESMER`** (**M**uon **E**lectron **S**cattering with **M**ultiple **E**lectromagnetic **R**adiation) is a Monte Carlo event generator for
+high-precision simulation of muon-electron scattering at low enegies, developed for the MUonE experiment (see [here](https://web.infn.it/MUonE/) and/or [here](https://twiki.cern.ch/twiki/bin/view/MUonE/WebHome)).
 
 ### Authors
 **`MESMER`** is developed at INFN, Sezione di Pavia, and Department of Physics, Università di Pavia (Italy).  
-Authors are listed in the file [`AUTHORS`](AUTHORS.md).
+Authors are listed in the [`AUTHORS`](AUTHORS.md) file.
 
 ### Citing the code
 We'd be grateful if you could cite the following papers when using the **`MESMER`** generator:  
@@ -18,7 +19,7 @@ The program is mainly written in `Fortran 77` and it has been extensively tested
 
 Three external libraries are used, [`LoopTools`](http://www.feynarts.de/looptools/), [`Collier`](https://collier.hepforge.org/) and
 the `C` implementation of [`RANLUX`](https://luscher.web.cern.ch/luscher/ranlux/), shipped with the code under GPL-like licences. To be compiled,
-the `Collier` library requires the availability of the `cmake`.
+the `Collier` library requires the availability of `cmake`.
 
 The interface to Cern ROOT event format requires the [`ROOT`](https://root.cern/) framework to be installed.
 
@@ -30,9 +31,9 @@ where parameters for the run can be set.
 Alternatively, an [input data card (`input-example`)](input-example) is provided and it can be fed as input
 by piping `./mesmer < input-example`.  
 The order in which the input parameters and values are inserted in the data card or at the prompt is indifferent.
-If a parameter/value is missing, defaults are used. The only rule is that the last input must be `run`.
+If a parameter/value is missing, defaults are used. The only mandatory rule is that the last input must be `run`.
 
-The **`MESMER`** prompy looks like:
+The **`MESMER`** prompt	 looks like:
 
 ```
   *************************************************************
@@ -45,7 +46,7 @@ The **`MESMER`** prompy looks like:
   ********                                             ********
   *************************************************************
   
- Principal parameters:
+Principal parameters:
    [ type "run" to start generation, "help" for help or "quit" to abort ]
    [ Qmu       ] Incoming muon charge = 1 (in e+ charge units)
    [ Ebeam     ] Muon beam energy = 150. GeV
@@ -81,7 +82,7 @@ The **`MESMER`** prompy looks like:
  Insert "parameter value" or "run" or "quit": 
 ```
 
-By typing `help` at the prompt, a short description of the parameters that can be set is displayed:
+By typing `help` at the prompt, a short description of the parameters that can be set is displayed (more details [here](#running-parameters-description)):
 
 ```
  Principal parameters:
@@ -101,7 +102,7 @@ By typing `help` at the prompt, a short description of the parameters that can b
  store     ---> if events have to be stored [yes/no]
  storemode ---> which mode to use to store events [0/1/2]
              └> [0] plain ascii file 
-             └> [1] root file (see README)
+             └> [1] root file (see README.md)
              └> [2] on-the-fly xz compressed ascii file
  path      ---> path where to store outputs
  seed      ---> pseudo-RNG seed ("small" int)
@@ -123,5 +124,44 @@ By typing `help` at the prompt, a short description of the parameters that can b
  ndistr    ---> if writing distributions also at different orders [1/2/3]
  sdmax     ---> maximum integrand for unweightening
  wnorm     ---> typical integrated cross section within applied cuts, used for storage in ROOT format
- sync      ---> syncronization mode for random numbers (see README) [0/1]
+ sync      ---> syncronization mode for random numbers (see README.md) [0/1]
 ```
+## Running parameters description
+
+The parameters that can be set are split into *principal* and *internal* parameters.  
+They are set by typing at the prompt `parameter value` (case sensitive).
+
+### Principal parameters
+
+* `Qmu [default 1]`: charge of the incoming muon in e+ units `[1 / -1]`
+* `Ebeam [150]`: nominal incoming muon energy in GeV
+* `bspr [0]`: Gaussian beam energy spread, in % of `Ebeam`
+* `Eemin [1]`: minimum outgoing electron energy in GeV
+* `themax [100]`: maximum outgoing electron angle in mrad
+* `thmumin [0]`: minimum outgoing muon angle in mrad
+* `thmumax [100]`: maximum outgoing muon angle in mrad
+* `acoplcut [no 3.5]`: if the acoplanarity cut has to be applied or not [yes/no mrad]
+* `elastcut [no 0.2]`: if the cut on the geometric distance from the elesticity curve in the <img src="https://render.githubusercontent.com/render/math?math=[\theta_\mu,\theta_e]"> has to be applied or not [yes/no mrad]
+* `ord [alpha]`: to which order (photonic) corrections are included `[born/alpha/alpha2]` (standing for `[LO/NLO/NNLO]`)
+* `arun [on]`: if vacuum polarization (VP) effects must be includer or not. Possible values are
+  * `off`: no VP
+  * `on`: both leptonic and hadronic VP are included. The hadronic part defaults to `hadr5`
+  * `hadr5`: include leptonic VP and for hadronic VP use latest Fred Jegerlehner parameterization
+  * `nsk`: include leptonic VP and for hadronic VP use Fedor Ignatov's parameterization
+  * `knt`: include leptonic VP and for hadronic VP use Keshavarzi-Nomura-Teubner's parameterization
+* `hadoff [no]`: if hadronic VP has to be switched off `[yes/no]`
+* `nev [10000000.]`: number of events to be generated
+* `store [no]`: if events have to be stored `[yes/no]`
+* `storemode [0]`: if `store yes`, which mode to use to store events `[0/1/2]` (see [below](#description-of-event-format) for a short description of the event format)
+  * mode `0`: plain ASCII text file
+  * mode `1`: `ROOT` format. **`MESMER`** runs in parallel `write-root-events` (a link to `root-interface/write_MuE_MCevents.exe`), developed by G. Abbiendi, which writes through a named pipe a `.root` file with the events
+  * mode `2`: an `xz` compressed file is saved
+* `path [test-run/]`: the directory where all outputs are saved. It will contain some `.txt` files with differential distributions of some variables, the file with saved events if `store yes` and the file `stat_*.txt`, where cross sections and all info of the current run are reported
+* `seed [42]`: seed for pseudo-random-number-generator, it must be set to a "small" integer
+
+
+### Inner parameters
+
+
+
+## Description of event format
