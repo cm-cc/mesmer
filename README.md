@@ -21,6 +21,8 @@ Three external libraries are used, [`LoopTools`](http://www.feynarts.de/looptool
 the `C` implementation of [`RANLUX`](https://luscher.web.cern.ch/luscher/ranlux/), shipped with the code under GPL-like licences. To be compiled,
 the `Collier` library requires the availability of `cmake`.
 
+Furthermore, the program includes three different parameterization for the hadronic vacuum polarization: one by [Fred Jegerlehner](http://www-com.physik.hu-berlin.de/~fjeger/software.html), one by [Keshavarzi-Nomura-Teubner](#footnotes) and one by [Fedor Ignatov](http://cmd.inp.nsk.su/~ignatov/vpl/).
+
 The interface to Cern ROOT event format requires the [`ROOT`](https://root.cern/) framework to be installed.
 
 A `Makefile` is provided and the executable `mesmer` is build by simply issuing the command `make`.
@@ -140,28 +142,90 @@ They are set by typing at the prompt `parameter value` (case sensitive).
 * `themax [100]`: maximum outgoing electron angle in mrad
 * `thmumin [0]`: minimum outgoing muon angle in mrad
 * `thmumax [100]`: maximum outgoing muon angle in mrad
-* `acoplcut [no 3.5]`: if the acoplanarity cut has to be applied or not [yes/no mrad]
-* `elastcut [no 0.2]`: if the cut on the geometric distance from the elesticity curve in the <img src="https://render.githubusercontent.com/render/math?math=[\theta_\mu,\theta_e]"> has to be applied or not [yes/no mrad]
+* `acoplcut [no 3.5]`: if the acoplanarity cut has to be applied or not `[yes/no mrad]`
+* `elastcut [no 0.2]`: if the cut on the geometric distance from the elesticity curve in the [&theta;<sub>&mu;</sub>,&theta;<sub>e</sub>] plane has to be applied or not `[yes/no mrad]`
 * `ord [alpha]`: to which order (photonic) corrections are included `[born/alpha/alpha2]` (standing for `[LO/NLO/NNLO]`)
 * `arun [on]`: if vacuum polarization (VP) effects must be includer or not. Possible values are
   * `off`: no VP
   * `on`: both leptonic and hadronic VP are included. The hadronic part defaults to `hadr5`
-  * `hadr5`: include leptonic VP and for hadronic VP use latest Fred Jegerlehner parameterization
+  * `hadr5`: include leptonic VP and for hadronic VP use latest Fred Jegerlehner's parameterization
   * `nsk`: include leptonic VP and for hadronic VP use Fedor Ignatov's parameterization
   * `knt`: include leptonic VP and for hadronic VP use Keshavarzi-Nomura-Teubner's parameterization
 * `hadoff [no]`: if hadronic VP has to be switched off `[yes/no]`
 * `nev [10000000.]`: number of events to be generated
 * `store [no]`: if events have to be stored `[yes/no]`
 * `storemode [0]`: if `store yes`, which mode to use to store events `[0/1/2]` (see [below](#description-of-event-format) for a short description of the event format)
-  * mode `0`: plain ASCII text file
-  * mode `1`: `ROOT` format. **`MESMER`** runs in parallel `write-root-events` (a link to `root-interface/write_MuE_MCevents.exe`), developed by G. Abbiendi, which writes through a named pipe a `.root` file with the events
-  * mode `2`: an `xz` compressed file is saved
-* `path [test-run/]`: the directory where all outputs are saved. It will contain some `.txt` files with differential distributions of some variables, the file with saved events if `store yes` and the file `stat_*.txt`, where cross sections and all info of the current run are reported
-* `seed [42]`: seed for pseudo-random-number-generator, it must be set to a "small" integer
+  * `0`: plain ASCII text file
+  * `1`: `ROOT` format. **`MESMER`** runs in parallel `write-root-events` (a symbolic link to `root-interface/write_MuE_MCevents.exe`), developed by G. Abbiendi, which writes through a named pipe a `.root` file with the events
+  * `2`: an `xz` compressed file is saved
+* `path [test-run/]`: the directory where all outputs are saved. It will contain some `.txt` files with differential distributions of some variables, the file `events-*.[dat,dat.xz,root]` with saved events if `store yes` and the file `stat_*.txt`, where cross sections and all info of the current run are reported
+* `seed [42]`: seed for the pseudo-random-number-generator, it must be set to a "small" integer. Independent generations must use different seeds
 
 
 ### Inner parameters
 
-
+* `mode [weighted]`: if stored events are weighted or unweighted `[weighted/unweighted]`.  
+If `weighted`, to each event is associated a different weight, which must be appropriately accounted for when producing distributions.  
+If `unweighted`, all events have the same constant weight, *i.e.* they are directly distributed according to the underlying cross sections.  
+**Notice:** unweighted generation can be much slower, due to the unweightening procedure
+* `radchs [1 1]`: "radiative" charges of the muon and electron leg, to switch on/off gauge invariants subsets `[0/1 0/1]`
+* `eps [1e-5]`: minimum photon CM energy of the emitted photons in sqrt(s)/2 units. Physical observables must not (and do not) depend on `eps`
+* `phmass [1e-10]`: photon mass to regularize infra-red divergecies in GeV. Physical observables do not depend on `phmass`
+* `nphot [-1]`: it's a code driving which final states are included and the multiplicity of particles in the final state.
+Possible values are
+  * `< 0 and > -1000`: up to one extra photon in the final state for `ord alpha`, *i.e.* NLO, and up to two photons for `ord alpha2`, *i.e.* NNLO. No extra photons for `ord born`, *i.e.* LO
+  * `0 or 1 or 2`: exactly this number of extra photons in the final state
+  * `1000`: simulates
+  *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>e<sup>+</sup>e<sup>-</sup>*
+  and
+  *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>&mu;<sup>+</sup>&mu;<sup>-</sup>*
+  together
+  * `1001`: simulates *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>e<sup>+</sup>e<sup>-</sup>*
+  * `1002`: simulates *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>&mu;<sup>+</sup>&mu;<sup>-</sup>*
+  * `-1000`: all possible final states, *i.e.* maximum number of photons plus extra leptonic pairs
+* `nwrite [500000]`: files in `path` are dumped every `nwrite` generated events. If `nwrite < 0`, files are dumped (approximately) every `-nwrite` seconds
+* `nwarmup [0]`:  if `mode weighted`, the maximum weight for subsequent unweightening is searched generating first `nwarmup` events, after which unweighted generation is started. Notice that the maximum weight is a guessed value.  
+If `store yes` and `nwarmup > 0`, `wnorm` is calculated automatically using the first `nwarmup` events of the generation.  
+For unweightening, the maximum weight `sdmax` can be alternatively set by hand (setting `nwarmup 0` at the same time)
+* `sdmax [1e-17]`: maximum weight used for unweightening, when `mode unweighted` and `nwarmup 0`
+* `wnorm [-1.]`: typical integrated cross section within applied cuts. This value is used for storing events: the true weight of the event *w<sub>t</sub>* is saved as *w = w<sub>t</sub> / wnorm* in order to make the average of the weights *w* over the generated sample close to 1
+* `sync [0]`: syncronization mode for random numbers `[0/1]`. This is used to make as correlated as possible two samples with same `seed` but different `Ebeam`. *This feature needs more cross-checks*
 
 ## Description of event format
+The event format has been developed together with G. Abbiendi.
+
+Version 1 is compliant with the current version of the `ROOT` file writer ([mantained by G. Abbiendi](https://gitlab.cern.ch/muesli/nlo-mc/mue/-/tree/master/writer)), but it is limited to parse only LO and NLO events (*NNLO or events with extra leptonic pairs are not supported yet*).  
+
+**A more general event format will be agreed upon soon.**
+
+### Version 1
+The simple ASCII file (`storemode 0`) contains an header section between the tags `<header>` and `</header>` and a closing section between the tags `<footer>` and `</footer>`. After the header, each *event record* is enclosed between the `<event>` and `</event>` tags.  
+The header contains useful info about the run and the set parameters. The footer contains some statistics of the generated sample.  
+A typical *event record* looks like
+```
+<event>
+          42
+                 9998
+           3
+   6.1762125544134905E-002   6.0976085936283446E-002   6.1756917995296243E-002
+   0.0000000000000000     
+   150.00000000000000     
+   145.44875212920633        5.1471445841701699E-002  -4.2645249941300672E-002   145.44869839336738     
+   2.2013510818264361       -2.4148349195201722E-002   1.7863188831557644E-002   2.2011460851234839     
+   2.3504077876745284       -2.7323096646499977E-002   2.4782061109743032E-002   2.3501183089789106     
+ </event>
+```
+After the `<event>` tag, the first line is the `seed` of the sample, the second one is the event number and the third is the number of final state particles (in this case a &mu;, an *e* and a &gamma;).  
+In the fourth line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
+The fifth line represents the weight *w<sub>LO</sub>* which can be used to get LO distributions from a NLO sample (in this case it is `0` because it's a 3-body final state).  
+The sixth line is the incoming &mu; energy in GeV.  
+Finally, the last three lines represent the momenta (in GeV) of the final state &mu;, *e* and &gamma; respectively, in the format E p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>.  
+The tag `</event>` closes the *event record*.
+
+The `ROOT` file writer reads through a named pipe this event format and writes all the information into a `.root` file.
+
+### Version 2
+Not released yet. To be agreed upon
+
+##### Footnotes
+KNT: Available upon request from the authors
