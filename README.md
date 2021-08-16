@@ -1,7 +1,5 @@
 # MESMER
 
-***THIS README.md FILE IS UNDER CONSTRUCTION.***
-
 **`MESMER`** (**M**uon **E**lectron **S**cattering with **M**ultiple **E**lectromagnetic **R**adiation) is a Monte Carlo event generator for
 high-precision simulation of muon-electron scattering at low enegies, developed for the MUonE experiment (see [here](https://web.infn.it/MUonE/) and/or [here](https://twiki.cern.ch/twiki/bin/view/MUonE/WebHome)).
 
@@ -26,6 +24,8 @@ Furthermore, the program includes three different parameterization for the hadro
 The interface to Cern ROOT event format requires the [`ROOT`](https://root.cern/) framework to be installed.
 
 A `Makefile` is provided and the executable `mesmer` is build by simply issuing the command `make`.
+
+**NOTICE: as of now, the released code runs only at LO and NLO. If NNLO and/or extra leptonic pair production are selected, the execution stops with a warning.** 
 
 ## Running the code
 Once compiled, **`MESMER`** is run by issuing in the working directory the command `./mesmer`, which displays a command prompt

@@ -310,7 +310,7 @@ c      stop
 
       ina7 = 0
       iela = 0
-      dthna7max = 3.5
+      dthna7max = 3.5d0
       cutela    = 0.2d0
       
       nw = 1 ! number of distributions
@@ -713,6 +713,7 @@ c
 #ifdef RELEASE
       if (ord.eq.'alpha2'
      .     .or.(nphotmode.gt.999.or.nphotmode.lt.-999)) then
+         print*,' '
          print*,'You want to run with not-yet-released features.'
          print*,'Please, contact Carlo... stopping execution!'
          print*,' '
