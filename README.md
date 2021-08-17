@@ -189,6 +189,7 @@ If `store yes` and `nwarmup > 0`, `wnorm` is calculated automatically using the 
 For unweightening, the maximum weight `sdmax` can be alternatively set by hand (setting `nwarmup 0` at the same time)
 * `sdmax [1e-17]`: maximum weight used for unweightening, when `mode unweighted` and `nwarmup 0`
 * `wnorm [-1.]`: typical integrated cross section within applied cuts. This value is used for storing events: the true weight of the event *w<sub>t</sub>* is saved as *w = w<sub>t</sub> / wnorm* in order to make the average of the weights *w* over the generated sample close to 1
+* `ndistr [1]`: number of distributions at different orders. For example, if running at NNLO (`ord alpha2`), the distribution files saved in `path` can be produced also at NLO and LO with the same run. The defaults `ndistr 1` produces distributions only at the selected order. If `ord alpha` and `ndistr >=2`, distributions are produced at NLO and LO. If `ord alpha2`,  if `ndistr 2` they are produced at NNLO and NLO, if `ndistr 3`, distributions at NNLO, NLO and LO are saved
 * `sync [0]`: syncronization mode for random numbers `[0/1]`. This is used to make as correlated as possible two samples with same `seed` but different `Ebeam`. *This feature needs more cross-checks*
 
 ## Description of event format
