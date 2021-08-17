@@ -44,6 +44,7 @@ ROOTINTERFACE=
 ROOTINTERFACE=yes
 
 GSLLIBS= -lgsl -lgslcblas
+GSLLIBS=
 
 F77 += $(FFLAGS)
 
