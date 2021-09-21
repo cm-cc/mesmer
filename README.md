@@ -195,7 +195,7 @@ For unweightening, the maximum weight `sdmax` can be alternatively set by hand (
 ## Description of event format
 The event format has been developed together with G. Abbiendi.
 
-Version 1 is compliant with the current version of the `ROOT` file writer ([mantained by G. Abbiendi](https://gitlab.cern.ch/muesli/nlo-mc/mue/-/tree/master/writer)), but it is limited to parse only LO, NLO and NNLO events (*NNLO or events with extra leptonic pairs are not supported yet*).  
+Version 1 is compliant with the current version of the `ROOT` file writer ([mantained by G. Abbiendi](https://gitlab.cern.ch/muesli/nlo-mc/mue/-/tree/master/writer)), but it is limited to parse only LO, NLO and NNLO events (*events with extra leptonic pairs are not supported yet*).  
 
 **A more general event format will be agreed upon soon.**
 
