@@ -5224,7 +5224,6 @@ c      kone(1) = modk * sk * sphik
 c      kone(2) = modk * sk * cphik
 c      kone(3) = modk * ck
 c end flat
-           
       p4a(0)   =  Es2
       p4a(1:3) = -kone(1:3)
 

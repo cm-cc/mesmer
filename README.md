@@ -25,7 +25,7 @@ The interface to Cern ROOT event format requires the [`ROOT`](https://root.cern/
 
 A `Makefile` is provided and the executable `mesmer` is build by simply issuing the command `make`.
 
-**NOTICE: as of now, the released code runs only at LO and NLO. If NNLO and/or extra leptonic pair production are selected, the execution stops with a warning.** 
+**NOTICE: as of now, the released code runs only at LO, NLO and NNLO. If NNLO extra leptonic pair production are selected, the execution stops with a warning.** 
 
 ## Running the code
 Once compiled, **`MESMER`** is run by issuing in the working directory the command `./mesmer`, which displays a command prompt
@@ -195,7 +195,7 @@ For unweightening, the maximum weight `sdmax` can be alternatively set by hand (
 ## Description of event format
 The event format has been developed together with G. Abbiendi.
 
-Version 1 is compliant with the current version of the `ROOT` file writer ([mantained by G. Abbiendi](https://gitlab.cern.ch/muesli/nlo-mc/mue/-/tree/master/writer)), but it is limited to parse only LO and NLO events (*NNLO or events with extra leptonic pairs are not supported yet*).  
+Version 1 is compliant with the current version of the `ROOT` file writer ([mantained by G. Abbiendi](https://gitlab.cern.ch/muesli/nlo-mc/mue/-/tree/master/writer)), but it is limited to parse only LO, NLO and NNLO events (*NNLO or events with extra leptonic pairs are not supported yet*).  
 
 **A more general event format will be agreed upon soon.**
 

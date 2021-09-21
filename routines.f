@@ -28,7 +28,6 @@
       common/finalstate/fs
       common/ecms/ecms,ecmsnom
       common/nphot_mode/nphotmode
-      common/zparameters/zm,gz,ve,ae,rv,ra,wm,s2th,gfermi,sqrt2,um
       common/parameters/ame,ammu,convfac,alpha,pi
       integer*8 kl,iwriteout
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
@@ -143,16 +142,16 @@
       end
 *********************************************************************
       subroutine itoa(int,a)
-** look also https://gcc.gnu.org/onlinedocs/gfortran/ICHAR.html      
+** look also at https://gcc.gnu.org/onlinedocs/gfortran/ICHAR.html      
       implicit integer (h-n)
       implicit character (a-g)
       character*(*) a
       parameter (nbase=10)
       call resetname(a)
       ichar0 = ichar('0')
-      idiv = nbase
-      i    = int
-      ncifre    = 1
+      idiv   = nbase
+      i      = int
+      ncifre = 1
       do while((i/idiv).gt.0)
          idiv = idiv * nbase
          ncifre = ncifre+1

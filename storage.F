@@ -246,7 +246,6 @@ c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
          endif
       endif
       write(istorunit,*)'</event>'
-ccc      print*,nevts
       return
       end
 *********************************************************
@@ -353,8 +352,6 @@ c      write(ifoo,*)foonh
       character*10time
       character*5 zone
       integer values(8)
-
-      
       
       character*6   ord
       character*10  model

@@ -74,8 +74,9 @@ c      common/dZsdm/dZrliimu,dmassmu,dZrliie,dmasse
       double precision vp13,vp24
       common/vp1g1L/vp13,vp24
 
-      integer ionlybubbles,ibubbleonv,ibubbleonboxsub
-      common/ionlybubblescmn/ionlybubbles,ibubbleonv,ibubbleonboxsub
+      integer ionlybubbles,ibubbleonv,ibubbleonboxsub,iexnnlobubbles
+      common/ionlybubblescmn/iexnnlobubbles,ionlybubbles,ibubbleonv,
+     .     ibubbleonboxsub
 ***
 ***   for reweighenting
       integer nextraweights

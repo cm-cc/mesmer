@@ -3649,11 +3649,8 @@ c$$$      emy34cec5mu = epsfuncmom(cuno*p3,cuno*p4,ce,c5mu)*im
       double complex c0,c1,c2,c3
       double complex c50,c51,c52,c53
       double precision nm1
-      double complex c(0:3),im,cI
-      double complex c5(0:3)
+      double complex c(0:3),im,cI,c5(0:3)
       parameter (im = (0.d0,1.d0))
-*      double complex dot_product
-*      external dot_product
 
       den12 = p1(0) + m1
       den22 = p2(0) + m2
@@ -5389,6 +5386,74 @@ c calc contributions to \Delta \alpha ----------------------
 c default
       alf_lep_carlo = 1.d0*alf_lepLO+1.d0*alf_lepNLO+1.d0*alf_lepNNLO
 c default, end
+      return
+      end
+
+***** from TEUBNER et al. routine, only nlo blob
+      double precision function alf_lep_carlo_nlo(gen_lep, s)
+      implicit NONE
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c
+c Calculates Leptonic Contribution \Delta \alpha_lep(s) 
+c at LO, NLO and NNLO
+c
+c   Pi0 := ( Pi(qsq) - Pi(0) )_LO ,                   
+c   Pi1 := ( Pi(qsq) - Pi(0) )_NLO ,                  
+c
+c (Taking real part of Pi is assumed.)
+c
+c LO and NLO results are checked against the results given in 
+c Steinhauser, hep-ph/9803313 
+c
+c Test at s = Mz^2 using PDG97 values for a comparison with 
+c Table 1 of Steinhauser, hep-ph/9803313.  Perfect agreement!
+c
+c          e             mu            tau
+c LO  0.0174346533  0.00917841908  0.00480593422  *1
+c LO  0.0174346533  0.00917841908  0.00480592861  *2
+c LO  0.0174346531  0.00917841908  0.00480592861  (full formula)
+c NLO 0.0000379829  0.00002359991  0.00001603387  (full formula)
+c NNLO0.0000003821  0.00000036614  0.00000031449  *3
+c
+c *1 An expansion up to and including M^2/s terms is used.
+c *2 An expansion up to and including M^4/s^2 terms is used.
+c *3 The expansion given in hep-ph/9803313 (up to and including 
+c    M^2/s terms) is used.
+c
+c Aug 2009: expression for Pi_1 at q^2/m^2 << 1 improved.
+c Mar 2010: CERNLIB no longer necessary to evaluate ReF and ImG
+c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c input ----------------------------------------------------
+      integer gen_lep
+      double precision s
+c const ----------------------------------------------------
+      double precision Me, Mmu, Mtau, PI, ZETA2, ZETA3, ZETA5
+c      Parameter(Me=0.510998928d-3, Mmu=0.1056583715d0, Mtau=1.77682d0)! PDG14
+c      Parameter( ALPHA = 1.d0/137.035999074d0 ) ! PDG14
+      Parameter( PI = 3.141592653589793238d0, ZETA2 = PI ** 2 / 6.d0 )
+      Parameter( ZETA3 = 1.2020569032d0,      ZETA5 = 1.0369277551d0 )
+c function, tmp var. ---------------------------------------
+      double precision Pi0, Pi1, eta, mlep
+      double precision PiA, Piell, PiF, Pih, eta1, eta2, stepf, y
+      double precision alf_lepLO, alf_lepNLO, alf_lepNNLO
+
+*******CARLO
+      double precision ame,ammu,convfac,alpha,piii
+      common/parameters/ame,ammu,convfac,alpha,piii
+      double precision  AMASSES(9)
+      common/massesVP/amasses
+      double precision dalo(3),danlo(3),dannlo(3)
+      common/dalonlonnlo/dalo,danlo,dannlo
+      
+c begin ====================================================
+c define functions -----------------------------------------
+
+c calc contributions to \Delta \alpha ----------------------
+      mlep = amasses(gen_lep)
+
+      alf_lep_carlo_nlo = - 4.d0 * PI * ALPHA * ( ALPHA / PI ) *
+     &     Pi1( - mlep **2 / s ) 
       return
       end
 ctt

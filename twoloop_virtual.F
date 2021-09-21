@@ -3042,8 +3042,9 @@ cc      COMMON/CONST/EMUBEAM,EEBEAM,ALPHA,CONVFAC,PI,AME,AMU
 **** charges to switch on radiation on legs (0 or 1)      
       integer QRe,QRmu
       common/radiationcharges/QRe,QRmu
-      integer ionlybubbles,ibubbleonv,ibubbleonboxsub
-      common/ionlybubblescmn/ionlybubbles,ibubbleonv,ibubbleonboxsub
+      integer ionlybubbles,ibubbleonv,ibubbleonboxsub,iexnnlobubbles
+      common/ionlybubblescmn/iexnnlobubbles,ionlybubbles,ibubbleonv,
+     .     ibubbleonboxsub      
       integer bubblemask(5)
       double precision colch2(5)
       common/colorandch2factors/colch2,bubblemask
@@ -3269,6 +3270,13 @@ c         call twoloop_light_heavy_Syed(t,amu,ame,0,f1lh,f2lh)
          probs(3) = 0.00001d0  * bubblemask(3)
          probs(4) = 0.000001d0 * bubblemask(4)
          probs(5) = 0.001d0    * bubblemask(5)
+
+c         probs(1) = 0.999d0    * bubblemask(1)
+c         probs(2) = 0.001d0    * bubblemask(2)
+c         probs(3) = 0.00001d0  * bubblemask(3)
+c         probs(4) = 0.000001d0 * bubblemask(4)
+c         probs(5) = 0.1d0    * bubblemask(5)
+       
          probs = probs/sum(probs)
 
          ifirst = 1
@@ -3369,7 +3377,7 @@ cc            call getxsampleddiscrete(xmin,xmax,xcv,wcv,mph2cv)
             kernfcv = wrapRhad(mph2cv) * colch2(iwhichblob)
          endif
          kernfcv = kernfcv/xcv/(1.d0-xcv)
-         kernfcv = kernfcv*ovall
+         kernfcv = kernfcv*ovall       !* 0.d0
       endif
 
       if (ibubbleb.gt.0) then
@@ -3396,7 +3404,7 @@ cc            call getxsampleddiscrete(xmin,xmax,xb,wb,mph2b)
             kernfb = wrapRhad(mph2b) * colch2(iwhichblob)
          endif
          kernfb = kernfb/xb/(1.d0-xb)
-         kernfb = kernfb*ovall
+         kernfb = kernfb*ovall      !* 0.d0
       endif
 
       ctandv = 0.d0
@@ -3419,10 +3427,12 @@ cc            call getxsampleddiscrete(xmin,xmax,xb,wb,mph2b)
 c         vpsubint       = vpvect(iwhichblob)
 c         bubbleonboxsub = bubbleonboxsub - vpsubint*box0
       endif
+
+
+c      if (iwhichblob.eq.5) wfl = 0.d0
       
       bubbleonv      = bubbleonv      * wfl
       bubbleonboxsub = bubbleonboxsub * wfl
-
       
 c      if ((.not.(abs(bubbleonv).lt.1d50).or.isnan(bubbleonv)).or.
 c     .  (.not.(abs(bubbleonboxsub).lt.1d50).or.isnan(bubbleonboxsub)))

@@ -1,5 +1,5 @@
       implicit double precision (a-h,o-z)
-      parameter (ndistr  = 37)
+      parameter (ndistr  = 32)
 #ifdef RELEASE
       parameter (nbin   = 100)	
 * 2D
@@ -19,6 +19,9 @@
       integer*8 nevinbin(ndistr,nbin)
       common/nevxbin/nevinbin
 
+      integer in(ndistr)
+      common/indexesfordistributions/in
+      
       character*100 distname(ndistr,maxwgt),tmp(ndistr),
      .     distname2(ndistr2)
       character*100 tmp2(ndistr)

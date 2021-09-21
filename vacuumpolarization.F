@@ -25,8 +25,9 @@
       double precision vpdal
       double precision vpvect(5)
       common/vp_dalphas/vpdal,vpdah,vpvect
-      integer ionlybubbles,ibubbleonv,ibubbleonboxsub
-      common/ionlybubblescmn/ionlybubbles,ibubbleonv,ibubbleonboxsub
+      integer ionlybubbles,ibubbleonv,ibubbleonboxsub,iexnnlobubbles
+      common/ionlybubblescmn/iexnnlobubbles,ionlybubbles,ibubbleonv,
+     .     ibubbleonboxsub      
 ***      
       data ifirst /0/
 
@@ -203,9 +204,9 @@ c     DATA AMASSES /0.510999D-3,.1056584D0,1.777D0,175.6D0,
 
       endif
 
-      vpolc    = (1.d0,0.d0)
-      vpdal    = 0.d0
-      vpdah    = 0.d0
+      vpolc  = (1.d0,0.d0)
+      vpdal  = 0.d0
+      vpdah  = 0.d0
       vpvect = 0.d0
 
       if (iarun.eq.0) then
@@ -219,12 +220,19 @@ c     DATA AMASSES /0.510999D-3,.1056584D0,1.777D0,175.6D0,
          datotnsk = 1.d0 - 1.d0/vpolc
 
          SOMMA=0.D0
+         xnloblob = 0.d0
          DO I=1,4
             vpvect(i) = SUMMA(AMASSES(I),Q2,I)
             SOMMA = SOMMA + vpvect(i)
          ENDDO
-         dalphaQED = ALPHA/PI*SOMMA !+(alpha/pi)**3*(log(-q2/ame/ame)-1.d0)**2
-         vpvect  = vpvect*alpha/pi
+         if (iexnnlobubbles.gt.0) then
+            xnloblob =
+     .           alf_lep_carlo_nlo(1,q2) +
+     .           alf_lep_carlo_nlo(2,q2) +
+     .           alf_lep_carlo_nlo(3,q2)
+         endif
+         dalphaQED   = ALPHA/PI*SOMMA + xnloblob
+         vpvect(1:4) = vpvect(1:4)*alpha/pi
          
          vpdal = dalphaQED
          if (ihadoff.eq.0) vpdah = datotnsk - vpdal
@@ -237,12 +245,19 @@ c     DATA AMASSES /0.510999D-3,.1056584D0,1.777D0,175.6D0,
       endif
          
       SOMMA=0.D0
+      xnloblob = 0.d0
       DO I=1,4 !3 only leptons
          vpvect(i) = SUMMA(AMASSES(I),Q2,I)
          SOMMA = SOMMA + vpvect(i)
       ENDDO
-      dalphaQED = ALPHA/PI*SOMMA  !+(alpha/pi)**3*(log(-q2/ame/ame)-1.d0)**2
-      vpvect(1:4)  = vpvect(1:4) * alpha/pi
+      if (iexnnlobubbles.gt.0) then
+         xnloblob =
+     .        alf_lep_carlo_nlo(1,q2) +
+     .        alf_lep_carlo_nlo(2,q2) +
+     .        alf_lep_carlo_nlo(3,q2)
+      endif
+      dalphaQED   = ALPHA/PI*SOMMA + xnloblob
+      vpvect(1:4) = vpvect(1:4) * alpha/pi
      
 c***********************************************************************************
 c!! adding leptonic nlo and nnlo contributions to  \Delta\alpha. Top only NLO (tiny)
@@ -469,7 +484,6 @@ c         cov = 0.d0
        ENDIF
        RETURN
        END
-
 *****************
       function wrapRhad(s)
       implicit double precision (a-h,o-z)
@@ -552,127 +566,3 @@ c      k = k - 1
 c      call wrapRfred(s,wrapRhad)
       return
       end
-***********************************************************
-c$$$      subroutine wrapRfred(s,Rout)
-c$$$      implicit double precision (a-h,o-z)      
-c$$$      double precision Rout
-c$$$      double complex cone,calp,cvpt_new,cvpt_hig,cvpt_low,alphac,alphah
-c$$$     &     ,alphal,alphact,alphaht,alphalt,calept1,cahadr1,caltop1
-c$$$
-c$$$      
-c$$$      double precision myalpha,mypi
-c$$$      common/carlocommons/myalpha,mypi
-c$$$      mypi = 4.d0*atan(1.d0)
-c$$$      myalpha = 1.d0/137.03599907430637d0
-c$$$
-c$$$      call alphaQEDcxcmcc(s,cvpt_new,cvpt_hig,cvpt_low,alphac,
-c$$$     &    alphah,alphal,alphact,alphaht,alphalt,calept1,cahadr1,caltop1)
-c$$$
-c$$$      Rout = (0.d0,1.d0)*cahadr1*mypi/myalpha
-c$$$
-c$$$      return
-c$$$      end
-c$$$      
-c$$$*;;;;;;;;;;;;;;;;;;;;;;;;;;;;; -*- Mode: Fortran -*- ;;;;;;;;;;;;;;;;;;;;;;;;;;;
-c$$$*;; alphaQEDc_sub.f --- 
-c$$$*;; Author          : Fred Jegerlehner
-c$$$*;; Created On      : Wed Jan 11 03:26:27 2006
-c$$$*;; Last Modified By: Friedrich Jegerlehner
-c$$$*;; Last Modified On: Tue Jul 18 12:57:38 2017
-c$$$*;; RCS: $Id$
-c$$$*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-c$$$*;; Copyright (c) 2010 Fred Jegerlehner
-c$$$*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-c$$$*;; 
-c$$$      SUBROUTINE alphaQEDcxcmcc(s,cvpt_new,cvpt_hig,cvpt_low,alphac,
-c$$$     &    alphah,alphal,alphact,alphaht,alphalt,calept1,cahadr1,caltop1)
-c$$$C Link files dggvapx,dhadr5n17,cggvapx,chadr5n17
-c$$$C Calculating the running QED coupling alpha(E) as a complex function
-c$$$C Leptons: 1--loop, 2--loop exact, 3--loop in high energy approximation
-c$$$C Quarks form routine dhadr5n including effective s--channel shifts in low energy range
-c$$$C r1....,r2....,r3.... : one-loop, two-loop, three-loop result
-c$$$C  ..real: real-part, ..imag: imaginary part;
-c$$$C ......l: light fermions only (high energy approximation for 3--loops) 
-c$$$C dallepQED1n=r1real,dallepQED2n=r2real,dallepQED3l=r3reall
-c$$$C dallepQED3l also returns one-loop and two-loop high energy (light fermion) 
-c$$$C approximations 
-c$$$c 21/09/2009 common pQCD parameter setting via constants_qcd.f      
-c$$$c FJ 28/01/2012 recalculated Nall=2055 --> 2177
-c$$$c 29/01/2012 common resonance parameters setting via resonances_dat.f
-c$$$c 21/09/2012 new option for W contribution: iOSW=0 strict MSbar, iOSW=1 including 
-c$$$c            high energy asymptotic constant of the OS W contribution at s>>MW2
-c$$$c 10/07/2017 providing statistical and systematic hadronic errors separately now
-c$$$c            allows to set up the covariance matrix
-c$$$      implicit none
-c$$$      double precision s,null
-c$$$c      double precision dalept,dahadr,daltop,Dalphaweak1MSb
-c$$$      double complex cggvapx,cerror,cerrorsta,cerrorsys,
-c$$$     &     calept,cahadr,caltop,cDalphaweak1MSb
-c$$$      double complex cone,calp,cvpt_new,cvpt_hig,cvpt_low,alphac,alphah
-c$$$     &     ,alphal,alphact,alphaht,alphalt,calept1,cahadr1,caltop1
-c$$$      external cggvapx
-c$$$      integer ifirst
-c$$$      common/complexdalphacarlo/ifirst
-c$$$      data ifirst /0/
-c$$$********************* part to be included and edited in main program **************
-c$$$c check cuts CHPTCUT,EC,ECUT   ! specify where to use CHPT and pQCD in constants_qcd
-c$$$c decommment next line in main
-c$$$      double precision pi1,ALINP,ERRAL,EINP,MTOP1 ! get QCD parameters as set in constants_qcd
-c$$$c QCD parameters required to calculare imaginary part (R) and top contribution 
-c$$$      include 'alphaQEDc19/common.h'
-c$$$c     decomment next 3 lines in main
-c$$$      double precision st2,als,mtop,sin2ell
-c$$$      integer Ismooth
-c$$$      common/var1/pi1,ALINP,ERRAL,EINP,MTOP1
-c$$$      common /parm/st2,als,mtop
-c$$$      COMMON/SMOO/Ismooth
-c$$$c decomment next line if needed (provided also by cggvap)
-c$$$c      common /resu/dalept,dahadr,daltop,Dalphaweak1MSb   ! real results
-c$$$      common /cres/calept,cahadr,caltop,cDalphaweak1MSb  ! complex results
-c$$$c decomment next 2 lines in main
-c$$$      if (ifirst.eq.0) then
-c$$$         LEPTONflag='had'       ! choose had,lep,top,ele,muo,tau
-c$$$         iLEP=LFLAG(LEPTONflag)
-c$$$*         
-c$$$         call constants()
-c$$$         call constants_qcd()
-c$$$         sin2ell=0.23153        ! pm 0.00016 LEPEEWG Phys Rep 427 (2006) 257
-c$$$c decommment next line and change default as appropriate in main      
-c$$$         st2=0.23153d0          ! Reference value for weak mixing parameter
-c$$$c decomment next 2 lines in main
-c$$$         als=ALINP              ! alpha strong
-c$$$         mtop=MTOP1             ! top quark mass
-c$$$         Ismooth=0              ! flag for imaginary part: 0= R(s) data; 1= R(s) fits
-c$$$c following two entried set as default in chad5n09.f
-c$$$         IRESON=1               ! include narrow resonances in fits
-c$$$         iresonances=1          ! include narrow resonances in data sets
-c$$$c decomment next line in main
-c$$$         call Rdata()
-c$$$c decomment next line in main
-c$$$         call resonances_renocomplex()
-c$$$c      call resonances_renoreal()
-c$$$C LEPTONflag=all,had,lep,ele,muo,tau -> iLEP=-3,-2,-1,1,2,3
-c$$$C Default: 
-c$$$c       LEPTONflag='all'
-c$$$c       iLEP  = -3  ! for sum of leptons + quarks              
-c$$$C decomment in main the following 2 lines for changing the default
-c$$$c ***********************************************************************
-c$$$c
-c$$$      endif
-c$$$      null=0.d0
-c$$$      cone=DCMPLX(1.d0,null)
-c$$$      calp=DCMPLX(alp,null)
-c$$$      cvpt_new= cggvapx(s,cerror,cerrorsta,cerrorsys)           ! central value
-c$$$      cvpt_hig= cvpt_new+cerror            !    ...        + total error 
-c$$$      cvpt_low= cvpt_new-cerror            !    ...        - total error
-c$$$      alphac  =calp/(cone-cvpt_new)        ! alpha no top
-c$$$      alphah  =calp/(cone-cvpt_hig)
-c$$$      alphal  =calp/(cone-cvpt_low)
-c$$$      alphact =calp/(cone-cvpt_new-caltop-cDalphaweak1MSb) ! alpha incl top + W
-c$$$      alphaht =calp/(cone-cvpt_hig-caltop-cDalphaweak1MSb)
-c$$$      alphalt =calp/(cone-cvpt_low-caltop-cDalphaweak1MSb)
-c$$$      calept1 =calept                      ! lepton VP
-c$$$      cahadr1 =cahadr                      ! hadronic VP 5 flavors
-c$$$      caltop1 =caltop                      ! top contribution                 
-c$$$      return
-c$$$      END

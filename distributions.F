@@ -22,25 +22,52 @@
 
       ebeam = ecmsnom/2.d0
 
-      if (nbin.eq.50)   bw =  '50.txt'
-      if (nbin.eq.100)  bw = '100.txt'
-      if (nbin.eq.200)  bw = '200.txt'
-      if (nbin.eq.300)  bw = '300.txt'
-      if (nbin.eq.400)  bw = '400.txt'
-      if (nbin.eq.500)  bw = '500.txt'
-      if (nbin.eq.600)  bw = '600.txt'
-      if (nbin.eq.800)  bw = '800.txt'
-      if (nbin.eq.1000) bw = '1000.txt'
-      if (nbin.eq.2000) bw = '2000.txt'
+      call itoa(nbin,bw)
+      bw = trim(bw)//'.txt'
 
+
+      in(1)  = 1
+      in(2)  = 2
+      in(3)  = 3
+      in(4)  = 4
+      in(5)  = 5
+      in(6)  = 6
+      in(7)  = 7
+      in(8)  = 8
+      in(9)  = 9
+      in(10) = 10
+      in(11) = 11
+      in(12) = 12
+      in(13) = 13
+      in(14) = 14
+      in(15) = 15
+      in(16) = 16
+      in(17) = 17
+      in(18) = 18
+      in(19) = 19
+      in(20) = 20
+      in(21) = 21
+      in(22) = 22
+      in(24) = 24
+      in(25) = 25
+      in(26) = 26
+      in(27) = 27
+      in(28) = 28
+      in(29) = 29
+      in(30) = 30
+      in(31) = 31
+      in(32) = 32
+      
 ******************
       tmp(1)  = 'ethlab_'
       tmp(2)  = 'eenlab_'
       tmp(3)  = 'mthlab_'
       tmp(4)  = 'menlab_'
       tmp(5)  = 't24_'
+      tmp(6)  = 't25_'
       tmp(7)  = 't13_'
       tmp(8)  = 'aco_'
+      tmp(9)  = 't26_'
       tmp(10) = 'ethcm_'
       tmp(11) = 'eencm_'
       tmp(12) = 'mthcm_'
@@ -52,12 +79,11 @@
       tmp(17) = 'gthcm_'
       tmp(18) = 'gencm_'
       tmp(19) = 'gecthcm_'
-      tmp(20) = 'dist_'
+      tmp(20) = 'm45_'
       tmp(21) = 'acollcm_'
       tmp(22) = 'm456_'
-      tmp(23) = 'distf_'
+      tmp(23) = 'eenlab_p_'
       tmp(24) = 'ethlab_p_'
-      tmp(34) = 'eenlab_p_'
       tmp(25) = 't2in_'
       tmp(26) = 'g2thcm_'
       tmp(27) = 'g2encm_'
@@ -68,14 +94,11 @@
       tmp(31) = 'en6lab_'
       tmp(32) = 'm56_'
 
-      tmp(33) = 'm45_'
 
-      tmp(6)  = 't25_'
-      tmp(9)  = 't26_'
 
-      tmp(35) = 'tripleprod_'
-      tmp(36) = 'acoplGA_'
-      tmp(37) = 'acoplCM_'
+c      tmp(35) = 'tripleprod_'
+c      tmp(36) = 'acoplGA_'
+c      tmp(37) = 'acoplCM_'
       
 ******** 2d distributions
       if (i2d.gt.0) then
@@ -290,9 +313,6 @@ c         print*,trim(distrstring(1:i2+2))
          pi = 4.d0 * atan(1.d0)
          radtodeg = 1d3 ! 180.d0/pi
 
-c         bma(1) = 2.5d0
-c         bma(3) = 0.5d0
-
          be = sqrt(tridot(pin2,pin2))/pin2(0)
          ga = 1.d0/sqrt(1.d0-be*be)
          a  = ga*(1.d0-be)*egminmue
@@ -308,15 +328,9 @@ c         bma(3) = 0.5d0
          bmi(5) =  tmin
          
          bma(5) =  tmax
-c         bma(5) =  0.d0
 
-cproton
-c         bmi(5) = tmin
-c         bma(5) = tmax
+ccc         bma(5) = 2.d0*ame*ame - 2.d0*1.d0*ame
          
-c         bmi(5) =  2.d0*tmax
-c         bma(5) =  0.d0
-
          bmi(25) =  bmi(5)
          bma(25) =  bma(5)
          
@@ -340,10 +354,6 @@ calculating xmin, xmax, theminL, themaxL in the lab (L for local)
          
          bmi(2) = eemin
          bma(2) = 140.d0        !eemax
-c         bmi(2) = ame
-c         bma(2) = eemax
-
-
          
          bmi(3) = 0.d0 !bmi(1)
          bma(3) = bma(1)/7.d0
@@ -369,8 +379,8 @@ c         bma(2) = eemax
          bmi(8) =  -pi*1d3
          bma(8) =  +pi*1d3
 
-         bmi(8) =  0.d0!-pi*1d3
-         bma(8) =  pi*1d3
+         bmi(8) = 0.d0!-pi*1d3
+         bma(8) = pi*1d3
 
 c         bmi(8) = -1.d0
 c         bma(8) =  1.d0
@@ -422,16 +432,12 @@ c         bma(11) = sqrt(s)*0.5d0
          bma(27) = bma(18)
          
          cmin = max(-1.d0,-1.d0-tmax*0.5d0/pcm/pcm)
-         bmi(20) = 0.d0
-         bma(20) = 2.5d0
          
          bmi(21) = 0.d0
          bma(21) = 180.d0
          bmi(22) = 0.d0 !bmi(21)
          bma(22) = sqrt(s) - ame - ammu!bma(21)
          
-         bmi(23) = bmi(20)
-         bma(23) = bma(20)
 
          bmi(24) =  bmi(1)
          bma(24) =  bma(1)
@@ -451,30 +457,26 @@ c         bma(1) = bma(28)
          bmi(32) = 0.d0
          bma(32) = sqrt(s) - ame - ammu
          
-         bmi(33) = bmi(32)
-         bma(33) = bma(32)
+         bmi(20) = bmi(32)
+         bma(20) = bma(32)
 
-         bmi(34) = bmi(2)
-         bma(34) = bma(2)
+c         bmi(32) = 0.d0
+c         bma(32) = 1.d0
+         
+         
+         bmi(23) = bmi(2)
+         bma(23) = bma(2)
          
 c         do k = 1,100
 c         print*,'RESET limits for: 2,5,11 '
 c         enddo
 
-         bmi(35) = -6.d-5
-         bma(35) = -bmi(35)
-         bmi(35) = -1.5d-6
-         bma(35) = -bmi(35)
-         
-         bmi(36) = -50.d0
-         bma(36) = -bmi(36)
-         bmi(36) = -200.d0
-         bma(36) = -bmi(36)
-
-         bmi(37) = -1.5d0
-         bma(37) = -bmi(37)
-         bmi(37) = -0.15d0
-         bma(37) = -bmi(37)
+c         bmi(35) = -3d-6
+c         bma(35) = -bmi(35)         
+c         bmi(36) = -pi*1d3
+c         bma(36) = -bmi(36)
+c         bmi(37) = -pi*1d3 /1000.d0
+c         bma(37) = -bmi(37)
          
 !     filling distr. components when entering the first time
          distr   = 0.d0
@@ -490,10 +492,10 @@ c         enddo
 *****************************
 ****  2d distributions
          if (i2d.gt.0) then
-            bmi2(1,1) = bmi(3)
-            bmi2(1,2) = bmi(24)
-            bma2(1,1) = bma(3)
-            bma2(1,2) = bma(24)
+            bmi2(1,1) = bmi(5) 
+            bmi2(1,2) = bmi(7)
+            bma2(1,1) = bma(5)
+            bma2(1,2) = bma(7)
             
             dis2d  = 0.d0         
             edis2d = 0.d0
@@ -514,17 +516,16 @@ c         enddo
          ifirst = 0
       endif
 
-      if (.not.(abs(sd(1)).lt.1d50).or.isnan(sd(1))) then
-         print*,'print in distributions'
-         print*,sd
-         print*,p3
-         print*,p4
-         print*,p5
-         print*,p6
-         print*,qph
-         print*,'end print in distributions'
-      endif
-
+c      if (.not.(abs(sd(1)).lt.1d50).or.isnan(sd(1))) then
+c         print*,'print in distributions'
+c         print*,sd
+c         print*,p3
+c         print*,p4
+c         print*,p5
+c         print*,p6
+c         print*,qph
+c         print*,'end print in distributions'
+c      endif
       
 cc this doesnt work if not boosting where pin2 is at rest (p2lab is not at rest in general)
 c      call new_boost(pin2,p3,p3lab,1)
@@ -558,12 +559,10 @@ c      t13 = dot(p1lab-p3lab,p1lab-p3lab)
 
 ****  extra      
       
-c      fun(8) = acoplanarity(p3lab,p4lab)
-      fun(8) = testplanarity(p3lab,p4lab)
+ccccccc      fun(8) = testplanarity(p3lab,p4lab)
+      fun(8) = acoplanarityPSIdef(p3lab,p4lab)*1d3
 
-      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
-
-      
+c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
       
       pm4 = sqrt(tridot(p4,p4))
       pm3 = sqrt(tridot(p3,p3))
@@ -571,9 +570,6 @@ c      fun(8) = acoplanarity(p3lab,p4lab)
       fun(12) = bmi(12)-1.d0
       if (pm4.gt.0.d0) fun(10) = acos(p4(3)/pm4)*180.d0/pi
       if (pm3.gt.0.d0) fun(12) = acos(p3(3)/pm3)*180.d0/pi
-
-      fun(20) = dist
-      fun(23) = distf
       
       fun(11) = p4(0)
       fun(13) = p3(0)
@@ -622,9 +618,10 @@ c      fun(8) = acoplanarity(p3lab,p4lab)
          endif
 
 
-         fun(34) = pinside_e(0)
+         fun(23) = pinside_e(0)
 ***********pairs
-         fun(28:33) = bmi(28:33) -1d3
+         fun(28:32) = bmi(28:32) -1d3
+         fun(20) = bmi(20) - 1d3
          fun(6) = bmi(6) - 1d3
          fun(9) = bmi(9) - 1d3         
          if (p6(0).gt.0.5d0*ame) then
@@ -632,8 +629,6 @@ c      fun(8) = acoplanarity(p3lab,p4lab)
             fun(24) = acos(pinside_e(3)/
      .           sqrt(tridot(pinside_e,pinside_e)))*1d3
             fun(25) = dot(p2lab - pinside_e,p2lab - pinside_e)
-
-            
             
             call new_boost(p12lab,p5,p5lab,-1)
             call new_boost(p12lab,p6,p6lab,-1)
@@ -642,14 +637,17 @@ c      fun(8) = acoplanarity(p3lab,p4lab)
             fun(30) = p5lab(0)
             fun(31) = p6lab(0)
             fun(32) = sqrt(dot(p5+p6,p5+p6))
-            fun(33) = sqrt(dot(p5+p4,p5+p4))
+
+cc            fun(32) = (p5(0)+p6(0))/sqrt(dot(p12lab,p12lab))
+
+            fun(20) = sqrt(dot(p5+p4,p5+p4))
             fun(22) = sqrt(dot(p4+p5+p6,p4+p5+p6))
             fun(6)  = dot(p2lab-p5lab,p2lab-p5lab)
             fun(9)  = dot(p2lab-p6lab,p2lab-p6lab)
-            fun(8)  = testplanarity(p3lab,pinside_e)
+            fun(8)  = acoplanarityPSIdef(p3lab,pinside_e)*1d3
 
-            call acoplanaritiesGA(p3lab,pinside_e,
-     .           fun(35),fun(36),fun(37))
+c            call acoplanaritiesGA(p3lab,pinside_e,
+c     .           fun(35),fun(36),fun(37))
             
          endif         
 ***********************************************************************
@@ -672,8 +670,8 @@ c      fun(8) = acoplanarity(p3lab,p4lab)
 c            fun2(1,1) = fun(3)
 c            fun2(1,2) = acos(pinside_e(3)/
 c     .           sqrt(tridot(pinside_e,pinside_e)))*1d3
-            fun2(1,1) = fun(3)
-            fun2(1,2) = fun(24)
+            fun2(1,1) = fun(5)
+            fun2(1,2) = fun(7)
 *******************      
             DO k = 1,ndistr2
                dx = (bma2(k,1) - bmi2(k,1))/nbin2
@@ -816,6 +814,7 @@ cc the following is identical to acoplanarityPSIdef
       testplanarity = max(-1.d0,testplanarity)      
       testplanarity = (pi - acos(testplanarity))*1d3 ! in mrad
       testplanarity = testplanarity*sign(1.d0,tp)
+      
       return
       end
 cccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -841,7 +840,7 @@ cc A_\phi by Giovanni, which is identical to acoplanarityPSIdef
       testplanarity = testplanarity*sign(1.d0,trp)
       gio = testplanarity
 cc
-      call vecprod(p1,p2,ptmp)
+      call vecprod(p1/sqrt(tridot(p1,p1)),p2/sqrt(tridot(p2,p2)),ptmp)      
       ptmp = ptmp/sqrt(tridot(ptmp,ptmp))      
       testplanarity = tridot(pz,ptmp)
       cla = pi*0.5d0 - acos(testplanarity)

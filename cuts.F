@@ -161,9 +161,18 @@ c      return
 
       icut = 1 ! rejected by default
       
+c      if ((p3(0)+p4(0)).gt.0.01d0*sqrt(dot(p12lab,p12lab))) return
+c      sqs = sqrt(dot(p12lab,p12lab))
+c      t24 = dot(pin2-p2,pin2-p2)
+c      t13 = dot(pin1-p1,pin1-p1)
+c      xx = (p3(0)+p4(0))/sqs
+c      if (t24.lt.-0.12d0.and.xx.lt.0.05d0*sqs) then
+c         print*,(sqs - p1(0) - p2(0))/sqs,xx,sqrt(dot(p3+p4,p3+p4))
+c      endif
 *** threshold, detector, limits on energy (GeV) and angle (mrad) 
       Ethr  = 0.2d0
       ththr = 100d0
+c      ththr = 50d0
 ***
 * I put in p[3456]lab the final state lepton momenta...      
       call new_boost(p12lab,p1,p3lab,-1) 
@@ -202,23 +211,26 @@ c            if (j.ne.i.and.itriggers(i)*itriggers(j).gt.0) then
                lcond1 = thslab(i).ge.thmumin.and.thslab(i).le.thmaxmukin
      .              .and.pmatlab(0,i).ge.emulabmin
                lcond1 = lcond1.and.pmatlab(0,j).gt.eemin
-     .              .and.thslab(j).ge.thmumin
+     .              .and.thslab(j).ge.thmumin 
                
                lcond2 = thslab(j).ge.thmumin.and.thslab(j).le.thmaxmukin
      .              .and.pmatlab(0,j).ge.emulabmin
                lcond2 = lcond2.and.pmatlab(0,i).gt.eemin
      .              .and.thslab(i).ge.thmumin
                
+**zoom
+c               lcond1=
+c     .              lcond1.and.thslab(i).lt.0.6d0.and.thslab(j).lt.0.6d0
+c               lcond2=
+c     .              lcond2.and.thslab(j).lt.0.6d0.and.thslab(i).lt.0.6d0
+** end zoom
+
                if (lcond1.or.lcond2) then
                   ncoppie = ncoppie + 1
                endif
             endif
          enddo
       enddo
-
-c      if ((p5lab(0)+p6lab(0)).gt.10.d0*ame) return
-c      t = dot(p1lab-p3lab,p1lab-p3lab)
-c      if ((p5lab(0)+p6lab(0)).gt.0.5d0*sqrt(-t)) return
       
       if (ncoppie.eq.1) then
          if (itriggers(2).eq.1) pinside_e = pmatlab(:,2)
@@ -252,7 +264,7 @@ c     .     cutela,theout,thmout,dist)
          if (dist.gt.cutela) icut = 1
 
       endif
-      
+
       return
       end
 *******************************************************************

@@ -24,10 +24,11 @@
       common/ecms/ecms,ecmsnom
       common/nphot_mode/nphotmode
       
-      common/zparameters/zm,gz,ve,ae,rv,ra,wm,s2th,gfermi,sqrt2,um
       common/epssoft/eps
       common/parameters/ame,ammu,convfac,alpha,pi
       common/tautopmasses/taumass,topmass
+      double precision mz,mz2,gz,gz2,mw,mw2,stw,ctw
+      common/zparameters/mz,mz2,gz,gz2,mw,mw2,stw,ctw,gv,ga
       common/qedORDER/ord
       integer*8 iwriteout
       integer isync,seed,nsearch,iverbose,nw
@@ -130,9 +131,9 @@ c$$$
 
       character*4 bbf,ebf
       character*4 bit,eit
-
-      integer ionlybubbles,ibubbleonv,ibubbleonboxsub
-      common/ionlybubblescmn/ionlybubbles,ibubbleonv,ibubbleonboxsub
+      integer ionlybubbles,ibubbleonv,ibubbleonboxsub,iexnnlobubbles
+      common/ionlybubblescmn/iexnnlobubbles,ionlybubbles,ibubbleonv,
+     .     ibubbleonboxsub
       double precision colch2(5)
       integer bubblemask(5)
       common/colorandch2factors/colch2,bubblemask
@@ -149,6 +150,7 @@ c$$$
       ionlybubbles    = 0
       ibubbleonv      = 0
       ibubbleonboxsub = 0
+      iexnnlobubbles  = 0
 c      bubblemask = (/1,1,1,1,1/)
       bubblemask = (/0,0,0,0,0/)
 
@@ -159,8 +161,10 @@ c      bubblemask = (/1,1,1,1,1/)
 **********************      
 *******************************
 
-      print*,'Input ionlybubbles'
-      read*,ionlybubbles
+c      print*,'Input ionlybubbles'
+c      read*,ionlybubbles
+      print*,'Input iexnnlobubbles (0/1/2'
+      read*,iexnnlobubbles
       
       print*,'only bubbles on verter and/or boxes'
       read*,ibubbleonv,ibubbleonboxsub
@@ -245,38 +249,25 @@ c      stop
       
       ame  =   0.51099906d-3
       ammu = 105.65836900d-3
-** Fael
+
+**
       ame  = 0.510998928d-3 ! electron mass
       ammu = 105.6583715d-3 ! muon mass
       taumass = 1.77682D0
       topmass = 175.6D0
 
+** for Z exchange (at LO)      
+      mz = 91.1876d0
+      gz = 2.4952d0
+      mw = 80.398d0
+      
 c      ame = ammu
 c      ammu = ame
       
 c      write(*,'(A,A)',advance='no')'test',achar(13)
 c      stop
-
-      alpha = 1.D0/137.0359895D0
-* Fael
+*
       alpha = 1.d0/137.03599907430637d0
-
-** Z parameters...
-      zm  = 91.1867D0
-      wm  = 80.35d0 
-      gz  = 2.4952D0
-      s2th = 1.d0 - wm**2/zm**2
-
-      gfermi = 1.16639d-5
-      sqrt2  = sqrt(2.d0)
-      gfermi = pi*alpha/2.d0/s2th/wm**2*sqrt2
-
-      ve = -1.d0 + 4.d0*s2th
-      ae = -1.d0
-      rv = ve**2/(ae**2+ve**2)
-      ra = ae**2/(ae**2+ve**2)
-      um = sqrt(pi*alpha/sqrt2/gfermi)
-** ...Z parameters
 
 ***** default input values
       fs   = 'ee' ! 'ee' or 'gg' or 'mm'
@@ -709,10 +700,15 @@ c
       nw = min(nw,3)
 *****
 
+*** switch off any NNLO VP RC if iarun = 0  or ord = born
+      if (iarun.eq.0) iexnnlobubbles = 0
+      if (ord.eq.'born') iexnnlobubbles = 0
+***      
 *******************************************************
 #ifdef RELEASE
-      if (ord.eq.'alpha2'
-     .     .or.(nphotmode.gt.999.or.nphotmode.lt.-999)) then
+c      if (ord.eq.'alpha2'
+c     .     .or.(nphotmode.gt.999.or.nphotmode.lt.-999)) then
+      if (nphotmode.gt.999.or.nphotmode.lt.-999) then
          print*,' '
          print*,'You want to run with not-yet-released features.'
          print*,'Please, contact Carlo... stopping execution!'

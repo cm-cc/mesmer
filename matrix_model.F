@@ -537,11 +537,9 @@ c p4 = mu
       common/parameters/ame,ammu,convfac,alpha,pi
       common/tautopmasses/taumass,topmass
       
-c      common/zparameters/zm,gz,ve,ae,rv,ra,wm,s2th,gfermi,sqrt2,um
-
       double complex sp1(2,4),sp2(2,4),sp3(2,4),sp4(2,4)
       double complex s1l(4),s2l(4),s3l(4),s4l(4),sa(4),sb(4),sa5(4)
-      double complex amplborn,ampv(0:15),amplbsm,atmp
+      double complex amplborn,ampv(0:15),amplbsm,atmp,amplowz
       double complex c1,c2,boxamp,vertamp,tmp2l,ctmp1,ctmp2,ctmp3
       double complex ctest!, c5mu(0:3),c5e(0:3)
 
@@ -562,7 +560,7 @@ c      common/zparameters/zm,gz,ve,ae,rv,ra,wm,s2th,gfermi,sqrt2,um
       common/bsmparams/bsmmass,yae,yam,bsmlambda,gagg,ibsm      
 
       double precision mz,mz2,gz,gz2,mw,mw2,stw,ctw
-      common/zparametershere/mz,mz2,gz,gz2,mw,mw2,stw,ctw,gv,ga
+      common/zparameters/mz,mz2,gz,gz2,mw,mw2,stw,ctw,gv,ga
 
       double precision phmass
       common/photonmasslambda/phmass
@@ -604,15 +602,15 @@ c      common/labmomenta/p1lab,p2lab,p12lab
 
       integer ionoff(4,4)
       
-      icount = icount + 1
-      
       if (ifirst.eq.0) then
 
          extraweight = 1.d0
-         
-         mz = 91.1876d0
-         gz = 2.4952d0
-         mw = 80.398d0
+
+! in userinterface.F         
+c         mz = 91.1876d0
+c         gz = 2.4952d0
+c         mw = 80.398d0
+
          mz2 = mz*mz
          mw2 = mw*mw
          gz2 = gz*gz
@@ -627,17 +625,6 @@ c      common/labmomenta/p1lab,p2lab,p12lab
          gv = ec*gv
          ga = ec*ga
 
-c         gv = ec
-c         ga = 0.d0
-c         mz = 0.d0
-c         mz2 = 0.d0
-         
-cc         print*,'sqrt(s) =',sqrt(dot(p1+p2,p1+p2))
-
-c         do k = 1,10
-c            print*,'USING FORM FOR BORN'
-c         enddo
-
          ifirst = 1
       endif
 
@@ -648,21 +635,21 @@ c         enddo
       iq2 = 0
       
       ptmp = p1+p2
-      s = dot(ptmp,ptmp)
+      s    = dot(ptmp,ptmp)
       ptmp = p1-p3
-      t = dot(ptmp,ptmp)
-      ptmp = p1-p4
-      u = dot(ptmp,ptmp)
-      s2 = s*s
-      t2 = t*t
-      u2 = u*u
+      t    = dot(ptmp,ptmp)
 
       ect  = sqrt(ec2)
       ec2s  = ec2               !* vpolc(s) ! * 0.d0
       tm1 = 1.d0/t
       vpt = 1.d0
       sff = 0.d0
-*** analytic check w form         
+***   analytic check w form
+c      ptmp = p1-p4
+c      u    = dot(ptmp,ptmp)
+c      s2   = s*s
+c      t2   = t*t
+c      u2   = u*u
 c         xform = !! OK !! already averaged over IS
 c     & 2.D0*t2 + 4.D0*s*t + 4.D0*s2 + 4.D0*mm4 - 8.D0*mm2*s + 4.D0*
 c     & me4 - 8.D0*me2*s + 8.D0*me2*mm2
@@ -775,13 +762,12 @@ c            call getcurrent(s3l,s1l,cmu,cImu,c5mu)
          
          cmuce   = dotcmom(cmu,ce)
             
-           !! per la Z devo usare dotcom(v*cmu+a*c5mu,v*ce+a*c5e)
+           !! per la Z devo usare dotcmom(v*cmu+a*c5mu,v*ce+a*c5e)
 c            cmuceZ = dotcmom(gv*cmu+ga*c5mu,gv*ce+ga*c5e)
             
 cc better to leave the i's explicit
 cc            amplborn = amplborn * (im*ect*im*ect) * (-im)/t      
 
-ccc           amplborn = cmuce*im*ec2*tm1 * vpt ! vp dealed below
          amplborn = cmuce*im*ec2*tm1 
 !! per la Z
 c           amplborn = amplborn + im*cmuceZ/(t-mz2+im*mz*gz)
@@ -793,11 +779,11 @@ c           amplborn = amplborn + im*cmuceZ/(t-mz2+im*mz*gz)
             call loadspinvariants(p1,p2,p3,p4,cmu,ce)
             call getQEDvertexes(vertamp)
             call getQEDboxes(boxamp)
-
+            
             oneloop = bbar * (1.d0*cts + 1.d0*sff + 2.d0*(dal+dah))
      .           + 2.d0*dreal(amplborn*conjg(vertamp))
      .           + 2.d0*dreal(amplborn*conjg(boxamp))
-
+            
             boxmph0 = boxmph0 + 2.d0*dreal(amplborn*conjg(boxamp))
             ctandvmph0 = ctandvmph0 + bbar * cts
      .           + 2.d0*dreal(amplborn*conjg(vertamp))
@@ -823,7 +809,7 @@ ccc END TEST YFS oal
                ctmp3 = cyfsmu*cyfsmu*0.5d0 * amplborn
      .              + (ctmp2-cyfsmu*amplborn)*cyfsmu ! funziona!!                             
                yfs2Lmumu = yfs2Lmumu
-     .                 + 2.d0*dreal(amplborn*conjg(ctmp3))
+     .              + 2.d0*dreal(amplborn*conjg(ctmp3))
 ! approximates the 2 loop with 1 vertex on e and one on mu                  
                ctmp3 = cyfse*cyfsmu * amplborn
      .              + (ctmp1-cyfse *amplborn)*cyfsmu
@@ -834,63 +820,99 @@ ccc END TEST YFS oal
                ctmp3 = cyfs*cyfs*0.5d0*amplborn
      .              + (ctmp1+ctmp2+boxamp - cyfs*amplborn)*cyfs ! full 2L approximation
                yfs2L = yfs2L + 2.d0*dreal(amplborn*conjg(ctmp3))
-               endif
-** end for 2L ******************************************************
             endif
-            ampm2 = ampm2 + bbar + oneloop
-         enddo
+** end for 2L ******************************************************
+         endif
+         ampm2 = ampm2 + bbar + oneloop
+      enddo
+
+****  Z LO always added!
+      bornwz = 0.d0
+      DZ     = 0.d0
+      do hh = 0, 15 ! notice, I must sum over all helicities because of CP violation
+         h1  = mod(hh,16)/8 + 1
+         h2  = mod(hh, 8)/4 + 1
+         h3  = mod(hh, 4)/2 + 1
+         h4  = mod(hh, 2)   + 1
+         if (Qmu.lt.0.d0) then
+            call getcurrentnew(Qmu,h3,h1,p3,p1,mm,mm,cmu,cImu,c5mu)
+         else
+            call getcurrentnew(Qmu,h3,h1,p1,p3,mm,mm,cmu,cImu,c5mu)
+         endif            
+         call getcurrentnew(-1.d0,h4,h2,p4,p2,me,me,ce,cIe,c5e)
+         cmuce   = dotcmom(cmu,ce)
+!! per la Z devo usare dotcmom(v*cmu+a*c5mu,v*ce+a*c5e)
+         amplowz = cmuce*im*ec2*tm1*vpt 
+!! per la Z
+         cmuceZ  = dotcmom(gv*cmu+ga*c5mu,gv*ce+ga*c5e)
+         amplowz = amplowz + im*cmuceZ/(t-mz2+im*mz*gz)
+         bornwz  = bornwz + amplowz*conjg(amplowz)
+      enddo
+      DZ = bornwz - 2.d0*born*vpt*vpt
+**** end Z LO
+ 42   continue
+      
+      ampm2      = 2.d0 * ampm2 * vpt*vpt ! because summing only on half of helicities
+      born       = 2.d0 * born  * vpt*vpt
+
+      ampm2      = ampm2 + DZ ! adding Z at LO
+
+      boxmph0    = 2.d0 * boxmph0 ! no vp here
+      ctandvmph0 = 2.d0 * ctandvmph0 ! no vp here
+      ampm2NLO   = ampm2
+      blobsexact = 0.d0
+
+      extrareweightLO = 1.d0
+      
+      IF (ionlybubbles.gt.0) THEN ! this was used for nnlo pairs paper
+         vp    = dot_product(vpvect,bubblemask)
          
-         ampm2      = 2.d0 * ampm2 * vpt*vpt ! because summing only on half of helicities
-         born       = 2.d0 * born  * vpt*vpt
-         boxmph0    = 2.d0 * boxmph0    ! no vp here
-         ctandvmph0 = 2.d0 * ctandvmph0 ! no vp here
-         ampm2NLO   = ampm2
-
-         extrareweightLO = 1.d0
+         extrareweightLO = 1.d0/vpt/vpt
          
-         if (ionlybubbles.gt.0) then
-            vp    = dot_product(vpvect,bubblemask)
-
-            extrareweightLO = 1.d0/vpt/vpt
-
-            xx1      = alf_lep_carlo(1,t) ! to fill the common
-            xx1      = alf_lep_carlo(2,t) ! to fill the common
-            xx1      = alf_lep_carlo(3,t) ! to fill the common
-            danlo(1) = danlo(1)*bubblemask(1)
-            danlo(2) = danlo(2)*bubblemask(2)
-            danlo(3) = danlo(3)*bubblemask(3)
-            vpnlo    = danlo(1) + danlo(2) + danlo(3)
-            
-            bornclean = born/vpt/vpt
-            boxbubble  = 0.d0
-            vertbubble = 0.d0
-            ibubblev  = ibubbleonv
-            ibubbleb  = ibubbleonboxsub
-            if (QRe.eq.0.or.QRmu.eq.0) ibubbleb = 0
-            call leptonicbubbles(p1,p2,p3,p4,ibubblev,ibubbleb,
-     .           vertbubble,boxbubble)
+         xx1      = alf_lep_carlo(1,t) ! to fill the common
+         xx1      = alf_lep_carlo(2,t) ! to fill the common
+         xx1      = alf_lep_carlo(3,t) ! to fill the common
+         danlo(1) = danlo(1)*bubblemask(1)
+         danlo(2) = danlo(2)*bubblemask(2)
+         danlo(3) = danlo(3)*bubblemask(3)
+         vpnlo    = danlo(1) + danlo(2) + danlo(3)
+         
+         bornclean = born/vpt/vpt
+         boxbubble  = 0.d0
+         vertbubble = 0.d0
+         ibubblev  = ibubbleonv
+         ibubbleb  = ibubbleonboxsub
+         if (QRe.eq.0.or.QRmu.eq.0) ibubbleb = 0
+         call leptonicbubbles(p1,p2,p3,p4,ibubblev,ibubbleb,
+     .        vertbubble,boxbubble)
 !! that's good!            
-            ampm2 = (ctandvmph0 + boxmph0 + bornclean*sff)*vp*2.d0
-     .           + boxbubble + vertbubble
-     .           + 1.d0 * bornclean * (3.d0*vp*vp + 2.d0*vpnlo)
+         ampm2 = (ctandvmph0 + boxmph0 + bornclean*sff)*vp*2.d0
+     .        + boxbubble + vertbubble
+     .        + 1.d0 * bornclean * (3.d0*vp*vp + 2.d0*vpnlo)
 
 c            ampm2 = vertbubble
 c           call leptonicbubblequadpack(p1,p2,p3,p4,1,0,
 c     .           ctandv,boxsub)
 c           print*,t,ctandv,twoloop_onlynf1(s,t,u)
 c           stop
-            
 cc            ampm2 = twoloop_onlynf1(s,t,u)
-            
-         endif
+      ENDIF
 
-c         aaa = wraprhad((1.0001999999999999d-2)**2)
-c         stop
-
-c          print*,''
-c          print*,dalnloquadpack(t,ame**2)/danlo(1)
-c     print*,dalnloquadpack(t,ammu**2)/danlo(2)
-
+      if (iexnnlobubbles.gt.1) then
+! this is the non-factorizable NNLO virtual pair contribution
+         boxbubble  = 0.d0
+         vertbubble = 0.d0
+         ibubblev  = ibubbleonv
+         ibubbleb  = ibubbleonboxsub
+         if (QRe.eq.0.or.QRmu.eq.0) ibubbleb = 0
+         call leptonicbubbles(p1,p2,p3,p4,ibubblev,ibubbleb,
+     .        vertbubble,boxbubble)
+!! that's good!            
+         blobsexact = (boxbubble + vertbubble)*vpt*vpt ! with vpt^2 I add VP on non-loop photon...
+      endif
+      
+      ampm2 = ampm2 + blobsexact ! added to the 1L contribution...
+         
 c$$$         tmin = -0.143d0
 c$$$         tmax = 0.d0
 c$$$         dt = (tmax - tmin)/40d0
@@ -918,52 +940,39 @@ c         enddo
 c         stop
          
 *******************************************************
-         if (is2L) then
+      if (is2L) then
 *******************************************************        
+         vpt2 = vpt*vpt
+         oneloopm2 = 2.d0 * oneloopm2 * vpt2 ! |1L|^2 
 
-            vpt2 = vpt*vpt
-            
-            oneloopm2 = 2.d0 * oneloopm2 * vpt2 ! |1L|^2 
-
-            yfs2Lee   = 2.d0*yfs2Lee   * vpt2
-            yfs2Lmumu = 2.d0*yfs2Lmumu * vpt2
-            yfs2Lemu  = 2.d0*yfs2Lemu  * vpt2
-            yfs2L     = 2.d0*yfs2L     * vpt2
-            
-            true2L = twoloop_twobody(s,t,u) * vpt2
-            sv1L   = (ampm2-born*(1.d0+sff))*sff
-            
-            DeltaYFS = yfs2L - yfs2Lee - yfs2Lmumu - yfs2Lemu ! eureka!
-
-            dueloop = true2L+DeltaYFS+oneloopm2+sv1L+0.5d0*sff*sff*born
-
-            ampm2     = ampm2 + dueloop ! ottimo!
-
-            ampm2NNLO = ampm2
-
-c            print*,'print 2L',dueloop
-
-         endif     
-***   ! per la Z
-c         ampm2 = ampm2*0.5d0
-c         born  = born*0.5d0
-****     
-c         ampm2 = dueloop
-cc         ampm2 = true2L
-c         print*,ampm2
-c         stop
+         yfs2Lee   = 2.d0*yfs2Lee   * vpt2
+         yfs2Lmumu = 2.d0*yfs2Lmumu * vpt2
+         yfs2Lemu  = 2.d0*yfs2Lemu  * vpt2
+         yfs2L     = 2.d0*yfs2L     * vpt2
          
- 999     extraweights(0) = 1.d0
-         extraweights(1) = 1.d0/vpt/vpt
-         extraweights(2) = 1.d0/vpt/vpt/(1.d0-dalw)/(1.d0-dalw)         
-
-         reweightLO  = born/ampm2  * extrareweightLO
-
-         reweightNLO = ampm2NLO/ampm2
-
-         if (ord.eq.'born') reweightNLO = 0.d0
+         true2L = twoloop_twobody(s,t,u) * vpt2
+         sv1L   = (ampm2-born*(1.d0+sff))*sff
          
-         smtq2 = ampm2
+         DeltaYFS = yfs2L - yfs2Lee - yfs2Lmumu - yfs2Lemu ! eureka!
+         
+         dueloop = true2L+DeltaYFS+oneloopm2+sv1L+0.5d0*sff*sff*born
+         
+         ampm2     = ampm2 + dueloop ! ottimo!
+         
+         ampm2NNLO = ampm2
+      endif     
+         
+ 999  extraweights(0) = 1.d0
+      extraweights(1) = 1.d0/vpt/vpt
+      extraweights(2) = 1.d0/vpt/vpt/(1.d0-dalw)/(1.d0-dalw)
+
+      reweightLO  = (born + DZ)/ampm2  * extrareweightLO
+      
+      reweightNLO = ampm2NLO/ampm2
+
+      if (ord.eq.'born') reweightNLO = 0.d0
+         
+      smtq2 = ampm2
          
 c         eee = ame - t*0.5d0/ame
 c         delta =  max(2.d0*ame,0.1d00*eee) ! 0.01*eee almost cancels out the virtual part
@@ -973,7 +982,7 @@ c     .        * Fsoftrealpairs(delta,ame)
 c         uuuu = Fsoftrealpairs(delta,ame)
 c         stop
          
-         smt   = smtq2
+      smt   = smtq2
 
 *** analytic check w form    
 c         xform = !! OK !! already averaged over IS
@@ -986,7 +995,6 @@ c         print*,ampm2/xform
 *********************************
 c         stop         
 ********************
-***   with Z exchange  !
       return
       end
 **************************************************************************
