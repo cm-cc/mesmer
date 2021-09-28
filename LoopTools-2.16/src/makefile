@@ -6,7 +6,7 @@ frontend: lib $(FE)
 
 mma1: lib $(MFE)
 
-mma0 lib: $(LIB) clooptools.h fcc
+mma0 lib: $(LIB) clooptools.h $(FCC)
 
 
 .SUFFIXES:
@@ -236,11 +236,6 @@ ffdcxs.o: ffdcxs.F $(FFINC)
 ffbndc.o: ffbndc.F $(FFINC)
 	$(XFC) -c -o ffbndc.o ffbndc.F
 
-f77290: f77290.c
-	$(CC) $(CFLAGS) -o f77290 f77290.c
-looptools.h90: looptools.h f77290
-	f77290 looptools.h looptools.h90
-
 $(LIB): $(OBJS)
 	$(AR) $(ARFLAGS) $(LIB) $?
 	-$(RANLIB) $(LIB)
@@ -251,15 +246,15 @@ $(FE): lt.F $(LTINC) $(LIB)
 	-rm -f lt.o
 
 clooptools.h: clooptools.h.in ftypes.h
-	sed "s:NOUNDERSCORE:$(NOUNDERSCORE):" ftypes.h clooptools.h.in > clooptools.h
+	sed "s:NOUNDERSCORE:$(NOUNDERSCORE):g" ftypes.h clooptools.h.in > clooptools.h
 
-fcc: fcc.in
+$(FCC): fcc.in
 	sed -e 's|^fldflags=.*|fldflags="$(LDFLAGS) $(MCLIBS)"|' \
-	    -e 's|^cc=.*|cc="$${REALCC:-$(CC)}"|' \
-	    -e 's|^cxx=.*|cxx="$${REALCXX:-$(CXX)}"|' fcc.in > fcc
-	chmod 755 fcc
-	rm -f f++
-	ln -s fcc f++
+	    -e 's|^cc=.*|cc="$${REALCC:-$(CC) $(CFLAGS)}"|' \
+	    -e 's|^cxx=.*|cxx="$${REALCXX:-$(CXX) $(CXXFLAGS)}"|' fcc.in > $(FCC)
+	chmod 755 $(FCC)
+	rm -f $(FXX)
+	ln -s $(FCC) $(FXX)
 
 LoopTools$(EXE): LoopTools.tm clooptools.h fortranflush.o $(LIB) fcc
 	test -d =. || ln -s . =.

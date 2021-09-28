@@ -2,7 +2,7 @@
 	clooptools.h
 		the C/C++ header file with all definitions for LoopTools
 		this file is part of LoopTools
-		last modified 13 Aug 18 th
+		last modified 22 Sep 21 th
 */
 
 
@@ -254,7 +254,7 @@ extern "C" {
 
 extern struct {		/* MUST match common block ltvars in lt.h! */
   COMPLEX cache[10][2];
-  COMPLEX savedptr[10];
+  INTEGER8 savedptr[10];
   REAL maxdev;
   INTEGER epsi, warndigits, errdigits;
   INTEGER serial, versionkey;
