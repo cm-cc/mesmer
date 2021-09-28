@@ -275,8 +275,8 @@ c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
       double precision qphlab(40,0:3)
 * included only to access the common 'weights'      
 #include "invariants.h"      
-      call eventstorage_v2(w,nev,ie,p3,p4,p5,p6,qph)
-c      call eventstorage_v1(w,nev,ie,p3,p4,p5,p6,qph)
+c      call eventstorage_v2(w,nev,ie,p3,p4,p5,p6,qph)
+      call eventstorage_v1(w,nev,ie,p3,p4,p5,p6,qph)
       return
       end
 *******************************************
