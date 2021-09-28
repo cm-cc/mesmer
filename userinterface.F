@@ -53,8 +53,8 @@
       common/radiationcharges/QRe,QRmu
 ***
       double precision cutela
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       double precision phmass
       common/photonmasslambda/phmass
@@ -67,7 +67,7 @@
       data iper,iid /0,0/
 !!!      
       common/weightnormalization/wnorm
-      character*9 setkey(37)
+      character*9 setkey(40)
 c$$$      
 c$$$ for teubner routine, 2010/05/19
 c$$$
@@ -118,7 +118,10 @@ c$$$
      +     'scEdhad', ! 34
      +     'sprb1  ', ! 35
      +     'sprb2  ', ! 36
-     +     'wnorm '   ! 37
+     +     'wnorm ',  ! 37
+     +     'themin', ! 38
+     +     'Ethr', ! 39
+     +     'ththr'  ! 40
      +     /
 * BSM parameters
       common/bsmparams/bsmmass,yae,yam,bsmlambda,gagg,ibsm
@@ -137,11 +140,18 @@ c$$$
       double precision colch2(5)
       integer bubblemask(5)
       common/colorandch2factors/colch2,bubblemask
-            
+
+*****
+      integer ismualongz
+      common/ISmuondirection/ismualongz
+***** 
+      
 *** opening stdout as utf-8!      
       open(stdout,encoding='UTF-8')
 ***
 
+      ismualongz = 1
+      
 *** for real pairs
       iid   = 1
       iper  = 1
@@ -151,7 +161,6 @@ c$$$
       ibubbleonv      = 0
       ibubbleonboxsub = 0
       iexnnlobubbles  = 0
-c      bubblemask = (/1,1,1,1,1/)
       bubblemask = (/0,0,0,0,0/)
 
 #ifndef RELEASE
@@ -281,9 +290,13 @@ c      stop
       spremu = 0.d0
       eemin  = 1.d0
       thmumin = 0.d0
+      themin  = 0.d0
       thmumax = 100d0
       themax  = 100d0
+      Ethr    = 0.2d0
+      ththr   = 100.d0
 
+      
       ecms = ame*ame + ammu*ammu + 2.d0*emulab*ame
       ecms = sqrt(ecms)      
       
@@ -322,7 +335,7 @@ c      ififo = 1 ! for writing to a fifo, used with root interface
 c      ififo = 0 ! ascii file
       ififo = 0
       
-      sdifmax      = 1.d-17
+      sdifmax      = 1.d-10
       arun         = 'on'
 
       iarun = 0
@@ -353,6 +366,10 @@ c            print*,'>> Overwriting run parameters <<'
      .       ' LAB energy = ',trim(r8tostr(eemin)),' GeV'
          print*,trim(stringa)
 
+         write(stringa,*)' [ '//setkey(38)//' ] Minimum electron'//
+     .       ' LAB angle = ',trim(r8tostr(themin)),' mrad'
+         print*,trim(stringa)
+         
          write(stringa,*)' [ '//setkey(24)//' ] Maximum electron'//
      .       ' LAB angle = ',trim(r8tostr(themax)),' mrad'
          print*,trim(stringa)
@@ -378,6 +395,18 @@ c            print*,'>> Overwriting run parameters <<'
      .        //' (and value) = '//trim(ctmp),' (',
      .        trim(r8tostr(cutela)),' mrad)'
          print*,trim(stringa)
+
+         write(stringa,*)' [ '//setkey(39)//' ] ''Detectability'''//
+     .        ' energy threshold for extra leptons = ',
+     .        trim(r8tostr(Ethr)),' GeV'
+         print*,trim(stringa)
+
+         write(stringa,*)' [ '//setkey(40)//' ] Maximum'//
+     .        ' ''detectability'' LAB angle'//
+     .        ' for extra leptons = ',
+     .        trim(r8tostr(ththr)),' mrad'
+         print*,trim(stringa)
+         
          
          write(stringa,*)' [ '//setkey(11)
      .//' ] Simulation at "'//trim(ord)//'" order'
@@ -556,7 +585,10 @@ cc 111     write(*,'(''Insert "variable value" or "run" or "quit": '',$)')
             if (c.eq.'wnorm')   wnorm = x
             if (c.eq.'thmumin') thmumin = x
             if (c.eq.'thmumax') thmumax = x
-            if (c.eq.'themax')  themax = x            
+            if (c.eq.'themin')  themin = x
+            if (c.eq.'themax')  themax = x
+            if (c.eq.'Ethr')    Ethr = x
+            if (c.eq.'ththr')   ththr = x
          endif
          if (c(1:3).eq.'run')  then
             istop = .true.
@@ -648,7 +680,7 @@ c
             print*,'and resetting wnorm and sdmax'
             print*,'**************************************************'
             wnorm = -1.d0
-            sdifmax = 1d-17
+            sdifmax = 1d-10
          endif
          if (wnorm.gt.0.d0) then
             print*,'**************************************************'
@@ -761,6 +793,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
       print*,setkey(2)  ,' ---> beam energy spread percentage (%)'
       print*,setkey(3)  ,' ---> minimum electron energy in the LAB'//
      .     ' (GeV)'
+      print*,setkey(38) ,' ---> minimum electron angle in the LAB'//
+     .     ' (mrad)'      
       print*,setkey(24) ,' ---> maximum electron angle in the LAB'//
      .     ' (mrad)'
       print*,setkey(22) ,' ---> minimum muon angle in the LAB (mrad)'
@@ -770,6 +804,10 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
       print*,setkey(31) ,' ---> if applying'//
      .     ' distance-from-elasticity-curve cut and'//
      .     ' to which value [yes/no mrad]'
+      print*,setkey(39) ,' ---> ''detectability'' threshold energy'//
+     .     ' for extra leptons (GeV)'
+      print*,setkey(40) ,' ---> maximum ''detectability'' angle for'//
+     .     ' extra leptons  (mrad)'      
       print*,setkey(11) ,' ---> to which order simulate events '//
      .     '[born/alpha/alpha2] for [LO/NLO/NNLO]'
       print*,setkey(21) ,' ---> if running of alpha must be used'//
@@ -831,10 +869,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
       integer i
       logical is0      
       character*200 stringa
-
       i = precision(a)
-      
-      write(stringa,'(f30.18)')a
+      write(stringa,'(f30.16)')a
       stringa = adjustl(trim(stringa))
       is0 = .true.
       k = index(stringa,' ')-1
@@ -852,7 +888,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
       integer i
       logical is0      
       character*200 stringa
-      write(stringa,'(f30.18)')a
+      write(stringa,'(f30.16)')a
       stringa = adjustl(trim(stringa))
       is0 = .true.
       k = index(stringa,' ')-1

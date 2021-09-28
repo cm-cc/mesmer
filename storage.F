@@ -8,8 +8,21 @@
 
       integer g,mum,mup,em,ep
       common/LHAparticlesids/g,mum,mup,em,ep
+      character*4 cg,cmum,cmup,cem,cep
+      common/LHAparticlesidschar/cg,cmum,cmup,cem,cep
       data g,mum,mup,em,ep/22,13,-13,11,-11/
 
+      write(cg,'(i4)')g
+      write(cmum,'(i4)')mum
+      write(cmup,'(i4)')mup
+      write(cem,'(i4)')em
+      write(cep,'(i4)')ep
+      cg   = adjustl(trim(cg))
+      cmum = adjustl(trim(cmum))
+      cmup = adjustl(trim(cmup))
+      cem  = adjustl(trim(cem))
+      cep  = adjustl(trim(cep))
+      
       print*,'Initializing storage...'
       
       wnormalization = wnorm
@@ -62,8 +75,6 @@ c     >        //storfile(1:ilens)//".footer "
       endif
 
       print*,'...and now starting to store...'
-      
-      
       return
       end
 *********************************************************
@@ -78,9 +89,9 @@ c     >        //storfile(1:ilens)//".footer "
       common/storedevents/nstored,nevts,ifirst
       data nstored,nevts,ifirst /0,0,0/
 
-      common/parameters/ame,ammu,convfac,alpha,pi     
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      common/parameters/ame,ammu,convfac,alpha,pi
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer*8 iwriteout
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
 
@@ -115,7 +126,6 @@ c     >        //storfile(1:ilens)//".footer "
       common/weiunwei/iweight
 
       common/tobewritten/wnormalization,sdmax
-      
       
       double precision p0(0:3)
       data p0 /0.d0,0.d0,0.d0,0.d0/
@@ -156,7 +166,7 @@ c     >        //storfile(1:ilens)//".footer "
          else
             print*,'  Running mode not valid. Stopping in eventstorage'
             stop
-         endif         
+         endif
          write(istorunit,*)'  External and internal seed for RNG'
          write(istorunit,*)iseedext,iseed
          write(istorunit,*)'  ------------------------------'
@@ -172,7 +182,7 @@ c     >        //storfile(1:ilens)//".footer "
          write(istorunit,*)' ',ame
          write(istorunit,*)'  1/alpha(0)'
          write(istorunit,*)' ',1.d0/alpha
-         write(istorunit,*)'  CoM photon k_0 (GeV)',egmin
+         write(istorunit,*)'  CoM photon k_0 (GeV)',egmin         
          write(istorunit,*)'  MC generation cut: min E_e (GeV)',eemin
          write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  Normalization cross section (mub)'
@@ -265,8 +275,8 @@ c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
       double precision qphlab(40,0:3)
 * included only to access the common 'weights'      
 #include "invariants.h"      
-c      call eventstorage_newversion(w,nev,ie,p3,p4,p5,p6,qph)
-      call eventstorage_v1(w,nev,ie,p3,p4,p5,p6,qph)
+      call eventstorage_v2(w,nev,ie,p3,p4,p5,p6,qph)
+c      call eventstorage_v1(w,nev,ie,p3,p4,p5,p6,qph)
       return
       end
 *******************************************
@@ -311,7 +321,7 @@ c      write(ifoo,*)foonh
       end
 *************************************************
 *********************************************************
-      subroutine eventstorage_newversion(w,nev,ie,p3,p4,p5,p6,qph)
+      subroutine eventstorage_v2(w,nev,ie,p3,p4,p5,p6,qph)
 ! after agreeing new format with Giovanni (5/2/21)
       implicit double precision (a-h,o-z)
 ! already in invariats.h      dimension p3(0:3),p4(0:3)
@@ -323,9 +333,11 @@ c      write(ifoo,*)foonh
       common/storedevents/nstored,nevts,ifirst
       data nstored,nevts,ifirst /0,0,0/
 
-      common/parameters/ame,ammu,convfac,alpha,pi     
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      character*30 cnstored,cnp,ctmp
+      
+      common/parameters/ame,ammu,convfac,alpha,pi
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer*8 iwriteout
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
 
@@ -336,8 +348,14 @@ c      write(ifoo,*)foonh
 
       integer g,mum,mup,em,ep
       common/LHAparticlesids/g,mum,mup,em,ep
+      character*4 cg,cmum,cmup,cem,cep
+      common/LHAparticlesidschar/cg,cmum,cmup,cem,cep
 
+      double precision mz,mz2,gz,gz2,mw,mw2,stw,ctw
+      common/zparameters/mz,mz2,gz,gz2,mw,mw2,stw,ctw,gv,ga
+      
       integer id1,id2,id3,id4,id5,id6
+      character*3 cid1,cid2,cid3,cid4,cid5,cid6
       
       common/eventcount/kbefore
       data kbefore /0/
@@ -362,18 +380,27 @@ c      write(ifoo,*)foonh
       common/photoncutoff/egmin,egmin2
       common/realinput/anpoints,sdifmax
 
+      common/nphot_mode/nphotmode
+      
       common/weiunwei/iweight
 
       common/tobewritten/wnormalization,sdmax
       
       double precision p0(0:3)
       data p0 /0.d0,0.d0,0.d0,0.d0/
+
+      integer ismualongz
+      common/ISmuondirection/ismualongz      
       
 *     included only to access the common 'weights'      
 #include "invariants.h"
 
       if (ifirst.eq.0) then
          write(istorunit,*)'<header>'
+         write(istorunit,*)'  ------------------------------'
+         write(istorunit,*)'  SAMPLE TAG'
+         write(istorunit,*)iseedext
+         write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  Program version: ',programversion
          write(istorunit,*)'  Process ID',idproc,'running on ',hstnm
          call date_and_time(date,time,zone,values)
@@ -405,7 +432,11 @@ c      write(ifoo,*)foonh
          else
             print*,'  Running mode not valid. Stopping in eventstorage'
             stop
-         endif         
+         endif
+         write(istorunit,*)'   multiplicity and included'//
+     .        ' final states mode:',
+     .        nphotmode
+         write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  External and internal seed for RNG'
          write(istorunit,*)iseedext,iseed
          write(istorunit,*)'  ------------------------------'
@@ -422,7 +453,17 @@ c      write(ifoo,*)foonh
          write(istorunit,*)'  1/alpha(0)'
          write(istorunit,*)' ',1.d0/alpha
          write(istorunit,*)'  CoM photon k_0 (GeV)',egmin
-         write(istorunit,*)'  MC generation cut: min E_e (GeV)',eemin
+         write(istorunit,*)'  ------------------------------'
+         write(istorunit,*)'  MC generation cuts:'
+         write(istorunit,*)'   Eemin   = ',eemin
+         write(istorunit,*)'   themin  =',themin
+         write(istorunit,*)'   themax  =',themax
+         write(istorunit,*)'   thmumin =',thmumin
+         write(istorunit,*)'   thmumax =',thmumax
+         write(istorunit,*)'   Ethr    =',Ethr
+         write(istorunit,*)'   ththr   =',ththr
+         write(istorunit,*)'   acoplanarity cut =',ina7,dthna7max
+         write(istorunit,*)'   elasticity cut   =',iela,cutela
          write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  Normalization cross section (mub)'
          write(istorunit,*)' ',wnormalization
@@ -436,6 +477,12 @@ c      write(ifoo,*)foonh
       nevts   = nevts + nev - kbefore
       ng = 0      ! number of photons in the record
       npairs = 0  ! number of pairs
+
+      write(cnstored,*)nstored
+      cnstored = adjustl(trim(cnstored))
+
+      cnp = '0'
+      cnp = adjustl(trim(cnp))
       
       id2 = em
       id4 = id2
@@ -449,22 +496,43 @@ c      write(ifoo,*)foonh
       write(istorunit,*)'<event>'
       if (ie.ne.0) then
 c     write(istorunit,*)0
-         write(istorunit,*)iseedext ! RunNr
-         write(istorunit,*)nstored      ! EventNr
-         write(istorunit,*)0 ! number of final state particles
+         write(istorunit,*)' '//cnstored(1:len_trim(cnstored)) ! EventNr
+         write(istorunit,*)' '//cnp(1:len_trim(cnp)) ! number of final state particles
 ! p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
          write(istorunit,*)0.d0,0.d0,0.d0  ! weights
          write(istorunit,*)0.d0,0.d0       ! weight for LO and NLO
-         
-         write(istorunit,*)real(p1lab(0),ikind)
-         write(istorunit,*)id3,real(p0(1:3),ikind)
-         write(istorunit,*)id4,real(p0(1:3),ikind)    
+
+         write(ctmp,*)id3         
+         ctmp = trim(adjustl(ctmp))
+c old         write(istorunit,*)real(p1lab(0),ikind)
+c new 
+         write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     .        real(truep1lab(1:3),ikind)
+         write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     .        real(p0(1:3),ikind)
+         write(ctmp,*)id4
+         ctmp = trim(adjustl(ctmp))
+         write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     .        real(p0(1:3),ikind)
       else
+         
+c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
+         call new_boost(p12lab,p3,p3lab,-1)         
+         call new_boost(p12lab,p4,p4lab,-1)
+         if (ismualongz.eq.0) then
+            call rot(-1,truep1lab,p3lab,p3lab)
+            call rot(-1,truep1lab,p4lab,p4lab)
+         endif
+         
 ccc   counting photons 
          do k = 1,40
             if (qph(k,0).gt.0.d0) then
                ng = ng +1
                call new_boost(p12lab,qph(k,0:3),qphlab(k,0:3),-1)
+               if (ismualongz.eq.0) then
+                  call rot(-1,truep1lab,qphlab(k,0:3),qphlab(k,0:3))
+               endif
+               
             endif
          enddo
 ccc   counting pairs
@@ -477,40 +545,63 @@ ccc   counting pairs
                id5 = mup
                id6 = mum
             endif
+
+            if (ismualongz.eq.0) then
+               call rot(-1,truep1lab,p5lab,p5lab)
+               call rot(-1,truep1lab,p6lab,p6lab)
+            endif
          endif
+
+         write(istorunit,*)' '//cnstored(1:len_trim(cnstored)) ! EventNr
+
+         npart = 2 + ng + 2*npairs
+         write(cnp,*)npart
+         cnp = adjustl(trim(cnp))
+         write(istorunit,*)' '//cnp(1:len_trim(cnp))! number of final state particles
+
+         ws = w
          
-c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
-         call new_boost(p12lab,p3,p3lab,-1)
-         call new_boost(p12lab,p4,p4lab,-1)
-
-         write(istorunit,*)iseedext ! RunNr
-         write(istorunit,*)nstored  ! EventNr
-            
-         write(istorunit,*)2+ng  + 2*npairs! number of final state particles
-
          kbefore = nev
-         write(istorunit,*)real(w,ikind),
-     >        real(w*extraweights(1),ikind),
-     >        real(w*extraweights(2),ikind)
-         write(istorunit,*)w*reweightLO,w*reweightNLO  ! weight for LO and NLO
-         write(istorunit,*)real(p1lab(0),ikind)
+         write(istorunit,*)real(ws,ikind),
+     >        real(ws*extraweights(1),ikind),
+     >        real(ws*extraweights(2),ikind)
+         write(istorunit,*)ws*reweightLO,ws*reweightNLO  ! weight for LO and NLO
 
-         write(istorunit,*)id3,real(p3lab(1:3),ikind)
-         write(istorunit,*)id4,real(p4lab(1:3),ikind)
+         write(ctmp,*)id3
+         ctmp = trim(adjustl(ctmp))         
+c original - only IS muon energy         write(istorunit,*)real(p1lab(0),ikind)
+c new
+         write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     >        real(truep1lab(1:3),ikind)
+ccc         
+         write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     >        real(p3lab(1:3),ikind)
+         write(ctmp,*)id4
+         ctmp = trim(adjustl(ctmp))         
+         write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     >        real(p4lab(1:3),ikind)
          
          if (npairs.gt.0) then
-            write(istorunit,*)id5,real(p5lab(1:3),ikind)
-            write(istorunit,*)id6,real(p6lab(1:3),ikind)
+            write(ctmp,*)id5
+            ctmp = trim(adjustl(ctmp))                     
+            write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     >           real(p5lab(1:3),ikind)
+            write(ctmp,*)id6
+            ctmp = trim(adjustl(ctmp))                     
+            write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     >           real(p6lab(1:3),ikind)
          endif
-
+         
          if (ng.gt.0) then
             do k = 1, ng
-               write(istorunit,*)g,real(qphlab(k,1:3),ikind)
+               write(ctmp,*)g
+               ctmp = trim(adjustl(ctmp))                     
+               write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     >              real(qphlab(k,1:3),ikind)
             enddo
          endif
       endif
       write(istorunit,*)'</event>'
-ccc      print*,nevts
       return
       end
 *********************************************************

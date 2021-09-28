@@ -9,8 +9,10 @@
       dimension p3lab(0:3),p4lab(0:3),p5lab(0:3),p6lab(0:3)
       common/momentainitial/pin1(0:3),pin2(0:3)
       common/parameters/ame,ammu,convfac,alpha,pi
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
+
       common/ifirstcuts/ifirst
       data ifirst /0/
       dimension ptvector(0:3)
@@ -24,9 +26,13 @@
 
       double precision lambda
       external lambda
+
+      integer djb_hash
+      external djb_hash
       
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 
       common/identicalandperipheral/iper,noper,iid
 
@@ -53,8 +59,6 @@
          inside_e  = 0
          inside_mu = 0
 
-!         ina7 and dthna7max read in userinterface
-         
          pelabin(0) = ame
          pelabin(1:3) = 0.d0
 
@@ -67,9 +71,6 @@
          cthminmu = sqrt((1.d0-ame/ammu)*(1.d0+ame/ammu))
          thmaxmukin = acos(cthminmu)*1d3
 
-c         print*,thmaxmukin
-c         stop
-         
          cthmine   = 1.d0/r*sqrt((Eemin-ame)/(Eemin+ame))
          thmaxekin = acos(cthmine)*1d3
          
@@ -82,11 +83,213 @@ c         stop
          pinside_mu = (/ex,0.d0,0.d0,-px/)
          call new_boost(p12lab,pinside_mu,pinside_mu,-1)
          emulabmin = pinside_mu(0)
-c         print*,emulabmin,thmaxmukin
-c         stop
 
          iacademic = 1
          if (iid.eq.1) iacademic = 0
+         
+         ifirst = 1
+      endif
+** for elasticity routine      
+      emubeam0 = p1lab(0)
+**
+      
+cphsp
+c phspace volume test
+c      icut = 0
+c      return
+
+      icut = 1 ! rejected by default
+      
+***
+* I put in p[3456]lab the final state lepton momenta...      
+      call new_boost(p12lab,p1,p3lab,-1) 
+      call new_boost(p12lab,p2,p4lab,-1)
+      if (p3(0).gt.0.d0) then
+         call new_boost(p12lab,p3,p5lab,-1)
+         call new_boost(p12lab,p4,p6lab,-1)
+      else
+         p5lab = 0.d0
+         p6lab = 0.d0
+      endif
+
+      pmatlab(:,1) = p3lab
+      pmatlab(:,2) = p4lab
+      pmatlab(:,3) = p5lab
+      pmatlab(:,4) = p6lab
+
+      nlept = 2
+      if (npairs.gt.0.and.iacademic.eq.0) nlept = nlept + 2
+      call triggerdetector(nlept,pmatlab,Ethr,ththr,thslab,itriggers)
+
+c     nocut  itriggers = 1
+      if (sum(itriggers(1:nlept)).ne.2) then
+         return
+      endif
+
+      
+***  now checking how many pairs mimic mu/e signal
+      ncoppie = 0 
+      do i = 1,nlept-1
+         do j = i+1,nlept
+c            if (j.ne.i.and.itriggers(i)*itriggers(j).gt.0) then
+            if (itriggers(i)*itriggers(j).gt.0) then
+
+               lcond1 = thslab(i).ge.thmumin.and.thslab(i).le.thmaxmukin
+     .              .and.pmatlab(0,i).ge.emulabmin
+               lcond1 = lcond1.and.pmatlab(0,j).gt.eemin
+     .              .and.thslab(j).ge.themin 
+               
+               lcond2 = thslab(j).ge.thmumin.and.thslab(j).le.thmaxmukin
+     .              .and.pmatlab(0,j).ge.emulabmin
+               lcond2 = lcond2.and.pmatlab(0,i).gt.eemin
+     .              .and.thslab(i).ge.themin
+
+               if (lcond1.or.lcond2) then
+                  ncoppie = ncoppie + 1
+               endif
+            endif
+         enddo
+      enddo
+      
+      if (ncoppie.eq.1) then
+         if (itriggers(2).eq.1) pinside_e = pmatlab(:,2)
+         if (itriggers(3).eq.1) pinside_e = pmatlab(:,3)
+         if (itriggers(4).eq.1) pinside_e = pmatlab(:,4)
+         icut = 0
+         if (ina7.eq.1) then 
+            aco = acoplanarityPSIdef(pmatlab(:,1),pinside_e)*1d3
+            if (aco.gt.dthna7max) icut = 1
+         endif         
+      endif
+
+c no cut 
+c      pinside_e = pmatlab(:,2)
+c      icut = 0
+
+      dist  = 0.d0
+      if (icut.eq.0.and.(nph+npairs).gt.0.and.iela.gt.0) then
+         thein = pinside_e(3)/sqrt(tridot(pinside_e,pinside_e))
+         thein = acos(thein)*1d3
+         thmin = p3lab(3)/sqrt(tridot(p3lab,p3lab))
+         thmin = acos(thmin)*1d3
+
+c         call elasticity_distance(thein,thmin,theoutf,thmoutf)
+c         dist = 1d3*sqrt((thein-theoutf)**2+(thmin-thmoutf)**2)
+c         distf = dist
+         
+         call myelasticityopt(thein,thmin,nph+npairs,ththr,
+     .        cutela,theout,thmout,dist)
+         if (dist.gt.cutela) icut = 1
+
+      endif
+
+      return
+      end
+*******************************************************************
+      subroutine triggerdetector(n,p,eth,thth,th,itriggers)
+      implicit double precision (a-h,o-z)
+      double precision p(0:3,4),th(4),eth,thth
+      integer itriggers(4)
+      integer k
+      itriggers = 0
+      do k = 1,n
+         th(k) = acos(p(3,k)/sqrt(tridot(p(:,k),p(:,k))))*1d3
+         if (p(0,k).ge.eth.and.th(k).le.thth) itriggers(k) = 1
+      enddo
+      end
+******************************************************************
+      subroutine beamprofile(e,s,es,truep1lab)
+      implicit double precision (a-h,o-z)
+      double precision truep1lab(0:3)
+      common/parameters/ame,ammu,convfac,alpha,pi
+      integer ismualongz
+      common/ISmuondirection/ismualongz      
+      es = e
+      if (s.gt.1d-8) then
+         es  = gau_spread(e,s)      
+      endif
+
+      if (ismualongz.eq.1) then
+** Preparing for generic p1lab, with xyz components
+         truep1lab(0) = es
+         truep1lab(1) = 0.d0
+         truep1lab(2) = 0.d0
+         truep1lab(3) = sqrt(es*es-ammu*ammu)
+      else
+         p = sqrt(es*es-ammu*ammu)
+         truep1lab(0) = es
+         truep1lab(1) = p * sin(45.d0*pi/180.d0)
+         truep1lab(2) = 0.d0
+         truep1lab(3) = p * cos(45.d0*pi/180.d0)
+      endif
+      return
+      end
+*****************************************************************      
+      subroutine cuts_old(p1,p2,p3,p4,qph,nph,npairs,icut)
+! p1(0...3): final state electron four-momentum
+! p2(0...3): final state positron four-momentum
+! qph(0...40,0...3): four-momenta of 40 emitted photons
+! icut: icut = 1 event rejected, icut = 0 event accepted
+      implicit double precision (a-h,o-z)
+      dimension p1(0:3),p2(0:3),qph(40,0:3),q(0:3),ptmp(0:3)
+      dimension p3(0:3),p4(0:3)
+      common/momentainitial/pin1(0:3),pin2(0:3)
+      common/parameters/ame,ammu,convfac,alpha,pi
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
+      common/ifirstcuts/ifirst
+      data ifirst /0/
+      dimension ptvector(0:3)
+      dimension pelabin(0:3),pmu(0:3),pe(0:3),pmulabin(0:3),pmulo(0:3)
+      dimension peid(0:3),pmuid(0:3),ppid(0:3)
+      dimension pelo(0:3)
+      common/cutcommon/pelabin,pmulabin,r,s,cthminmu,thmaxmukin,
+     .     thmaxekin,emulabmin,iacademic
+
+      common/na7variable/dthna7 ! filled here to be passed in distributions!
+
+      double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
+
+      common/identicalandperipheral/iper,noper,iid
+
+      integer inside_e(3),inside_mu(3)
+      double precision pinside_e(0:3),pinside_mu(0:3),pout_1(0:3)
+      double precision pout_2(0:3)
+      common/insidecuts/inside_e,inside_mu,pinside_e,pinside_mu,
+     .     pout_1,pout_2
+            
+      if (ifirst.eq.0) then
+
+         inside_e  = 0
+         inside_mu = 0
+
+!         ina7 and dthna7max read in userinterface
+         
+         pelabin(0) = ame
+         pelabin(1:3) = 0.d0
+
+         pmulabin(0)   = emulab
+         pmulabin(1:3) = 0.d0
+         pmulabin(3)   = sqrt(emulab*emulab-ammu*ammu)
+         
+         r = sqrt(emulab**2-ammu**2)/(emulab+ame)
+
+         s = dot(pmulabin+pelabin,pmulabin+pelabin)
+
+
+         pmui = sqrt(emulab**2-ammu*ammu)
+         emu  = emulab + ame - eemin
+
+         csup = emulab*emu-ammu**2 + ame*(ame-eemin)
+         csup = csup /pmui/sqrt(emu**2-ammu**2)
+
+         cthminmu   = sqrt((1.d0-ame/ammu)*(1.d0+ame/ammu))
+         thmaxmukin = acos(cthminmu)*1d3
+         cthmine    = 1.d0/r*sqrt((Eemin-ame)/(Eemin+ame))
+         thmaxekin  = acos(cthmine)*1d3
+
 
 ******test
 ** from doc/Em_vs_thm.pdf         
@@ -144,205 +347,6 @@ c$$$         close(888)
 c$$$         stop
 ***** test
 
-         do k = 1,100
-c            print*,'NO CUT'
-         enddo
-         
-         ifirst = 1
-      endif
-** for elasticity routine      
-      emubeam0 = p1lab(0)
-**
-      
-cphsp
-c phspace volume test
-c      icut = 0
-c      return
-
-      icut = 1 ! rejected by default
-      
-c      if ((p3(0)+p4(0)).gt.0.01d0*sqrt(dot(p12lab,p12lab))) return
-c      sqs = sqrt(dot(p12lab,p12lab))
-c      t24 = dot(pin2-p2,pin2-p2)
-c      t13 = dot(pin1-p1,pin1-p1)
-c      xx = (p3(0)+p4(0))/sqs
-c      if (t24.lt.-0.12d0.and.xx.lt.0.05d0*sqs) then
-c         print*,(sqs - p1(0) - p2(0))/sqs,xx,sqrt(dot(p3+p4,p3+p4))
-c      endif
-*** threshold, detector, limits on energy (GeV) and angle (mrad) 
-      Ethr  = 0.2d0
-      ththr = 100d0
-c      ththr = 50d0
-***
-* I put in p[3456]lab the final state lepton momenta...      
-      call new_boost(p12lab,p1,p3lab,-1) 
-      call new_boost(p12lab,p2,p4lab,-1)
-      if (p3(0).gt.0.d0) then
-         call new_boost(p12lab,p3,p5lab,-1)
-         call new_boost(p12lab,p4,p6lab,-1)
-      else
-         p5lab = 0.d0
-         p6lab = 0.d0
-      endif
-
-      pmatlab(:,1) = p3lab
-      pmatlab(:,2) = p4lab
-      pmatlab(:,3) = p5lab
-      pmatlab(:,4) = p6lab
-
-      nlept = 2
-      if (npairs.gt.0.and.iacademic.eq.0) nlept = nlept + 2
-      call triggerdetector(nlept,pmatlab,Ethr,ththr,thslab,itriggers)
-
-c     nocut  itriggers = 1
-      if (sum(itriggers(1:nlept)).ne.2) then
-         return
-      endif
-
-c      if ((p5lab(0)+ p6lab(0)).gt.0.2d0) return
-      
-***  now checking how many pairs mimic mu/e signal
-      ncoppie = 0 
-      do i = 1,nlept-1
-         do j = i+1,nlept
-c            if (j.ne.i.and.itriggers(i)*itriggers(j).gt.0) then
-            if (itriggers(i)*itriggers(j).gt.0) then
-
-               lcond1 = thslab(i).ge.thmumin.and.thslab(i).le.thmaxmukin
-     .              .and.pmatlab(0,i).ge.emulabmin
-               lcond1 = lcond1.and.pmatlab(0,j).gt.eemin
-     .              .and.thslab(j).ge.thmumin 
-               
-               lcond2 = thslab(j).ge.thmumin.and.thslab(j).le.thmaxmukin
-     .              .and.pmatlab(0,j).ge.emulabmin
-               lcond2 = lcond2.and.pmatlab(0,i).gt.eemin
-     .              .and.thslab(i).ge.thmumin
-               
-**zoom
-c               lcond1=
-c     .              lcond1.and.thslab(i).lt.0.6d0.and.thslab(j).lt.0.6d0
-c               lcond2=
-c     .              lcond2.and.thslab(j).lt.0.6d0.and.thslab(i).lt.0.6d0
-** end zoom
-
-               if (lcond1.or.lcond2) then
-                  ncoppie = ncoppie + 1
-               endif
-            endif
-         enddo
-      enddo
-      
-      if (ncoppie.eq.1) then
-         if (itriggers(2).eq.1) pinside_e = pmatlab(:,2)
-         if (itriggers(3).eq.1) pinside_e = pmatlab(:,3)
-         if (itriggers(4).eq.1) pinside_e = pmatlab(:,4)
-         icut = 0
-         if (ina7.eq.1) then 
-            aco = acoplanarityPSIdef(pmatlab(:,1),pinside_e)*1d3
-            if (aco.gt.dthna7max) icut = 1
-         endif         
-      endif
-
-c no cut 
-c      pinside_e = pmatlab(:,2)
-c      icut = 0
-
-      distf = 0.d0
-      dist  = 0.d0
-      if (icut.eq.0.and.(nph+npairs).gt.0.and.iela.gt.0) then
-         thein = pinside_e(3)/sqrt(tridot(pinside_e,pinside_e))
-         thein = acos(thein)
-         thmin = p3lab(3)/sqrt(tridot(p3lab,p3lab))
-         thmin = acos(thmin)
-
-         call elasticity_distance(thein,thmin,theoutf,thmoutf)
-         dist = 1d3*sqrt((thein-theoutf)**2+(thmin-thmoutf)**2)
-         distf = dist
-         
-c         call myelasticityopt(thein*1d3,thmin*1d3,nph+npairs,ththr,
-c     .     cutela,theout,thmout,dist)
-         if (dist.gt.cutela) icut = 1
-
-      endif
-
-      return
-      end
-*******************************************************************
-      subroutine triggerdetector(n,p,eth,thth,th,itriggers)
-      implicit double precision (a-h,o-z)
-      double precision p(0:3,4),th(4),eth,thth
-      integer itriggers(4)
-      integer k
-      itriggers = 0
-      do k = 1,n
-         th(k) = acos(p(3,k)/sqrt(tridot(p(:,k),p(:,k))))*1d3
-         if (p(0,k).ge.eth.and.th(k).le.thth) itriggers(k) = 1
-      enddo
-      end
-******************************************************************      
-      subroutine cuts_old(p1,p2,p3,p4,qph,nph,npairs,icut)
-! p1(0...3): final state electron four-momentum
-! p2(0...3): final state positron four-momentum
-! qph(0...40,0...3): four-momenta of 40 emitted photons
-! icut: icut = 1 event rejected, icut = 0 event accepted
-      implicit double precision (a-h,o-z)
-      dimension p1(0:3),p2(0:3),qph(40,0:3),q(0:3),ptmp(0:3)
-      dimension p3(0:3),p4(0:3)
-      common/momentainitial/pin1(0:3),pin2(0:3)
-      common/parameters/ame,ammu,convfac,alpha,pi
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
-      common/ifirstcuts/ifirst
-      data ifirst /0/
-      dimension ptvector(0:3)
-      dimension pelabin(0:3),pmu(0:3),pe(0:3),pmulabin(0:3),pmulo(0:3)
-      dimension peid(0:3),pmuid(0:3),ppid(0:3)
-      dimension pelo(0:3)
-      common/cutcommon/pelabin,pmulabin,r,s,cthminmu,thmaxmukin,
-     .     thmaxekin,emulabmin,iacademic
-
-      common/na7variable/dthna7 ! filled here to be passed in distributions!
-
-      double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
-
-      common/identicalandperipheral/iper,noper,iid
-
-      integer inside_e(3),inside_mu(3)
-      double precision pinside_e(0:3),pinside_mu(0:3),pout_1(0:3)
-      double precision pout_2(0:3)
-      common/insidecuts/inside_e,inside_mu,pinside_e,pinside_mu,
-     .     pout_1,pout_2
-            
-      if (ifirst.eq.0) then
-
-         inside_e  = 0
-         inside_mu = 0
-
-!         ina7 and dthna7max read in userinterface
-         
-         pelabin(0) = ame
-         pelabin(1:3) = 0.d0
-
-         pmulabin(0)   = emulab
-         pmulabin(1:3) = 0.d0
-         pmulabin(3)   = sqrt(emulab*emulab-ammu*ammu)
-         
-         r = sqrt(emulab**2-ammu**2)/(emulab+ame)
-
-         s = dot(pmulabin+pelabin,pmulabin+pelabin)
-
-
-         pmui = sqrt(emulab**2-ammu*ammu)
-         emu  = emulab + ame - eemin
-
-         csup = emulab*emu-ammu**2 + ame*(ame-eemin)
-         csup = csup /pmui/sqrt(emu**2-ammu**2)
-
-         cthminmu   = sqrt((1.d0-ame/ammu)*(1.d0+ame/ammu))
-         thmaxmukin = acos(cthminmu)*1d3
-         cthmine    = 1.d0/r*sqrt((Eemin-ame)/(Eemin+ame))
-         thmaxekin  = acos(cthmine)*1d3
          
          ifirst = 1
       endif
@@ -463,7 +467,8 @@ c     if (aco.gt.dthna7max) return
       data ifirst /0/
       double precision pin1(0:3),pin2(0:3)
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
       common/momentainitial/pin1,pin2
 
       if (ifirst.eq.0) then
@@ -640,11 +645,12 @@ c      dth = 0.d0
       double precision p3lo(0:3),p4lo(0:3)
 
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
       
       common/processmasses/m1,m2,m12,m22
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       common/rrrre/r,radtodeg,ifirst
       dimension pin1(0:3),pin2(0:3)
       common/momentainitial/pin1,pin2

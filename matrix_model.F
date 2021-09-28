@@ -577,7 +577,6 @@ c p4 = mu
       logical is2L
       double precision p3lab(0:3),p4lab(0:3)
 c      double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-c      common/labmomenta/p1lab,p2lab,p12lab
 ****
       double precision dalo(3),danlo(3),dannlo(3)
       common/dalonlonnlo/dalo,danlo,dannlo

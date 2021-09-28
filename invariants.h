@@ -38,7 +38,8 @@
 
 ******* calculated in main      
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 ******* calculated in main      
       
       integer h1,h2,h3,h4

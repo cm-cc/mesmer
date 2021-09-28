@@ -48,17 +48,20 @@ The **`MESMER`** prompt	 looks like:
   ********                                             ********
   *************************************************************
   
-Principal parameters:
+ Principal parameters:
    [ type "run" to start generation, "help" for help or "quit" to abort ]
    [ Qmu       ] Incoming muon charge = 1 (in e+ charge units)
    [ Ebeam     ] Muon beam energy = 150. GeV
    [ bspr      ] Beam energy spread = 0. %
    [ Eemin     ] Minimum electron LAB energy = 1. GeV
+   [ themin    ] Minimum electron LAB angle = 0. mrad
    [ themax    ] Maximum electron LAB angle = 100. mrad
    [ thmumin   ] Minimum muon LAB angle = 0. mrad
    [ thmumax   ] Maximum muon LAB angle = 100. mrad
    [ acoplcut  ] Apply acoplanarity cut (and value) = no (3.5 mrad)
    [ elastcut  ] Apply "elasticity" cut (and value) = no (0.2 mrad)
+   [ Ethr      ] 'Detectability' energy threshold for extra leptons = 0.2 GeV
+   [ ththr     ] Maximum 'detectability' LAB angle for extra leptons = 100. mrad
    [ ord       ] Simulation at "alpha" order
    [ arun      ] alpha running is on
    [ hadoff    ] Hadronic VP is off: no
@@ -77,11 +80,11 @@ Principal parameters:
    [ nwrite    ] file(s) dumped every 500000 events
    [ nwarmup   ] events for maximum searching = 0
    [ ndistr    ] number of distr. at different orders: 1
-   [ sdmax     ] starting "sdifmax" 0.00000000000000001
+   [ sdmax     ] starting "sdifmax" 0.0000000001
    [ wnorm     ] normalization cross section = -1.
    [ sync      ] random numbers sequence syncronization: 0 [0/1]
   
- Insert "parameter value" or "run" or "quit": 
+ Insert "parameter value" or "run" or "quit":
 ```
 
 By typing `help` at the prompt, a short description of the parameters that can be set is displayed (more details [here](#running-parameters-description)):
@@ -92,11 +95,14 @@ By typing `help` at the prompt, a short description of the parameters that can b
  Ebeam     ---> nominal muon beam energy (GeV)
  bspr      ---> beam energy spread percentage (%)
  Eemin     ---> minimum electron energy in the LAB (GeV)
+ themin    ---> minimum electron angle in the LAB (mrad)
  themax    ---> maximum electron angle in the LAB (mrad)
  thmumin   ---> minimum muon angle in the LAB (mrad)
  thmumax   ---> maximum muon angle in the LAB (mrad)
  acoplcut  ---> if applying acoplanarity cut and to which value [yes/no mrad]
  elastcut  ---> if applying distance-from-elasticity-curve cut and to which value [yes/no mrad]
+ Ethr      ---> 'detectability' threshold energy for extra leptons (GeV)
+ ththr     ---> maximum 'detectability' angle for extra leptons  (mrad)
  ord       ---> to which order simulate events [born/alpha/alpha2] for [LO/NLO/NNLO]
  arun      ---> if running of alpha must be used [off/on/hadr5/nsk/knt]
  hadoff    ---> if switching off hadronic VP [yes/no]
@@ -104,7 +110,7 @@ By typing `help` at the prompt, a short description of the parameters that can b
  store     ---> if events have to be stored [yes/no]
  storemode ---> which mode to use to store events [0/1/2]
              └> [0] plain ascii file 
-             └> [1] root file (see README.md)
+             └> [1] root file (see README)
              └> [2] on-the-fly xz compressed ascii file
  path      ---> path where to store outputs
  seed      ---> pseudo-RNG seed ("small" int)
@@ -126,9 +132,11 @@ By typing `help` at the prompt, a short description of the parameters that can b
  ndistr    ---> if writing distributions also at different orders [1/2/3]
  sdmax     ---> maximum integrand for unweightening
  wnorm     ---> typical integrated cross section within applied cuts, used for storage in ROOT format
- sync      ---> syncronization mode for random numbers (see README.md) [0/1]
+ sync      ---> syncronization mode for random numbers (see README) [0/1]
 ```
 ## Running parameters description
+
+In general, the routine `cuts(...)` in the file `cuts.F` can be modified according to the needs of the user. The default one applies the selection criteria described below.
 
 The parameters that can be set are split into *principal* and *internal* parameters.  
 They are set by typing at the prompt `parameter value` (case sensitive).
@@ -144,6 +152,10 @@ They are set by typing at the prompt `parameter value` (case sensitive).
 * `thmumax [100]`: maximum outgoing muon angle in mrad
 * `acoplcut [no 3.5]`: if the acoplanarity cut has to be applied or not `[yes/no mrad]`
 * `elastcut [no 0.2]`: if the cut on the geometric distance from the elesticity curve in the [&theta;<sub>&mu;</sub>,&theta;<sub>e</sub>] plane has to be applied or not `[yes/no mrad]`
+* `Ethr [0.2]`: minimum energy above which a lepton possibly triggers the detector (GeV)
+* `ththr [100]`: lab. angle above which the detector is blind (mrad).  
+  (*i.e.* a lepton with energy > `Ethr` and angle < `ththr` counts as a possible track, otherwise it is considered undetectable. The code requires that events passing the selection criteria have strictly two visible tracks.)
+
 * `ord [alpha]`: to which order (photonic) corrections are included `[born/alpha/alpha2]` (standing for `[LO/NLO/NNLO]`)
 * `arun [on]`: if vacuum polarization (VP) effects must be includer or not. Possible values are
   * `off`: no VP
@@ -187,7 +199,7 @@ Possible values are
 * `nwarmup [0]`:  if `mode weighted`, the maximum weight for subsequent unweightening is searched generating first `nwarmup` events, after which unweighted generation is started. Notice that the maximum weight is a guessed value.  
 If `store yes` and `nwarmup > 0`, `wnorm` is calculated automatically using the first `nwarmup` events of the generation.  
 For unweightening, the maximum weight `sdmax` can be alternatively set by hand (setting `nwarmup 0` at the same time)
-* `sdmax [1e-17]`: maximum weight used for unweightening, when `mode unweighted` and `nwarmup 0`
+* `sdmax [1e-10]`: maximum weight used for unweightening, when `mode unweighted` and `nwarmup 0`
 * `wnorm [-1.]`: typical integrated cross section within applied cuts. This value is used for storing events: the true weight of the event *w<sub>t</sub>* is saved as *w = w<sub>t</sub> / wnorm* in order to make the average of the weights *w* over the generated sample close to 1
 * `ndistr [1]`: number of distributions at different orders. For example, if running at NNLO (`ord alpha2`), the distribution files saved in `path` can be produced also at NLO and LO with the same run. The defaults `ndistr 1` produces distributions only at the selected order. If `ord alpha` and `ndistr >=2`, distributions are produced at NLO and LO. If `ord alpha2`,  if `ndistr 2` they are produced at NNLO and NLO, if `ndistr 3`, distributions at NNLO, NLO and LO are saved
 * `sync [0]`: syncronization mode for random numbers `[0/1]`. This is used to make as correlated as possible two samples with same `seed` but different `Ebeam`. *This feature needs more cross-checks*
@@ -199,7 +211,36 @@ Version 1 is compliant with the current version of the `ROOT` file writer ([mant
 
 **A more general event format will be agreed upon soon.**
 
-### Version 1
+### Version 2 (not released yet)
+
+The simple ASCII file (`storemode 0`) contains an header section between the tags `<header>` and `</header>` and a closing section between the tags `<footer>` and `</footer>`. After the header, each *event record* is enclosed between the `<event>` and `</event>` tags.  
+The header contains useful info about the run and the set parameters. The footer contains some statistics of the generated sample.  
+In the header, the first lines define the `SAMPLE TAG`, independent generations should have different `SAMPLE TAG`.
+
+A typical *event record* looks like
+```
+ <event>
+  29
+  4
+   1288.0833213939834        1274.1380019004034        1288.0485923275990     
+   0.0000000000000000        0.0000000000000000     
+  13   0.0000000000000000        0.0000000000000000        149.99996278769049     
+  13   4.7351763229257753E-003  -3.7788242076383663E-002   148.56596423784202     
+  11  -4.7380575116014048E-003   3.7727552624132459E-002   1.4320550665709977     
+  22  -3.7225710186970653E-007   2.3176521780370965E-006   7.8860160895178325E-005
+  22   3.2534457774992014E-006   5.8371800073170300E-005   1.8646228958474713E-003
+ </event>
+```
+After the `<event>` tag, the first line is the event number and the second is the number (`nfs`) of final state particles (in this case a &mu;, an *e* and two &gamma;s).  
+In the third line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
+The fourth line represents the weights *w<sub>LO</sub>* and *w<sub>NLO</sub>* which can be used to get LO distributions from a NLO sample and LO and NLO distributions from a NNLO sample (in this case they are `0` because it's a 4-body final state).  
+The fifth line is the incoming &mu;, in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*, where *id* is the [PDG Monte Carlo code](https://pdg.lbl.gov/2021/web/viewer.html?file=%2F2021/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle and *p<sub>x</sub>*, *p<sub>y</sub>* and *p<sub>z</sub>* (in GeV) are the three-momentum components of the incoming muon. Its energy can be calculated with the muon mass which is stored in the header section.    
+Finally, the last `nfs` lines represent the *id* and three-momenta (in GeV) of the final state &mu;, *e* and two &gamma;s respectively, again in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*.  
+The tag `</event>` closes the *event record*.
+
+The upcoming `ROOT` file writer will read through a named pipe this event format and will write all the information into a `.root` file.
+
+### Version 1 (default)
 The simple ASCII file (`storemode 0`) contains an header section between the tags `<header>` and `</header>` and a closing section between the tags `<footer>` and `</footer>`. After the header, each *event record* is enclosed between the `<event>` and `</event>` tags.  
 The header contains useful info about the run and the set parameters. The footer contains some statistics of the generated sample.  
 A typical *event record* looks like
@@ -224,9 +265,6 @@ Finally, the last three lines represent the momenta (in GeV) of the final state 
 The tag `</event>` closes the *event record*.
 
 The `ROOT` file writer reads through a named pipe this event format and writes all the information into a `.root` file.
-
-### Version 2
-Not released yet. To be agreed upon
 
 ##### Footnotes
 KNT: Available upon request from the authors

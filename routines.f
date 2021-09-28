@@ -1,4 +1,3 @@
-************************************************
       function xvar(t)
       implicit double precision (a-h,m,o-z)
       common/parameters/ame,ammu,convfac,alpha,pi
@@ -13,7 +12,7 @@
       tvar = -x*x*ammu*ammu/(1.d0-x)
       return
       end
-***********************************************************************************      
+**********************************************************
       subroutine printstatus(icode,kl,p1,p2,qph,ng,
      .     xs,var,varb,sd,sdm,fm)
       implicit double precision (a-h,o-z)
@@ -378,12 +377,14 @@ c      pp(3) = pin(3)
          r(2,3) =  0.d0
          r(3,3) =  vers(3)
       endif
-      
       pout(0) = pp(0)
       pout(1) = r(1,1)*pp(1) + r(1,2)*pp(2) + r(1,3)*pp(3)
       pout(2) = r(2,1)*pp(1) + r(2,2)*pp(2) + r(2,3)*pp(3)
       pout(3) = r(3,1)*pp(1) + r(3,2)*pp(2) + r(3,3)*pp(3)
 
+c      print*,pout(1:3)
+c      pout(1:3) = matmul(r,pp(1:3))
+c      print*,pout(1:3)      
       return
       end
 *******************************************************************
@@ -1242,5 +1243,18 @@ c      pp(3) = pin(3)
      .            + ptmp2(1:3)*s
      .            + tridot(k,pin)*(1.d0-c)*k(1:3)
       pin = ptmp
+      return
+      end
+*******************************************************************
+      integer function djb_hash(str)! result(hash)
+      implicit none
+      character(len=*),intent(in) :: str
+      integer :: hash
+      integer :: i
+      hash = 5381
+      do i=1,len(str)
+         hash = (ishft(hash,5) + hash) + ichar(str(i:i))
+      enddo
+      djb_hash = hash
       return
       end

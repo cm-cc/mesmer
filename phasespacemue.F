@@ -53,7 +53,8 @@ c         ic = ic + 1
       common/kappa/count
       
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 
       logical nge2,sol1,sol2
       
@@ -67,8 +68,8 @@ c         ic = ic + 1
       
       double precision Erange(2,2)
 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       
       dimension twopis(0:nphmax),factorial(0:nphmax)
       common/pis_new/twopis,factorial,rmax,nmax,nmaxb,ifirst
@@ -673,7 +674,8 @@ c$$$      endif
       common/tmintmax/tmincut,tmaxcut
 
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
       
       common/tcutcommon/icut
 
@@ -1055,7 +1057,8 @@ c$$$      endif
       common/tmintmax/tmincut,tmaxcut
 
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
       
       common/tcutcommon/icut
 
@@ -2707,7 +2710,8 @@ c      if (al.ne.0.d0) then
       common/tmintmax/tmincut,tmaxcut
       
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 
       logical nge2,sol1,sol2,cgt0,clt0
       
@@ -3260,7 +3264,8 @@ c back in the p1+p2 rest frame!
       common/kappa/count
       
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 
       logical nge2,sol1,sol2
       
@@ -3636,7 +3641,8 @@ c      if (iid.eq.0) then
       common/kappa/count
       
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 
       logical nge2,sol1,sol2
       
@@ -3849,7 +3855,8 @@ c     .     lambdanoabs(s,mk21,mk22),mk21,mk22
       common/tmintmax/tmincut,tmaxcut
       
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 
       logical nge2,sol1,sol2
       
@@ -4400,14 +4407,15 @@ c back in the p1+p2 rest frame!
       common/photoncutoff/egmin,egmin2
       common/tmintmax/tmincut,tmaxcut
 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       
       double precision Qmu
       common/muoncharge/Qmu
       
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 
       logical nge2,sol1,sol2,cgt0,clt0
       
@@ -4867,14 +4875,15 @@ c            b_45 = dot(p1-p3-p5-p4,p1-p3-p5-p4) ! i.e.
       common/photoncutoff/egmin,egmin2
       common/tmintmax/tmincut,tmaxcut
 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
-      
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
+
       double precision Qmu
       common/muoncharge/Qmu
       
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
       logical nge2,sol1,sol2,cgt0,clt0
       common/tcutcommon/icut
       common/nfotonicommon/nfotoni

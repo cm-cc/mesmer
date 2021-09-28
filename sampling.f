@@ -704,7 +704,7 @@ c      print*,p1,p23,p4
       endif
       return
       end
-***************************************************************************
+***************************************************************************            
       function gau_spread(e,s)
       implicit double precision (a-h,o-z)
       double precision csi(2)
@@ -719,7 +719,6 @@ c      print*,p1,p23,p4
          sum  = 0.d0
          sum2 = 0.d0
       endif
-
 ***   using Box-Mueller algorithm to generate 2 normal numbers
       x = 0.d0
       if (icalc.eq.1) then
@@ -731,7 +730,7 @@ c      print*,p1,p23,p4
          cf  = cos(tpi*cs2) 
          x1 = r*sf
          x2 = r*cf
-         
+
          x     = x1
 c     * since it's used also for "detector smearing", where s is not always
 c     * constant, I always recalculate it at price of throwing one away...         
@@ -741,15 +740,7 @@ ccc   icalc = 0
          x     = x2
          icalc = 1
       endif
-
       gau_spread = e + s*x
-
-c      ic = ic + 1
-c      sum  = sum  + gau_spread
-c      sum2 = sum2 + gau_spread*gau_spread
-c      if (mod(ic,1000000).eq.0)
-c     .     print*,sum/ic,sqrt(abs(sum2/ic - (sum/ic)**2))
-      
       return
       end
 *****
@@ -798,14 +789,6 @@ c         enddo
       enddo
 
       return
-ccc old      
-c      do k = 1,n
-c         call getrnd(csi,1)
-c         ep(k) = 1.d0*ncharged*csi(1) + 1
-c         if (ep(k).gt.ncharged) ep(k) = ncharged ! to avoid round-offs...
-c      enddo
-c      w = ncharged**n
-c      return
       end 
 *-----------------------------------------------------
       subroutine scanvpols
@@ -917,9 +900,9 @@ c      if (ires.eq.0) open(33,file='vpolres0',status='unknown')
       double precision phmass
       common/photonmasslambda/phmass
 
-*** cuts and inputs      
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+*** cuts and inputs            
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 ********
       
 **** charges to switch on radiation on legs (0 or 1), from invariants.h

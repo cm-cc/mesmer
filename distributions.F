@@ -221,8 +221,8 @@ c         print*,trim(distrstring(1:i2+2))
       data ifirst,icount /1,0/ 
 
       common/tmintmax/tmin,tmax
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       common/beamspreadsigmas/esig1,esig2
       
@@ -247,8 +247,8 @@ c         print*,trim(distrstring(1:i2+2))
       double precision ptmp(0:3), ptmp2(0:3)
 
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
-
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
 
       double precision m1,m2,m12,m22
       common/processmasses/m1,m2,m12,m22
@@ -705,9 +705,9 @@ c            endif
 ! nw is the number of weights
 #include "distributions_inc.F"
       common/ionlyfirsttime/ifirst,icount
-      data ifirst /1/ 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      data ifirst /1/
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       integer*8 nc
 

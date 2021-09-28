@@ -45,14 +45,15 @@
       common/momentainitial/pin1,pin2
 
       common/tmintmax/tmin,tmax
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themax,thmumax,
-     .     dthna7max,cutela,ina7,iela
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       double precision ntomicro
       common/nanotomicro/ntomicro,intomi
 
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
-      common/labmomenta/p1lab,p2lab,p12lab
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
       
       double precision lambda,m1,m2,m12,m22
       external lambda
@@ -206,9 +207,7 @@ c      do while(k.lt.wnpoints)
          call syncrndseq
 ************************         
         emuspr    = emulab ! to be spreaded
-        if (semu.gt.1d-8) then
-           emuspr = gau_spread(emulab,semu)
-        endif
+        call beamprofile(emulab,semu,emuspr,truep1lab)
         
         m1  = ammu
         m2  = ame
