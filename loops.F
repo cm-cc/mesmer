@@ -1201,7 +1201,7 @@ cfrpasserafael
       
       c   = vpolc(q2)
       dal = vpdal
-      dah = RealPart(vpdah)
+      dah = dble(vpdah)
       return
       end
 *****************************************************

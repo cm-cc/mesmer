@@ -3873,7 +3873,7 @@ c     .     EPSREL,RESULT,ABSERR,NEVAL,IER,leniw,LENW,LAST,IWORK,WORK)
       double precision mph2fact(5)
       integer ifirst
       common/wrapmasses/mph2fact,ifirst
-      data ifirst /0/
+c      data ifirst /0/
 
       double precision colch2(5)
       integer bubblemask(5)
@@ -3961,7 +3961,7 @@ c     .     EPSREL,RESULT,ABSERR,NEVAL,IER,leniw,LENW,LAST,IWORK,WORK)
 
       double precision mph2fact(5)
       integer ifirst
-      common/wrapmasses/mph2fact,ifirst
+      common/wrapmasses1/mph2fact,ifirst
       data ifirst /0/
 
       double precision colch2(5)
@@ -4039,7 +4039,7 @@ c     .     EPSREL,RESULT,ABSERR,NEVAL,IER,leniw,LENW,LAST,IWORK,WORK)
 
       double precision mph2fact(5)
       integer ifirst
-      common/wrapmasses/mph2fact,ifirst
+      common/wrapmasses2/mph2fact,ifirst
       data ifirst /0/
 
       double precision colch2(5)

@@ -11,6 +11,7 @@ Authors are listed in the [`AUTHORS`](AUTHORS.md) file.
 We'd be grateful if you could cite the following papers when using the **`MESMER`** generator:  
 1. [Carloni Calame *et al.*, Towards muon-electron scattering at NNLO, JHEP 11 (2020) 028](https://inspirehep.net/literature/1805205)  
 2. [Alacevich *et al.*, Muon-electron scattering at NLO, JHEP 02 (2019) 155](https://inspirehep.net/literature/1703989)
+3. [E. Budassi *et al.*, NNLO virtual and real leptonic corrections to muon-electron scattering, 2109.14606 [hep-ph]](https://inspirehep.net/literature/1933852)
 
 ## Prerequisites & Compilation
 The program is mainly written in `Fortran 77` and it has been extensively tested with `GCC` compilers on `GNU/Linux`.
