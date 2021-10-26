@@ -1,14 +1,14 @@
       double precision function muemue1g1Lupdown(p1,p2,p3,p4,k)
 c      implicit none
-      implicit double precision (Z) ! posso metterli reali perche' ho raccolto in form tutto cio' che e' imm...
+      implicit double precision (Z)
 #include "invariants.h"
-#include "funsdeccmn1g1L.h"      
+#include "funsdeccmn1g1L.h"
       double precision t13m1,t24m1,p1km1,p2km1,p3km1,p4km1
       double precision muemueg1L ! this is the variable in form
       double precision k(0:3)
       double precision cover,el8
 *      double precision p1k,p2k,p3k,p4k
-      common/ifirstmuemue1g1Lupdown/cover,el8,ifirst
+      common/ifirstmuemue1g1Lupdown/cover,el8,zerop,ifirst
       double complex vpolc
       external vpolc
       integer ifirst,iii
@@ -48,26 +48,36 @@ c      implicit none
      .     ip1dir,ip1dnir,ip2dir,ip2dnir,
      .     ip1cir,ip1cnir,ip2cir,ip2cnir            
 
+      double precision vp13l,vp24l
+      common/vpleptonicud/vp13l,vp24l
       
+      double precision zerop(0:3)
+      double complex dotten
+      external dotten
+      integer iten
+      common/usetruetensors/iten
       
       if (ifirst.eq.0) then
-
          mulined = 1
          mulinec = 1
          elined  = 1
          elinec  = 1
-
          vp13 = 1.d0
          vp24 = 1.d0
-         
+         vp13l = 1.d0
+         vp24l = 1.d0
          el8 = ec4*ec4
          cover  = el8*pi216m1
          ifirst = 1
          Amp = 1
-c         do iii = 1,100
-c            print*,'Remember to set Amp(i)=1 here and in form later on!'
-c         enddo
+         zerop = 0.d0
+         if (iten.eq.0) then
+            print*,'muemue1g1Lud.F line ~70'
+            print*,'iten=0, but using formed .f with tensors. Stopping.'
+            stop
+         endif
       endif
+      cwvpl = 0.d0
 
       muemue1g1Lupdown = 0.d0
       if (QRmu.eq.0.or.QRe.eq.0) return
@@ -82,10 +92,11 @@ c         enddo
 
 ***   VP stuff
       if (ifixedorder.eq.0.and.iarun.eq.1) then
-         call getVP1loop(t13,dal,dah)
-         vp13 = 1.d0/(1.d0-dal-dah)         
-         call getVP1loop(t24,dal,dah)
-         vp24 = 1.d0/(1.d0-dal-dah)
+c     call getVP1loop(t13,dal,dah)
+c     da[hl][13,24] calculated in radmuesum
+         vp13  = 1.d0/(1.d0-dal13-dah13)         
+c     call getVP1loop(t24,dal,dah)
+         vp24  = 1.d0/(1.d0-dal24-dah24)
       endif      
 ***   end VP stuff      
 
@@ -98,64 +109,42 @@ c         enddo
       p4km1 = 1.d0/p4k
 
 c      print*,'Reenable includes in muemue1g1Lud.F!!! stopping'
-      include 'muemue1g1Lupdown.f'
-      
+ctest      include 'form_mue/outgv2.f'
+c default is by forming form_mue/muemueg1LupdownBoxandPent_Pent_best_routing.frm
+c the one included here is the one by forming form_mue/muemueg1LupdownBoxandPent_Pent_best_routing_for_GA.frm,
+c which has less operations (strangely)
+c      include 'muemue1g1Lupdown.f'
+
+c this is forming form_mue/muemueg1LupdownBoxandPent_Pent_best_routing_ten.frm
+      include 'muemue1g1Lupdownten.f' ! this is with tensors, much less operations and faster compilation
+
+c     muemueg1L=t13m1*vp13*vp24*Z351_ + t13m1*vp13**2*Z381_ + t24m1*
+c    & vp24**2*Z349_ + t24m1*vp13*vp24*Z350_
+
+      cwvpl(1) = t24m1*Z349_*cover ! vp24**2
+      cwvpl(2) = (t13m1*Z351_ + t24m1*Z350_)*cover ! vp13*vp24
+      cwvpl(5) = t13m1*Z381_*cover ! vp13**2
+c     cwvpl(1)  ! *vp24**2
+c     cwvpl(2)  ! *vp24*vp24k1
+c     cwvpl(3)  ! *vp24*vp24k2
+c     cwvpl(4)  ! *vp24*vp24k1k2
+c     cwvpl(5)  ! *vp24k1**2
+c     cwvpl(6)  ! *vp24k1*vp24k2
+c     cwvpl(7)  ! *vp24k1*vp24k1k2
+c     cwvpl(8)  ! *vp24k2**2      
+c     cwvpl(9)  ! *vp24k2*vp24k1k2
+c     cwvpl(10) ! *vp24k1k2**2
+
       muemue1g1Lupdown = muemueg1L*cover
 
+** extraweights deaalt with outside, in matrix_model.F
+c      extraweights(0) = 1.d0
+c      extraweights(1) = (cwvpl(1)+cwvpl(2)+cwvpl(5))/muemue1g1Lupdown
+c      extraweights(2) = (cwvpl(1)*vp24l**2
+c     .     +cwvpl(2)*vp24l*vp13l+cwvpl(5)*vp13**2)/muemue1g1Lupdown
       return
       end
 ****************************************************
-      double precision function muemue1g1Lupdown_ten(p1,p2,p3,p4,k)
-*      implicit none
-      implicit double precision (Z) ! posso metterli reali perche' ho raccolto in form tutto cio' che e' imm...
-#include "invariants.h"
-#include "funsdeccmn1g1L.h"      
-      double precision t13m1,t24m1,p1km1,p2km1,p3km1,p4km1
-      double precision muemueg1L ! this is the variable in form
-      double precision k(0:3)
-      double precision cover,el8
-*      double precision p1k,p2k,p3k,p4k
-      common/ifirstmuemue1g1Lupdownten/cover,el8,zerop,ifirst
-      double complex vpolc
-      external vpolc
-      integer ifirst,iii
-      data ifirst /0/
-
-      double precision zerop(0:3)
-      double complex dotten
-      external dotten
-      double complex test1,test2,test3,test4,test5
-
-      integer Amp(24)
-      common/switchampls/Amp! for debugging IR...
-      
-      if (ifirst.eq.0) then
-         Amp = 1
-         el8 = ec4*ec4
-         cover  = el8*pi216m1
-         zerop = 0.d0
-         ifirst = 1
-      endif
-
-      muemue1g1Lupdown_ten = 0.d0
-      if (QRmu.eq.0.or.QRe.eq.0) return
-      
-      t13m1 = 1.d0/t13
-      t24m1 = 1.d0/t24
-      
-      p1km1 = 1.d0/p1k
-      p2km1 = 1.d0/p2k
-      p3km1 = 1.d0/p3k
-      p4km1 = 1.d0/p4k
-
-      print*,'reenable print of muemueg1L in the form!!!'
-c      include 'muemue1g1Lupdownwten.f'
-      
-      muemue1g1Lupdown_ten = muemueg1L*cover
-      
-      return
-      end
-************************************************************************
       double precision function pik(p,k)
       double precision p(0:3), k(0:3)
       double precision dot

@@ -39,9 +39,6 @@ c      implicit none !double precision (a-h,o-z)
      .     vp13k1k2_1,vp24k1k2_1,vp13k1_2,vp24k1_2,
      .     vp13k2_2,vp24k2_2,vp13k1k2_2,vp24k1k2_2,
      .     vp13_1,vp24_1,vp13_2,vp24_2
-
-
-
       
       if (ifirst.eq.0) then
          vp13     = 1.d0
@@ -141,7 +138,7 @@ cc always the matrix element for mu+ used, by crossing symmetry in matrix_model.
 
       extraweights(0) = 1.d0
 
-      extraweights(1) =tm112**2*vp24k1k2_1**2*Z7_
+      extraweights(1) = tm112**2*vp24k1k2_1**2*Z7_
      &     + tm102*tm112*vp24k2_1*vp24k1k2_1*Z12_ 
      &     + tm102**2*vp24k2_1**2*Z5_
      &     + tm110*tm112*vp24k1_1*vp24k1k2_1*Z25_
@@ -151,7 +148,7 @@ cc always the matrix element for mu+ used, by crossing symmetry in matrix_model.
      &     + tm100*tm102*vp24_1*vp24k2_1*Z9_ + 
      &     tm100*tm110*vp24_1*vp24k1_1*Z6_ + tm100**2*vp24_1**2*Z10_
 
-      extraweights(2) =tm112**2*vp24k1k2_2**2*Z7_
+      extraweights(2) = tm112**2*vp24k1k2_2**2*Z7_
      &     + tm102*tm112*vp24k2_2*vp24k1k2_2*Z12_ 
      &     + tm102**2*vp24k2_2**2*Z5_
      &     + tm110*tm112*vp24k1_2*vp24k1k2_2*Z25_
@@ -160,10 +157,21 @@ cc always the matrix element for mu+ used, by crossing symmetry in matrix_model.
      &     tm100*tm112*vp24_2*vp24k1k2_2*Z11_
      &     + tm100*tm102*vp24_2*vp24k2_2*Z9_ + 
      &     tm100*tm110*vp24_2*vp24k1_2*Z6_ + tm100**2*vp24_2**2*Z10_
-      
 
       extraweights(1:2) = extraweights(1:2)/muemuegg
-      
+
+      cwvpl(0)  = 0.d0
+      cwvpl(1)  = tm100**2*Z10_*el8         ! *vp24**2         ! or  vp13k1k2**2
+      cwvpl(2)  = tm100*tm110*Z6_*el8       ! *vp24*vp24k1     ! or  vp13k1k2*vp13k2
+      cwvpl(3)  = tm100*tm102*Z9_*el8       ! *vp24*vp24k2     ! or  vp13k1k2*vp13k1
+      cwvpl(4)  = tm100*tm112*Z11_*el8      ! *vp24*vp24k1k2   ! or  vp13k1k2*vp13
+      cwvpl(5)  = tm110**2*Z8_*el8          ! *vp24k1**2       ! or  vp13k2**2
+      cwvpl(6)  = tm110*tm102*Z13_*el8      ! *vp24k1*vp24k2   ! or  vp13k2*vp13k1
+      cwvpl(7)  = tm110*tm112*Z25_*el8      ! *vp24k1*vp24k1k2 ! or  vp13k2*vp13
+      cwvpl(8)  = tm102**2*Z5_*el8          ! *vp24k2**2       ! or  vp13k1**2
+      cwvpl(9)  = tm102*tm112*Z12_*el8      ! *vp24k2*vp24k1k2 ! or  vp13k1*vp12
+      cwvpl(10) = tm112**2*Z7_*el8          ! *vp24k1k2**2     ! or  vp13**2
+
 ccccccccccccc
 ccc not used to speedup compilation time, in matrix_model.F crossing symmetry is used
 c      if (Qmu.lt.0.d0) then

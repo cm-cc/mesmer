@@ -93,7 +93,9 @@ c     >        //storfile(1:ilens)//".footer "
       common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer*8 iwriteout
-      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
+      integer istorver,icwvp
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
 
       parameter (ikind = 8)
       double precision p3lab(0:3),p4lab(0:3)
@@ -265,6 +267,10 @@ c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
       integer*8 nev,nstored,nevts
       dimension qph(40,0:3),qph1(0:3),qph2(0:3)
       dimension pin1(0:3),pin2(0:3),p5(0:3),p6(0:3)
+      integer*8 iwriteout
+      integer istorver,icwvp
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
       common/momentainitial/pin1,pin2
       common/storageunit/istorunit,ilens
       common/storedevents/nstored,nevts,ifirst
@@ -274,9 +280,15 @@ c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
       double precision p3lab(0:3),p4lab(0:3)
       double precision qphlab(40,0:3)
 * included only to access the common 'weights'      
-#include "invariants.h"      
-c      call eventstorage_v2(w,nev,ie,p3,p4,p5,p6,qph)
-      call eventstorage_v1(w,nev,ie,p3,p4,p5,p6,qph)
+#include "invariants.h"
+      if (istorver.eq.1) then
+         call eventstorage_v1(w,nev,ie,p3,p4,p5,p6,qph)      
+      elseif(istorver.eq.2) then
+         call eventstorage_v2(w,nev,ie,p3,p4,p5,p6,qph)
+      else
+         print*,'Wrong storage format version! Stopping!'
+         stop
+      endif
       return
       end
 *******************************************
@@ -327,19 +339,21 @@ c      write(ifoo,*)foonh
 ! already in invariats.h      dimension p3(0:3),p4(0:3)
       integer*8 nev,nstored,kbefore,nevts
       dimension qph(40,0:3),qph1(0:3),qph2(0:3)
-      dimension pin1(0:3),pin2(0:3),p5(0:3),p6(0:3)
+      dimension pin1(0:3),pin2(0:3),p5(0:3),p6(0:3),ptmp(0:3)
       common/momentainitial/pin1,pin2
       common/storageunit/istorunit,ilens
       common/storedevents/nstored,nevts,ifirst
       data nstored,nevts,ifirst /0,0,0/
 
-      character*30 cnstored,cnp,ctmp
+      character*30 cnstored,cnp,ctmp,ctag,ctmp2
       
       common/parameters/ame,ammu,convfac,alpha,pi
       common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer*8 iwriteout
-      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
+      integer istorver,icwvp
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
 
       parameter (ikind = 8)
       double precision p3lab(0:3),p4lab(0:3)
@@ -391,15 +405,28 @@ c      write(ifoo,*)foonh
 
       integer ismualongz
       common/ISmuondirection/ismualongz      
-      
-*     included only to access the common 'weights'      
-#include "invariants.h"
 
+      common/runtag/ctag
+
+      double complex vpolc
+      external vpolc
+      
+      character*300 compactreal
+      external compactreal
+      
+*     included only to access the common 'weights', QRmu QRe and coeffforreweighting
+#include "invariants.h"
+      double precision cwnull(0:10)
+      common/cwvuoto/cwnull
+      data cwnull /11*0.d0/
+      
       if (ifirst.eq.0) then
+         write(ctag,*)iseedext
+         ctag = adjustl(trim(ctag)) ! in common
          write(istorunit,*)'<header>'
          write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  SAMPLE TAG'
-         write(istorunit,*)iseedext
+         write(istorunit,*)'  '//ctag(1:len_trim(ctag))
          write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  Program version: ',programversion
          write(istorunit,*)'  Process ID',idproc,'running on ',hstnm
@@ -433,9 +460,18 @@ c      write(ifoo,*)foonh
             print*,'  Running mode not valid. Stopping in eventstorage'
             stop
          endif
+         write(ctmp,*)nphotmode
+         ctmp = adjustl(trim(ctmp))
          write(istorunit,*)'   multiplicity and included'//
-     .        ' final states mode:',
-     .        nphotmode
+     .        ' final states mode: ',ctmp(1:len_trim(ctmp))
+         write(ctmp,*)QRmu
+         write(ctmp2,*)QRe
+         ctmp  = adjustl(trim(ctmp))
+         ctmp2 = adjustl(trim(ctmp2))
+         write(ctmp,*)ctmp(1:len_trim(ctmp))//
+     .        ' '//ctmp2(1:len_trim(ctmp2))
+         write(istorunit,*)'   muon and electron ''radiative'' charges'
+     .        //': ',ctmp(1:len_trim(ctmp))
          write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  External and internal seed for RNG'
          write(istorunit,*)iseedext,iseed
@@ -444,6 +480,10 @@ c      write(ifoo,*)foonh
          write(istorunit,*)emulab
          write(istorunit,*)'  RMS for gaussian energy spread (GeV)'
          write(istorunit,*)semu
+         write(istorunit,*)'  If muon beam is read externally'//
+     .        ' or not (beam profile)'
+         if (ismualongz.eq.1) write(istorunit,*)'  no'
+         if (ismualongz.eq.0) write(istorunit,*)'  yes'
          write(istorunit,*)'  Muon charge'
          write(istorunit,*)Qmu
          write(istorunit,*)'  Muon mass (GeV)'
@@ -495,12 +535,13 @@ c      write(ifoo,*)foonh
       
       write(istorunit,*)'<event>'
       if (ie.ne.0) then
-c     write(istorunit,*)0
+         write(istorunit,*)' '//ctag(1:len_trim(ctag)) ! GA RunNr
          write(istorunit,*)' '//cnstored(1:len_trim(cnstored)) ! EventNr
          write(istorunit,*)' '//cnp(1:len_trim(cnp)) ! number of final state particles
 ! p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
          write(istorunit,*)0.d0,0.d0,0.d0  ! weights
          write(istorunit,*)0.d0,0.d0       ! weight for LO and NLO
+         write(istorunit,*)cwnull       ! coefficients for VP reweight
 
          write(ctmp,*)id3         
          ctmp = trim(adjustl(ctmp))
@@ -552,6 +593,7 @@ ccc   counting pairs
             endif
          endif
 
+         write(istorunit,*)' '//ctag(1:len_trim(ctag)) ! GA RunNr ! readded by request         
          write(istorunit,*)' '//cnstored(1:len_trim(cnstored)) ! EventNr
 
          npart = 2 + ng + 2*npairs
@@ -566,7 +608,39 @@ ccc   counting pairs
      >        real(ws*extraweights(1),ikind),
      >        real(ws*extraweights(2),ikind)
          write(istorunit,*)ws*reweightLO,ws*reweightNLO  ! weight for LO and NLO
+c         write(istorunit,*)ws*cwvp  ! coefficients for VP reweight
+         if (icwvp.eq.1)
+     >        write(istorunit,*)' '//trim(compactreal(11,ws*cwvp(0:10))) ! coefficients for VP reweight
 
+*************************         
+c         ptmp(0)   = ame - p4lab(0)
+c         ptmp(1:3) = -p4lab(1:3)
+c         vp24      = vpolc(dot(ptmp,ptmp))         
+c         vp24k1    = 0.d0
+c         vp24k2    = 0.d0
+c         vp24k1k2  = 0.d0
+c         if (ng.gt.0) then
+c            vp24k1=vpolc(dot(ptmp-qphlab(1,0:3),ptmp-qphlab(1,0:3)))
+c         endif
+c         if (ng.eq.2) then
+c            vp24k2   = vpolc(dot(ptmp-qphlab(2,0:3),ptmp-qphlab(2,0:3)))
+c            vp24k1k2 = vpolc(dot(ptmp-qphlab(1,0:3)-qphlab(2,0:3),ptmp
+c     >           -qphlab(1,0:3)-qphlab(2,0:3)))
+c         endif
+c         print*,ng,ws,(cwvp(0) ! OK!!
+c     >        + cwvp(1) *vp24**2
+c     >        + cwvp(2) *vp24*vp24k1
+c     >        + cwvp(3) *vp24*vp24k2
+c     >        + cwvp(4) *vp24*vp24k1k2
+c     >        + cwvp(5) *vp24k1**2
+c     >        + cwvp(6) *vp24k1*vp24k2 
+c     >        + cwvp(7) *vp24k1*vp24k1k2
+c     >        + cwvp(8) *vp24k2**2
+c     >        + cwvp(9) *vp24k2*vp24k1k2
+c     >        + cwvp(10) *vp24k1k2**2
+c     >   )
+****************************************************
+         
          write(ctmp,*)id3
          ctmp = trim(adjustl(ctmp))         
 c original - only IS muon energy         write(istorunit,*)real(p1lab(0),ikind)
@@ -607,6 +681,24 @@ ccc
 *********************************************************
 *** end of storage routines
 *********************************************************
+      function compactreal(n,v)
+      implicit none
+      character*300 compactreal,tmp
+      character*30 cv(n)
+      character*1 c1
+      integer n,ik,k,i,kw,l(n)
+      parameter(ik=8)
+      double precision v(n)
+      i = 1
+      do k = 1,n
+         write(cv(k),*)real(v(k),ik)
+         l(k)  = len(trim(adjustl(cv(k)))) + 1
+         write(compactreal(i:),'(a)')trim(adjustl(cv(k)))
+         i = i + l(k)
+      enddo
+      return
+      end
+*********************************************************
       subroutine twomostenergetic(ng,q,q1,q2)
       implicit double precision (a-h,o-z)
       integer iloc(1)
@@ -638,7 +730,6 @@ ccc
       enddo
       return
       end
-***
 ****************************************************
       subroutine mixandsortmomenta(ng,pa,pb,qm)
       implicit double precision (a-h,o-z)
@@ -674,7 +765,7 @@ ccc
       enddo
       return
       end
-c
+********************************************
       subroutine orderinverseqm(nph,qm,qmord)
       implicit double precision (a-h,o-z)
       parameter (nmax = 40)
@@ -725,7 +816,7 @@ c
       enddo
       return
       end
-
+********************************************
       subroutine sort_vector_inverse(v,sv,iold,n)
 ! pensare quick sort!!
       implicit double precision (a-h,o-z)

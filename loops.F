@@ -119,14 +119,6 @@ c      print*,getmaxdev()
 #endif      
       return
       end
-****************************************************
-c      subroutine clearthecache ! only looptools...
-c#include "looptools.h"
-c#ifndef COLLIER      
-c      call clearcache ! I clear anyway the LT cache...
-c#endif
-c      return
-c      end
 *****************************************************
       subroutine initlooplibrary
 #include "looptools.h"
@@ -158,13 +150,13 @@ c      end
       double precision acc
       character*200  path
       common/cmnpath/path
+      integer i,j,k
       
-c     call Init_cll(4,2,path(1:len_trim(path))//'cll_out')      
+c     call Init_cll(4,2,path(1:len_trim(path))//'cll_out')
       call Init_cll(5,3,path(1:len_trim(path))//'cll_out')
-      call SetMode_cll(1)       ! 1 is COLI, 2 DD, 3 both. 1 is faster
+      call SetMode_cll(1) ! 1 is COLI, 2 DD, 3 both. 1 is faster
+      call InitCacheSystem_cll(5,5) ! init 5 caches, 1 for 2->2, 2 for 2->3, 3-5 for NNLO bubbles
 
-      call InitCacheSystem_cll(5,5) ! init 5 caches, 1 for 2->2, 2 for 2->3, 3,4,5 for leptonic bubbles
-      
 c      call SetCritAcc_cll(1d-16)
 c      call SetReqAcc_cll(1d-16)
 c      call GetReqAcc_cll(acc)
@@ -182,20 +174,6 @@ c      stop
       call SetmuIR2_cll(m*m)
       return
       end
-****************************************************
-c      subroutine clearthecachecollier
-c      use collier
-c      integer ifirst,ncache,n
-c      data ifirst /0/
-c      common/cachecollier/ifirst,ncache
-c      if (ifirst.eq.0) then
-c         ncache = 1
-c         call InitCacheSystem_cll(ncache,5)
-c         ifirst = 1
-c      endif
-c      call InitEvent_cll(ncache)
-c      return
-c      end
 *****************************************************
       subroutine getBsforctscollier(m2,B1o,dB0o,dB1o)
       use collier
@@ -207,15 +185,11 @@ c      end
       double complex b(0:rank/2,0:rank),buv(0:rank/2,0:rank)
 
       call SwitchOffCacheSystem_cll
-      
       call B_cll(b,buv,(1.d0,0.d0)*m2,(1.d0,0.d0)*m2,(0.d0,0.d0),1)
       B1o = b(0,1)
-      
       call DB0_cll(dB0o,(1.d0,0.d0)*m2,(1.d0,0.d0)*m2,(0.d0,0.d0))
       call DB1_cll(dB1o,(1.d0,0.d0)*m2,(1.d0,0.d0)*m2,(0.d0,0.d0))
-
       call SwitchOnCacheSystem_cll
-      
       return
       end
 **************************************************************************
@@ -237,14 +211,31 @@ c      end
 
       integer rank ! max rank
       parameter (rank = 2)
+      double complex ptmp(0:3)
       double complex dnd(0:rank/2,0:rank,0:rank,0:rank)
       double complex dnduv(0:rank/2,0:rank,0:rank,0:rank)
       double complex dnc(0:rank/2,0:rank,0:rank,0:rank)
       double complex dncuv(0:rank/2,0:rank,0:rank,0:rank)
 
+      double complex Dtend(0:rank,0:rank,0:rank,0:rank)
+      double complex Dtenc(0:rank,0:rank,0:rank,0:rank)
+      double complex Dtenda(0:rank,0:rank,0:rank,0:rank)
+      double complex Dtenca(0:rank,0:rank,0:rank,0:rank)
+      double complex Dtenduv(0:rank,0:rank,0:rank,0:rank)
+      double complex Dtencuv(0:rank,0:rank,0:rank,0:rank)
+      common/boxestenfuns/Dtend,Dtenc
+      data Dtend /81*(0.d0,0.d0)/
+      data Dtenc /81*(0.d0,0.d0)/
+
+      double precision k1(0:3),k2(0:3),k3(0:3)
+      double complex dotten
+      external dotten
+      double complex dottencmom
+      external dottencmom
+      
 #include "invariants.h"
-      double complex d0cll,cpard(10),cparc(10)
-      common/dcpar/cpard,cparc,ifirst
+      double complex d0cll,cpard(10),cparc(10),cu
+      common/dcpar/cpard,cparc,cu,ifirst
       data ifirst /0/
 
       if (ifirst.eq.0) then
@@ -256,9 +247,8 @@ c      end
          cpard(8)  = cuno*mm2
          cpard(9)  = cuno*0.d0
          cpard(10) = cuno*me2
-
          cparc = cpard
-         
+         cu = (1.d0,0.d0)
          ifirst   = 1
       endif
       cpard(5) = cuno*(2.d0*mm2-2.d0*p1p3)
@@ -316,10 +306,39 @@ c      end
       D23ltc = dnc(0,0,1,1)
       D33ltc = dnc(0,0,0,2)
 
+************with tensors
+!     direct box
+c not needed      call InitCacheSystem_cll(5,5) ! without this, it doesnt work...
+c perhaps not neede     call InitEvent_cll(5)
+c      call Dten_cll(Dtend,Dtenduv,
+c     .     cuno*p1c,cuno*(p1c-p3c),-cuno*p2c,
+c     .     cpard(1),
+c     .     cpard(2),
+c     .     cpard(3),
+c     .     cpard(4),
+c     .     cpard(5),
+c     .     cpard(6),
+c     .     cpard(7),
+c     .     cpard(8),
+c     .     cpard(9),
+c     .     cpard(10),rank)
+! crossed box      
+c      call Dten_cll(Dtenc,Dtencuv,
+c     .     cuno*p1c,cuno*(p1c-p3c),cuno*p4c,
+c     .     cparc(1),
+c     .     cparc(2),
+c     .     cparc(3),
+c     .     cparc(4),
+c     .     cparc(5),
+c     .     cparc(6),
+c     .     cparc(7),
+c     .     cparc(8),
+c     .     cparc(9),
+c     .     cparc(10),rank)
+***********************
       return
       end
 **************************************************************************
-******************************************************************
       subroutine Cfunscollier
       use collier
       double complex C0ltmu,C1ltmu,C2ltmu,C11ltmu,C12ltmu,C22ltmu
@@ -416,7 +435,7 @@ c      end
       double precision Z14_(0:3),Z15_(0:3),Z16_(0:3)
       double precision Z10_,Z11_,Z12_,Z13_
       double precision coverm2,csi(1)
-      double precision sqm,pr1,pr2,w
+      double precision sqm,pr1,pr2,w,soft
       double complex ct(0:3),c5t(0:3),cIt
       double complex cmum(0:3,2,2)
       double complex c5mum(0:3,2,2)
@@ -428,8 +447,8 @@ c      end
       common/ifirstrad/cover,coverm2,ifirst
       double complex vpolc
       external vpolc
-      double precision radmuesum,dah13,dah24
-      external radmuesum
+      double precision radmuesum,radmuesums
+      external radmuesum,radmuesums
       double precision radmuesumsoft,radmuesumonlye,radmuesumonlyeSD
       external radmuesumsoft,radmuesumonlye,radmuesumonlyeSD
       data ifirst /0/
@@ -440,9 +459,12 @@ c      end
          coverm2 = cover*conjg(cover)
          ifirst  = 1
       endif
-      
+
+c      soft = radmuesums(p1,p2,p3,p4,k,0,1)
+
       radmue = radmuesum(p1,p2,p3,p4,k)
-      
+
+c      radmue = soft      
       return
 *********************************************************
 c     goto 666
@@ -648,8 +670,7 @@ c            stop
       double complex cover
       double precision vpleps13(1:4)
       double precision vpleps24(1:4)
-      double precision coverm2,dah13,dah24,pi
-      double precision dalep13,dalep24
+      double precision coverm2,pi
       double precision t13m1v(0:2),t24m1v(0:2)
       double precision t13m2v(0:2),t24m2v(0:2)
       double precision p1p22,p1p32,p1p42,p2p32,p2p42,p3p42
@@ -675,6 +696,10 @@ c            stop
          radmuefermionloop = 0.d0
          dalp24 = 0.d0
          dalp13 = 0.d0
+         dah13 = 0.d0
+         dal13 = 0.d0
+         dah24 = 0.d0
+         dal24 = 0.d0
       endif
 
       reweightLO = 0.d0
@@ -687,6 +712,7 @@ c            stop
       if (ifixedorder.eq.0) then
          call getVP1loop(1.d0/t13m1v(0),dal,dah)
          dah13   = dah
+         dal13   = dal
 
          dalep13 = dot_product(vpvect,bubblemask)
          t13m1v(1) = t13m1v(0) * 1.d0/(1.d0 - dal - dah)
@@ -694,6 +720,7 @@ c            stop
 
          call getVP1loop(1.d0/t24m1v(0),dal,dah)
          dah24   = dah
+         dal24   = dal
          dalep24 = dot_product(vpvect,bubblemask)
          t24m1v(1) = t24m1v(0) * 1.d0/(1.d0 - dal - dah)
          t24m1v(2) = t24m1v(0) * 1.d0/(1.d0 - dal)
@@ -723,7 +750,7 @@ c            stop
       p2p42 = p2p4*p2p4
       p3p42 = p3p4*p3p4
       
-      if (Qmu.lt.0.d0) then     
+      if (Qmu.lt.0.d0) then
 cc         include 'oneloop/radmuesumminus.f'
 
       Z1_=p1p4 - p4k
@@ -904,12 +931,12 @@ cc         include 'oneloop/radmuesumminus.f'
       Z2_=Z2_ + Z6_ + Z4_ - p2p3 - p3p4 - Z18_ + Z3_
       Z2_=64*Z2_
 
-      radmuesum =  QRmu * t24m2v(1)*Z1_
+      radmuesum = QRmu * t24m2v(1)*Z1_
      .     + QRe  * t13m2v(1)*Z11_
      .     + QRmu*QRe * t13m1v(1)*t24m1v(1)*Z2_
 
       if (ionlybubbles.gt.0) then
-         radmuesum =  QRmu * t24m2v(0)*(2.d0*dalep24)*Z1_
+         radmuesum = QRmu * t24m2v(0)*(2.d0*dalep24)*Z1_
      .        + QRe  * t13m2v(0)*(2.d0*dalep13)*Z11_
      .        + QRmu*QRe * t13m1v(0)*t24m1v(0)*(dalep13+dalep24)*Z2_
       endif
@@ -919,12 +946,29 @@ c      radmuesum=t24m2v(0)*Z1_*2.d0*dah24 + t13m2v(0)*Z11_*2.d0*dah13
 c     .     + t13m1v(0)*t24m1v(0)*Z2_*(dah13+dah24)
 cfrpasserafael      
 
-      extraweights(1)=
+      extraweights(1) =
      .     QRmu*t24m2v(0)*Z1_ + QRe*t13m2v(0)*Z11_
      .     + QRmu*QRe * t13m1v(0)*t24m1v(0)*Z2_
-      extraweights(2)=
+      extraweights(2) =
      .     QRmu * t24m2v(2)*Z1_ + QRe * t13m2v(2)*Z11_
-     .     + QRmu*QRe * t13m1v(2)*t24m1v(2)*Z2_      
+     .     + QRmu*QRe * t13m1v(2)*t24m1v(2)*Z2_
+
+***   VP reweight stuff
+      cwvpl    = 0.d0
+      cwvpl(1) = QRmu*t24m2v(0)*Z1_   * coverm2
+      cwvpl(2) = QRmu*QRe * t13m1v(0)*t24m1v(0)*Z2_ * coverm2
+      cwvpl(5) = QRe*t13m2v(0)*Z11_   * coverm2
+c     cwvpl(1)  ! *vp24**2
+c     cwvpl(2)  ! *vp24*vp24k1
+c     cwvpl(3)  ! *vp24*vp24k2
+c     cwvpl(4)  ! *vp24*vp24k1k2
+c     cwvpl(5)  ! *vp24k1**2
+c     cwvpl(6)  ! *vp24k1*vp24k2
+c     cwvpl(7)  ! *vp24k1*vp24k1k2
+c     cwvpl(8)  ! *vp24k2**2      
+c     cwvpl(9)  ! *vp24k2*vp24k1k2
+c     cwvpl(10) ! *vp24k1k2**2
+***      
       extraweights(1:2) = extraweights(1:2)/radmuesum
       
       else  ! if Qmu > 0
@@ -1130,12 +1174,12 @@ cc         include 'oneloop/radmuesumplus.f'
       Z3_=Z4_ + Z7_ + Z6_ + Z8_ + Z3_ + Z9_ + Z10_ + Z5_
       Z3_=64*Z3_
 
-      radmuesum= QRmu * t24m2v(1)*Z1_
+      radmuesum = QRmu * t24m2v(1)*Z1_
      .     + QRe * t13m2v(1)*Z2_
      .     + QRmu*QRe * t13m1v(1)*t24m1v(1)*Z3_
 
       if (ionlybubbles.gt.0) then
-         radmuesum= QRmu * t24m2v(0)*(2.d0*dalep24)*Z1_
+         radmuesum = QRmu * t24m2v(0)*(2.d0*dalep24)*Z1_
      .        + QRe * t13m2v(0)*(2.d0*dalep13)*Z2_
      .        + QRmu*QRe * t13m1v(0)*t24m1v(0)*(dalep13+dalep24)*Z3_
       endif
@@ -1145,12 +1189,29 @@ c      radmuesum=t24m2v(0)*Z1_*2.d0*dah24 + t13m2v(0)*Z2_*2.d0*dah13 +
 c     .     t13m1v(1)*t24m1v(0)*Z3_ * (dah13+dah24)
 cfrpasserafael      
       
-      extraweights(1)=
+      extraweights(1) =
      .     QRmu * t24m2v(0)*Z1_ +QRe * t13m2v(0)*Z2_
      .     +QRmu*QRe* t13m1v(0)*t24m1v(0)*Z3_
-      extraweights(2)=
+      extraweights(2) =
      .     QRmu * t24m2v(2)*Z1_+QRe*t13m2v(2)*Z2_
-     . + QRmu * QRe * t13m1v(2)*t24m1v(2)*Z3_
+     .     + QRmu * QRe * t13m1v(2)*t24m1v(2)*Z3_
+
+***   VP reweight stuff
+      cwvpl    = 0.d0
+      cwvpl(1) = QRmu*t24m2v(0)*Z1_   * coverm2
+      cwvpl(2) = QRmu*QRe * t13m1v(0)*t24m1v(0)*Z3_ * coverm2
+      cwvpl(5) = QRe*t13m2v(0)*Z2_   * coverm2
+c     cwvpl(1)  ! *vp24**2
+c     cwvpl(2)  ! *vp24*vp24k1
+c     cwvpl(3)  ! *vp24*vp24k2
+c     cwvpl(4)  ! *vp24*vp24k1k2
+c     cwvpl(5)  ! *vp24k1**2
+c     cwvpl(6)  ! *vp24k1*vp24k2
+c     cwvpl(7)  ! *vp24k1*vp24k1k2
+c     cwvpl(8)  ! *vp24k2**2      
+c     cwvpl(9)  ! *vp24k2*vp24k1k2
+c     cwvpl(10) ! *vp24k1k2**2
+***      
       extraweights(1:2) = extraweights(1:2)/radmuesum
       
       endif
@@ -1158,9 +1219,541 @@ cfrpasserafael
       extraweights(0) = 1.d0
       
       radmuesum = coverm2*radmuesum
+      return
+      end
+***************************************************
+******************************************************
+      double precision function radmuesums(p1,p2,p3,p4,k,ns,ns2)
+** summed over spin/elicities. it's much faster (~0.35)      
+*      implicit none !double precision (a-h,o-z)
+      implicit double precision (Z)
+#include "invariants.h"
+      double precision t13m1,t24m1,dp1km1,dp2km1,dp3km1,dp4km1
+      double precision dp1km2,dp2km2,dp3km2,dp4km2
+      double precision p1km1,p2km1,p3km1,p4km1,muemueg1L
+      double precision k(0:3),t13m2,t24m2
+      double complex cover
+      double precision vpleps13(1:4)
+      double precision vpleps24(1:4)
+      double precision coverm2,pi
+      double precision t13m1v(0:2),t24m1v(0:2)
+      double precision t13m2v(0:2),t24m2v(0:2)
+      double precision p1p22,p1p32,p1p42,p2p32,p2p42,p3p42
+      common/ifirstradsumsoft/cover,coverm2,ifirst
+      double complex vpolc
+      external vpolc
+      integer ifirst,ns,ns2
+      data ifirst /0/
+      double precision radmue_mu,radmue_e,radmue_int
+*** for 1g1L
+      double precision dalp24,dalp13,radmuefermionloop
+      common/dalphasfor1g1Lcfrrecola/dalp24,dalp13,radmuefermionloop
+***
+      double precision colch2(5)
+      integer bubblemask(5)
+      common/colorandch2factors/colch2,bubblemask
+
+      
+      if (ifirst.eq.0) then
+         cover   = ec2*ec*im
+         coverm2 = cover*conjg(cover)
+         ifirst = 1
+         radmuefermionloop = 0.d0
+         dalp24 = 0.d0
+         dalp13 = 0.d0
+      endif
+
+      reweightLO = 0.d0
+
+      call loadinvariants1g(p1,p2,p3,p4,k)
+      
+      t13m1v(0) = 1.d0/t13
+      t24m1v(0) = 1.d0/t24
+      
+      if (ifixedorder.eq.0) then
+         call getVP1loop(1.d0/t13m1v(0),dal,dah)
+         dah13   = dah
+
+         dalep13 = dot_product(vpvect,bubblemask)
+         t13m1v(1) = t13m1v(0) * 1.d0/(1.d0 - dal - dah)
+         t13m1v(2) = t13m1v(0) * 1.d0/(1.d0 - dal)
+
+         call getVP1loop(1.d0/t24m1v(0),dal,dah)
+         dah24   = dah
+         dalep24 = dot_product(vpvect,bubblemask)
+         t24m1v(1) = t24m1v(0) * 1.d0/(1.d0 - dal - dah)
+         t24m1v(2) = t24m1v(0) * 1.d0/(1.d0 - dal)
+      else
+         t13m1v(1:2) = t13m1v(0)
+         t24m1v(1:2) = t24m1v(0)
+      endif
+
+*** putting here the charges!      
+      t24m1v = t24m1v * QRmu
+      t13m1v = t13m1v * QRe
+****      
+      t13m2v = t13m1v*t13m1v
+      t24m2v = t24m1v*t24m1v
+      
+      
+      dp1km1 = 0.5d0/p1k
+      dp2km1 = 0.5d0/p2k
+      dp3km1 = 0.5d0/p3k
+      dp4km1 = 0.5d0/p4k
+
+      dp1km2 = dp1km1*dp1km1
+      dp2km2 = dp2km1*dp2km1
+      dp3km2 = dp3km1*dp3km1
+      dp4km2 = dp4km1*dp4km1
+      
+      p1p22 = p1p2*p1p2
+      p1p32 = p1p3*p1p3
+      p1p42 = p1p4*p1p4
+      p2p32 = p2p3*p2p3
+      p2p42 = p2p4*p2p4
+      p3p42 = p3p4*p3p4
+      
+      if (Qmu.lt.0.d0) then     
+
+      Z1_=p1p4*p2p3
+      Z2_=p1p2*p3p4
+      Z3_=Z1_ + Z2_
+      Z4_=p1p3*me2
+      Z5_=Z4_ - Z3_
+      Z5_=mm2*Z5_
+      Z6_=2*me2
+      Z7_=Z6_ - p2p4
+      Z8_=Z7_*mm4
+      Z5_=Z5_ - Z8_
+      Z8_=dp3km2 + dp1km2
+      Z5_=Z5_*Z8_
+      Z7_=Z7_*mm2
+      Z8_=Z7_ + Z3_
+      Z8_=p1p3*Z8_
+      Z9_= - p1p32*me2
+      Z8_=Z8_ + Z9_
+      Z9_=2*dp1km1
+      Z8_=dp3km1*Z8_*Z9_
+      Z5_=Z8_ + Z5_
+      Z5_=128*Z5_
+      Z8_= - Z3_*me2
+      Z10_= - 2*mm2 + p1p3
+      Z10_=me4*Z10_
+      Z8_=Z10_ + Z8_
+      Z10_=dp4km2 + dp2km2
+      Z8_=Z10_*Z8_
+      Z10_=dp2km2*me2
+      Z11_=dp4km2*me2
+      Z12_=Z10_ + Z11_
+      Z12_=mm2*p2p4*Z12_
+      Z13_=Z4_ - Z1_
+      Z14_=Z2_ - Z13_
+      Z14_=p2p4*Z14_
+      Z15_=p2p4*Z6_
+      Z15_= - p2p42 + Z15_
+      Z15_=mm2*Z15_
+      Z14_=Z15_ + Z14_
+      Z15_=2*dp4km1
+      Z14_=dp2km1*Z14_*Z15_
+      Z8_=Z14_ + Z12_ + Z8_
+      Z8_=128*Z8_
+      Z4_= - Z7_ + Z4_ - Z2_
+      Z12_= - p1p4*Z4_
+      Z14_=p2p3*p1p42
+      Z12_=Z14_ + Z12_
+      Z12_=dp4km1*Z12_
+      Z7_=Z13_ - Z7_
+      Z13_=p1p2*Z7_
+      Z14_= - p1p22*p3p4
+      Z13_=Z14_ + Z13_
+      Z13_=dp2km1*Z13_
+      Z12_=Z12_ + Z13_
+      Z12_=dp1km1*Z12_
+      Z4_= - p2p3*Z4_
+      Z13_=p2p32*p1p4
+      Z4_=Z13_ + Z4_
+      Z4_=dp2km1*Z4_
+      Z7_=p3p4*Z7_
+      Z13_= - p1p2*p3p42
+      Z7_=Z13_ + Z7_
+      Z7_=dp4km1*Z7_
+      Z4_=Z7_ + Z4_
+      Z4_=dp3km1*Z4_
+      Z4_=Z12_ + Z4_
+      Z4_=256*Z4_
+      Z7_=p3p4*p2k
+      Z12_=p2p3*p4k
+      Z13_=Z7_ + Z12_
+      Z14_=p3k*me2
+      Z16_=Z13_ - Z14_
+      Z17_=dp1km1*Z16_
+      Z18_=p1p4*p2k
+      Z19_=p1p2*p4k
+      Z20_=Z18_ + Z19_
+      Z21_=p1k*me2
+      Z22_=Z20_ - Z21_
+      Z23_=mm2*p2k
+      Z24_=dp1km1*p4k*Z23_
+      Z24_= - 4*Z24_ + Z22_
+      Z24_=dp3km1*Z24_
+      Z17_=Z17_ + Z24_
+      Z17_=64*Z17_
+      Z24_=p3k*p1p2
+      Z25_=p1k*p2p3
+      Z23_= - Z23_ + Z24_ + Z25_
+      Z23_=dp4km1*Z23_
+      Z26_=dp4km1*Z14_
+      Z26_= - 4*Z26_ + p3p4
+      Z26_=p1k*Z26_
+      Z27_=p1p4*p3k
+      Z28_= - mm2*p4k
+      Z26_=Z28_ + Z27_ + Z26_
+      Z26_=dp2km1*Z26_
+      Z23_=Z23_ + Z26_
+      Z23_=64*Z23_
+      Z21_=Z21_ + Z14_
+      Z26_=dp2km1 + dp4km1
+      Z21_=Z21_*Z26_
+      Z26_=dp3km1 + dp1km1
+      Z28_=p2k + p4k
+      Z26_=mm2*Z28_*Z26_
+      Z28_=p2p3 + p3p4
+      Z29_=p1p4 + p1p2
+      Z21_= - Z29_ - Z28_ + Z26_ + Z21_
+      Z21_=64*Z21_
+      Z13_=Z20_ - Z13_
+      Z9_=p1p3*Z13_*Z9_
+      Z13_=mm2*me2
+      Z6_=Z6_*p1p3
+      Z6_=Z13_ + Z6_
+      Z13_=p2p3*p3p4
+      Z3_=Z9_ + 2*Z13_ + Z3_ - Z6_
+      Z3_=dp3km1*Z3_
+      Z9_= - dp3km2*Z22_
+      Z16_=dp1km2*Z16_
+      Z9_=Z9_ + Z16_
+      Z9_=mm2*Z9_
+      Z16_= - p2p3 - 2*p1p2
+      Z16_=p1p4*Z16_
+      Z6_= - Z2_ + Z16_ + Z6_
+      Z6_=dp1km1*Z6_
+      Z3_=Z3_ + 2*Z9_ + Z6_
+      Z3_=64*Z3_
+      Z6_=p3p4*me2
+      Z9_=dp2km2*Z6_
+      Z16_= - p2p3*Z11_
+      Z9_=Z9_ + Z16_
+      Z9_=p1k*Z9_
+      Z10_= - p4k*Z10_
+      Z11_=p2k*Z11_
+      Z10_=Z10_ + Z11_
+      Z10_=mm2*Z10_
+      Z11_=dp2km2*p1p4*Z14_
+      Z14_=Z14_*p1p2
+      Z16_= - dp4km2*Z14_
+      Z9_=Z10_ + Z9_ + Z11_ + Z16_
+      Z10_= - p3p4 + p2p3
+      Z10_=p1k*Z10_
+      Z10_=Z10_ + Z24_ - Z27_
+      Z10_=Z15_*p2p4*Z10_
+      Z11_=me2 + 2*p2p4
+      Z11_=Z11_*mm2
+      Z16_= - p3p4 - 2*p2p3
+      Z16_=p1p2*Z16_
+      Z10_=Z10_ + Z11_ + Z16_ - Z1_
+      Z10_=dp2km1*Z10_
+      Z16_=2*p3p4 + p2p3
+      Z16_=p1p4*Z16_
+      Z11_= - Z11_ + Z2_ + Z16_
+      Z11_=dp4km1*Z11_
+      Z9_=Z10_ + 2*Z9_ + Z11_
+      Z9_=64*Z9_
+      Z10_=Z19_*p2p3
+      Z11_=p1p2*Z27_
+      Z16_= - mm2*Z19_
+      Z11_=Z16_ + Z11_ + Z10_ - Z14_
+      Z14_=2*dp2km1
+      Z11_=Z11_*Z14_
+      Z16_=Z28_ - Z29_
+      Z16_=Z16_*mm2
+      Z1_=Z1_ - Z2_
+      Z2_=me2 + p1p2
+      Z2_=p3k*Z2_
+      Z2_= - Z7_ + Z2_
+      Z2_=p1p4*Z2_
+      Z18_= - mm2*Z18_
+      Z2_=Z2_ + Z18_
+      Z2_=Z2_*Z15_
+      Z18_= - p1p3*Z29_
+      Z2_=Z11_ + Z2_ + Z18_ - Z16_ - Z1_
+      Z2_=dp1km1*Z2_
+      Z11_=mm2 - p1p4
+      Z7_=Z7_*Z11_
+      Z11_=Z6_ - Z13_
+      Z11_=p1k*Z11_
+      Z7_=Z11_ + Z7_
+      Z7_=Z7_*Z15_
+      Z11_= - me2 - p3p4
+      Z11_=Z11_*Z25_
+      Z12_=mm2*Z12_
+      Z10_=Z12_ + Z10_ + Z11_
+      Z10_=Z10_*Z14_
+      Z11_=p1p3*Z28_
+      Z1_=Z10_ + Z7_ + Z11_ - Z16_ + Z1_
+      Z1_=dp3km1*Z1_
+      Z7_=p2p4 - me2
+      Z10_=p3p4*Z7_
+      Z11_=p2p3*me2
+      Z12_=me2 - p3p4
+      Z12_=p1p2*Z12_
+      Z13_=p2p3 + Z7_
+      Z13_=p1p4*Z13_
+      Z10_=Z13_ + Z12_ + Z10_ + Z11_
+      Z10_=dp4km1*Z10_
+      Z11_= - p2p3*Z7_
+      Z7_=p3p4 - Z7_
+      Z7_=p1p2*Z7_
+      Z12_= - me2 - p2p3
+      Z12_=p1p4*Z12_
+      Z6_=Z12_ + Z7_ - Z6_ + Z11_
+      Z6_=dp2km1*Z6_
+      Z1_=Z1_ + Z2_ + Z10_ + Z6_
+      Z1_=64*Z1_
+
+      radmuesums=t24m2v(1)*Z5_ + t13m2v(1)*Z8_
+     & + t13m1v(1)*t24m1v(1)*Z4_ + NS2*t24m2v(1)*
+     &     Z17_ + NS2*t13m2v(1)*Z23_ + NS2*t13m1v(1)*t24m1v(1)*Z21_
+     & + NS*t24m2v(1)*Z3_ + NS
+     & *t13m2v(1)*Z9_ + NS*t13m1v(1)*t24m1v(1)*Z1_
+         
+      extraweights(1:2) = 1.d0
+      
+      else  ! if Qmu > 0
+
+      Z1_=p3p4*p1p2
+      Z2_=p2p3*p1p4
+      Z3_=Z1_ + Z2_
+      Z4_=Z3_*mm2
+      Z5_=2*me2
+      Z6_= - Z5_ + p2p4
+      Z6_=mm4*Z6_
+      Z7_=mm2*me2
+      Z8_=Z7_*p1p3
+      Z4_= - Z4_ + Z8_ + Z6_
+      Z6_=dp1km2 + dp3km2
+      Z4_=Z4_*Z6_
+      Z6_=2*Z7_
+      Z8_=p2p4*mm2
+      Z8_=Z6_ - Z8_
+      Z9_=Z8_ + Z3_
+      Z9_=p1p3*Z9_
+      Z10_= - p1p32*me2
+      Z9_=Z10_ + Z9_
+      Z10_=2*dp1km1
+      Z9_=dp3km1*Z9_*Z10_
+      Z4_=Z9_ + Z4_
+      Z4_=128*Z4_
+      Z3_=Z3_*me2
+      Z9_=2*mm2
+      Z11_=Z9_ - p1p3
+      Z11_=Z11_*me4
+      Z12_=Z7_*p2p4
+      Z3_=Z11_ + Z3_ - Z12_
+      Z11_= - dp2km2 - dp4km2
+      Z3_=Z3_*Z11_
+      Z11_=p1p3*me2
+      Z12_=Z11_ - Z1_
+      Z6_= - Z12_ + Z6_ + Z2_
+      Z6_=p2p4*Z6_
+      Z13_= - mm2*p2p42
+      Z6_=Z13_ + Z6_
+      Z13_=2*dp4km1
+      Z6_=dp2km1*Z6_*Z13_
+      Z3_=Z6_ + Z3_
+      Z3_=128*Z3_
+      Z6_=Z12_ - Z8_
+      Z12_=p1p4*Z6_
+      Z14_= - p2p3*p1p42
+      Z12_=Z14_ + Z12_
+      Z12_=dp4km1*Z12_
+      Z8_= - Z11_ + Z8_ + Z2_
+      Z11_=p1p2*Z8_
+      Z14_=p3p4*p1p22
+      Z11_=Z14_ + Z11_
+      Z11_=dp2km1*Z11_
+      Z11_=Z12_ + Z11_
+      Z11_=dp1km1*Z11_
+      Z8_=p3p4*Z8_
+      Z12_=p3p42*p1p2
+      Z8_=Z12_ + Z8_
+      Z8_=dp4km1*Z8_
+      Z6_=p2p3*Z6_
+      Z12_= - p2p32*p1p4
+      Z6_=Z12_ + Z6_
+      Z6_=dp2km1*Z6_
+      Z6_=Z8_ + Z6_
+      Z6_=dp3km1*Z6_
+      Z6_=Z11_ + Z6_
+      Z6_=256*Z6_
+      Z8_=p2k*p1p4
+      Z11_=me2*p1k
+      Z12_=Z8_ - Z11_
+      Z14_=p1p2*p4k
+      Z15_=p4k*mm2
+      Z16_=dp1km1*p2k*Z15_
+      Z16_= - 4*Z16_ + Z14_ + Z12_
+      Z16_=dp3km1*Z16_
+      Z17_=p4k*p2p3
+      Z18_=p3p4*p2k
+      Z17_=Z17_ + Z18_
+      Z18_=p3k*me2
+      Z19_= - Z18_ + Z17_
+      Z19_=dp1km1*Z19_
+      Z16_=Z19_ + Z16_
+      Z16_=64*Z16_
+      Z19_=p3p4*p1k
+      Z20_=dp4km1*Z11_
+      Z20_= - 4*Z20_ + p1p4
+      Z20_=p3k*Z20_
+      Z20_= - Z15_ + Z19_ + Z20_
+      Z20_=dp2km1*Z20_
+      Z21_=p2p3*p1k
+      Z22_=mm2*p2k
+      Z23_=Z21_ - Z22_
+      Z24_=p3k*p1p2
+      Z25_=Z24_ + Z23_
+      Z25_=dp4km1*Z25_
+      Z20_=Z25_ + Z20_
+      Z20_=64*Z20_
+      Z25_=Z18_ + Z11_
+      Z26_= - dp2km1 - dp4km1
+      Z25_=Z25_*Z26_
+      Z26_=Z22_ + Z15_
+      Z27_= - dp3km1 - dp1km1
+      Z26_=Z26_*Z27_
+      Z27_=p1p2 + p1p4
+      Z28_=p3p4 + p2p3
+      Z25_=Z28_ + Z27_ + Z26_ + Z25_
+      Z25_=64*Z25_
+      Z26_=p2p3*Z15_
+      Z29_=p3p4*Z22_
+      Z30_= - p3k*Z7_
+      Z26_=Z30_ + Z26_ + Z29_
+      Z26_=dp1km2*Z26_
+      Z29_= - mm2*Z12_
+      Z30_= - p1p2*Z15_
+      Z29_=Z29_ + Z30_
+      Z29_=dp3km2*Z29_
+      Z26_=Z26_ + Z29_
+      Z29_=Z2_ - Z7_
+      Z5_=Z5_*p1p3
+      Z5_=Z5_ - Z29_
+      Z30_=p1p2*p1p4
+      Z31_= - Z1_ - 2*Z30_ + Z5_
+      Z31_=dp1km1*Z31_
+      Z17_=Z14_ + Z8_ - Z17_
+      Z10_=p1p3*Z17_*Z10_
+      Z17_=2*p2p3
+      Z32_=Z17_ + p1p2
+      Z32_=p3p4*Z32_
+      Z5_=Z10_ + Z32_ - Z5_
+      Z5_=dp3km1*Z5_
+      Z5_=Z5_ + 2*Z26_ + Z31_
+      Z5_=64*Z5_
+      Z10_= - p2p3*Z11_
+      Z26_=p2k*Z7_
+      Z31_= - p1p2*Z18_
+      Z10_=Z31_ + Z10_ + Z26_
+      Z10_=dp4km2*Z10_
+      Z7_= - p4k*Z7_
+      Z26_=p3p4*Z11_
+      Z18_=p1p4*Z18_
+      Z7_=Z18_ + Z7_ + Z26_
+      Z7_=dp2km2*Z7_
+      Z7_=Z10_ + Z7_
+      Z10_= - p1p4 + p1p2
+      Z10_=p3k*Z10_
+      Z10_=Z10_ + Z21_ - Z19_
+      Z10_=Z13_*p2p4*Z10_
+      Z9_=Z9_*p2p4
+      Z9_=Z9_ - Z29_
+      Z17_= - p1p2*Z17_
+      Z1_=Z10_ - Z1_ + Z17_ + Z9_
+      Z1_=dp2km1*Z1_
+      Z10_=2*p1p4 + p1p2
+      Z10_=p3p4*Z10_
+      Z9_=Z10_ - Z9_
+      Z9_=dp4km1*Z9_
+      Z1_=Z1_ + Z9_ + 2*Z7_
+      Z1_=64*Z1_
+      Z7_=me2*p1p4
+      Z9_= - Z7_ - Z30_
+      Z9_=p3k*Z9_
+      Z10_=p1p4*Z22_
+      Z8_=p3p4*Z8_
+      Z8_=Z9_ + Z10_ + Z8_
+      Z8_=Z8_*Z13_
+      Z9_= - p2p3 + mm2
+      Z9_=Z9_*Z14_
+      Z10_=me2 - p1p4
+      Z17_=Z10_*Z24_
+      Z9_=Z9_ + Z17_
+      Z17_=2*dp2km1
+      Z9_=Z9_*Z17_
+      Z18_=p2p3 - Z27_
+      Z18_=Z18_*mm2
+      Z19_=mm2 - p1p2
+      Z19_=p3p4*Z19_
+      Z22_=p1p3*Z27_
+      Z8_=Z9_ + Z8_ + Z22_ + Z19_ + Z2_ + Z18_
+      Z8_=dp1km1*Z8_
+      Z9_= - p1p4 - me2
+      Z9_=p2p3*Z9_
+      Z19_= - p2p4*p1p4
+      Z22_= - p1p2*me2
+      Z24_=p2p4 - me2
+      Z26_=p1p2 - Z24_
+      Z26_=p3p4*Z26_
+      Z9_=Z26_ + Z22_ + Z19_ + Z7_ + Z9_
+      Z9_=dp4km1*Z9_
+      Z12_=Z12_ + Z23_
+      Z12_=Z12_*Z13_
+      Z12_=Z12_ + mm2 + p1p2
+      Z12_=p3p4*Z12_
+      Z11_= - Z14_ + Z11_ - Z15_
+      Z11_=p2p3*Z11_
+      Z13_=p3p4*Z21_
+      Z11_=Z13_ + Z11_
+      Z11_=Z11_*Z17_
+      Z13_= - p1p3*Z28_
+      Z2_=Z11_ + Z13_ - Z2_ + Z12_ + Z18_
+      Z2_=dp3km1*Z2_
+      Z10_=p2p4 - Z10_
+      Z10_=p2p3*Z10_
+      Z11_=p1p2*Z24_
+      Z12_=me2 - p1p2
+      Z12_=p3p4*Z12_
+      Z7_=Z12_ + Z11_ + Z7_ + Z10_
+      Z7_=dp2km1*Z7_
+      Z2_=Z2_ + Z8_ + Z9_ + Z7_
+      Z2_=64*Z2_
+      radmuesums=t24m2v(1)*Z4_ + t13m2v(1)*Z3_ +
+     & t13m1v(1)*t24m1v(1)*Z6_ + NS2*t24m2v(1)*
+     &     Z16_ + NS2*t13m2v(1)*Z20_ + NS2*t13m1v(1)*t24m1v(1)*Z25_
+     & + NS*t24m2v(1)*Z5_ + NS
+     & *t13m2v(1)*Z1_ + NS*t13m1v(1)*t24m1v(1)*Z2_
+
+      extraweights(1:2) = 1.d0
+      
+      endif
+
+      extraweights(0) = 1.d0
+      
+      radmuesums = coverm2*radmuesums
       
       return
       end
+      
 ****************************************************
       double precision function apvertex(x)
       implicit double precision (a-h,m,o-z)
@@ -1240,9 +1833,9 @@ cfrpasserafael
       double complex b(0:rank/2,0:rank),buv(0:rank/2,0:rank)
       call SwitchOffCacheSystem_cll
       call B_cll(b,buv,q2*cuno,m2*cuno,0.d0*cuno,1)
-      Sigrlii = 2.d0*b(0,1)+1.d0
-      Sigrlii = -alpha*0.25d0/pi* Sigrlii      
       call SwitchOnCacheSystem_cll
+      Sigrlii = 2.d0*b(0,1)+1.d0
+      Sigrlii = -alpha*0.25d0/pi* Sigrlii
 #else
 #include "looptools.h"
       RealType uquad
@@ -1273,9 +1866,9 @@ c     Sigrlii = 2.d0*B1(q2,m2,0.d0)+1.d0
       double complex B1o,dB0o,dB1o
       call SwitchOffCacheSystem_cll
       call DB1_cll(dB1o,q2*cuno,m2*cuno,0.d0*cuno)
+      call SwitchOnCacheSystem_cll
       dSigrlii = 2.d0*dB1o
       dSigrlii = -alpha*0.25d0/pi* dSigrlii
-      call SwitchOnCacheSystem_cll
 #else
 #include "looptools.h"
       RealType uquad
@@ -1311,9 +1904,9 @@ c     dSigrlii = 2.d0*DB1(q2,m2,0.d0)
       double complex b(0:rank/2,0:rank),buv(0:rank/2,0:rank)
       call SwitchOffCacheSystem_cll
       call B_cll(b,buv,q2*cuno,m2*cuno,0.d0*cuno,1)
+      call SwitchOnCacheSystem_cll
       SigSii = 4.d0*b(0,0)-2.d0
       SigSii = -alpha*0.25d0/pi* SigSii
-      call SwitchOnCacheSystem_cll      
 #else      
 #include "looptools.h"
       RealType uquad
@@ -1346,9 +1939,9 @@ c     SigSii = 4.d0*B0(q2,m2,0.d0)-2.d0
       integer rank
       call SwitchOffCacheSystem_cll
       call DB0_cll(dB0o,q2*cuno,m2*cuno,0.d0*cuno)
+      call SwitchOnCacheSystem_cll
       dSigSii = 4.d0*dB0o
       dSigSii = -alpha*0.25d0/pi* dSigSii
-      call SwitchOnCacheSystem_cll      
 #else      
 #include "looptools.h"
       RealType uquad
@@ -2109,10 +2702,9 @@ c      subroutine loadQEDfuns1g1LCOLLIERten(iprint,iten,p1,p2,p3,p4,k)
 #endif      
       implicit none
       double precision k(0:3)
-c      double precision p1k,p2k,p3k,p4k
 #include "invariants.h"
 #include "funsdeccmn1g1L.h"
-      integer iprint,iten
+      integer iprint
       parameter (iprint = 0)
       real*16 qdot
       external qdot
@@ -2186,15 +2778,21 @@ c      double precision p1k,p2k,p3k,p4k
       double complex cEuvPt1(0:r3/2,0:r3,0:r3,0:r3,0:r3)
       double complex cEuvPt2(0:r3/2,0:r3,0:r3,0:r3,0:r3)
 
+      double complex Pmomvec(0:3,4)
+      double complex Pmass2(0:4),Pmominv(10)
+      
+      
       double precision PtErr(0:r3)
       double precision acc0,acc1,acc2
       integer ierr
       
       integer indexes(0:3,4),i,l,j,m,ii,mask(35*4)
       double complex c,tmp
-      integer ifirst
+      integer ifirst,cnr
       integer ponoff(160)
-      common/funs1g1LCOLLIERtenpt/c,ifirst,indexes,mask,ponoff,iten
+      common/funs1g1LCOLLIERtenpt/c,ifirst,indexes,mask,ponoff
+      integer iten
+      common/usetruetensors/iten
       data ifirst,ponoff,iten /0,160*0,0/
       data mask /
      .     0,0,0,0, ! 1
@@ -2239,36 +2837,16 @@ c      double precision p1k,p2k,p3k,p4k
          indexes(1,2) = 1
          indexes(2,3) = 1
          indexes(3,4) = 1
-
          ponoff = 1
-c         ponoff(1) = 0
-c         ponoff(4) = 0
-c         ponoff(14) = 0
-c         ponoff(37) = 0
-
-c         ponoff(41) = 0
-c         ponoff(43) = 0
-c         ponoff(51) = 0
-c         ponoff(72) = 0
-
-c         ponoff(81) = 0
-c         ponoff(84) = 0
-c         ponoff(94) = 0
-c         ponoff(117) = 0
-
-c         ponoff(121) = 0
-c         ponoff(123) = 0
-c         ponoff(131) = 0
-c         ponoff(151) = 0
-                 
          include 'funssettozero.f'
          c = cuno
          ifirst = 1
       endif
-
-c      if (iten.eq.1) call InitCacheSystem_cll(3,5)      
-      call InitEvent_cll(2)
-
+***************************************************
+      iten = 1 ! defaulting to true tensors for up-down boxes and pentagons
+***************************************************
+      cnr = 2
+      call InitEvent_cll(cnr)
       
       if (QRmu.eq.1) then
       call B_cll(BmuSf1,BmuuvSf1,c*p1mk2,c*0.d0,c*mm2,r1)
@@ -2327,7 +2905,7 @@ c      if (iten.eq.1) call InitCacheSystem_cll(3,5)
       C11muV4 = CmuV4(0,2,0)
       C12muV4 = CmuV4(0,1,1)
       C22muV4 = CmuV4(0,0,2)
-      
+
       call D_cll(DmuBx1,DmuuvBx1,
      .     c*mm2,c*0.d0,c*t24,c*mm2,c*p1mk2,c*t13,
      .     c*0.d0,c*mm2,c*mm2,c*mm2,r3)
@@ -2500,7 +3078,8 @@ c      if (iten.eq.1) call InitCacheSystem_cll(3,5)
       
 **********************************
       if (QRmu.eq.0.or.QRe.eq.0) return
-**********************************      
+**********************************
+      
       IF (iten.eq.0) THEN
 
       call D_cll(dDBx1,dDuvBx1,c*p1mk2,c*mm2,c*me2,c*me2,c*t24,c*s34,
@@ -2633,17 +3212,17 @@ c     .     c*me2,r3,PtErr)
 *** NEW ROUTING!
       call E_cll(dEPt1,dEuvPt1,0.d0*c,mm2*c,me2*c,me2*c,mm2*c,
      .     p3pk2*c,s34*c,t24*c,s12*c,p1mk2*c,
-     .     mm2*c,mm2*c,0.d0*c,me2*c,0.d0*c,r3,PtErr)
+     .     mm2*c,mm2*c,0.d0*c,me2*c,0.d0*c,r3)
       call E_cll(dEPt2,dEuvPt2,me2*c,mm2*c,mm2*c,me2*c,0.d0*c,
      .     s12*c,t13*c,s34*c,p4pk2*c,p2mk2*c,
-     .     me2*c,0.d0*c,mm2*c,0.d0*c,me2*c,r3,PtErr)
+     .     me2*c,0.d0*c,mm2*c,0.d0*c,me2*c,r3)
       call E_cll(cEPt1,cEuvPt1,0.d0*c,mm2*c,me2*c,me2*c,mm2*c,
      .     p3pk2*c,u23*c,t24*c,u14*c,p1mk2*c,
      .     mm2*c,mm2*c,0.d0*c,me2*c,0.d0*c,
-     .     r3,PtErr)
+     .     r3)
       call E_cll(cEPt2,cEuvPt2,me2*c,mm2*c,mm2*c,me2*c,0.d0*c,
      .     u23*c,t13*c,u14*c,p4pk2*c,p2mk2*c,
-     .     me2*c,0.d0*c,mm2*c,0.d0*c,me2*c,r3,PtErr)
+     .     me2*c,0.d0*c,mm2*c,0.d0*c,me2*c,r3)
 
       d1E0   = dEPt1(0,0,0,0,0) !* ponoff(1)  
       d1E1   = dEPt1(0,1,0,0,0) !* ponoff(2)  
@@ -2811,42 +3390,38 @@ c     .     c*me2,r3,PtErr)
       
       ELSE ! if iten = 1
 
-         print*,'the new routing is not implemented here! stopping'
-         print*,'TENSORS NOT IMPLEMENTED ANYMORE!'
-         print*,'in case you need to pass in input also momenta'
-         stop
+** 5 point tensors with Eten_cll functions conflicts with cache management,
+** but with TNten_cll everything seems to work correctly. It's for sure a
+** Collier bug
+c     print*,'Tensors work, but there is a problem with '//
+c     .        'Collier cache to be understood. Stopping.'
+c         stop         
+         call Dten_cll(dDBx1ten,dDBx1tenuv,c*(p1c-k1c),c*(p4c-p2c),
+     .        -c*p2c,c*p1mk2,c*mm2,c*me2,c*me2,c*t24,c*s34,
+     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
+         call Dten_cll(dDBx2ten,dDBx2tenuv,c*p1c,c*(p4c-p2c),-c*p2c,
+     .        c*mm2,c*p3pk2,c*me2,c*me2,c*t24,
+     .        c*s12,c*0.d0,c*mm2,c*0.d0,c*me2,r2)
+         call Dten_cll(dDBx3ten,dDBx3tenuv,c*p1c,c*(p1c-p3c),
+     .        c*(k1c-p2c),c*mm2,c*mm2,c*me2,c*p2mk2,c*t13,c*s34,
+     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
+         call Dten_cll(dDBx4ten,dDBx4tenuv,c*p1c,c*(p1c-p3c),-c*p2c,
+     .        c*mm2,c*mm2,c*p4pk2,c*me2,c*t13,c*s12,
+     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)      
 
-c$$$         call InitCacheSystem_cll(3,5) ! without this, it doesnt work...
-c$$$         call InitEvent_cll(3)
-c$$$
-c$$$c     call InitCacheSystem_cll(3,5)
-c$$$c     call InitEvent_cll(3)
-c$$$         
-c$$$         call Dten_cll(dDBx1ten,dDBx1tenuv,c*(p1-k),c*(p4-p2),-c*p2,
-c$$$     .        c*p1mk2,c*mm2,c*me2,c*me2,c*t24,c*s34,
-c$$$     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
-c$$$         call Dten_cll(dDBx2ten,dDBx2tenuv,c*p1,c*(p4-p2),-c*p2,
-c$$$     .        c*mm2,c*p3pk2,c*me2,c*me2,c*t24,
-c$$$     .        c*s12,c*0.d0,c*mm2,c*0.d0,c*me2,r2)
-c$$$         call Dten_cll(dDBx3ten,dDBx3tenuv,c*p1,c*(p1-p3),c*(k-p2),
-c$$$     .        c*mm2,c*mm2,c*me2,c*p2mk2,c*t13,c*s34,
-c$$$     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
-c$$$         call Dten_cll(dDBx4ten,dDBx4tenuv,c*p1,c*(p1-p3),-c*p2,
-c$$$     .        c*mm2,c*mm2,c*p4pk2,c*me2,c*t13,c*s12,
-c$$$     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)      
-c$$$
-c$$$         call Dten_cll(cDBx1ten,cDBx1tenuv,c*(p1-k),c*(p4-p2),c*p4,
-c$$$     .        c*p1mk2,c*mm2,c*me2,c*me2,c*t24,c*u23,
-c$$$     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
-c$$$         call Dten_cll(cDBx2ten,cDBx2tenuv,c*p1,c*(p4-p2),c*p4,
-c$$$     .        c*mm2,c*p3pk2,c*me2,c*me2,c*t24,c*u14,
-c$$$     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
-c$$$         call Dten_cll(cDBx3ten,cDBx3tenuv,c*p1,c*(p1-p3),c*p4,
-c$$$     .        c*mm2,c*mm2,c*p2mk2,c*me2,c*t13,c*u14,
-c$$$     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
-c$$$         call Dten_cll(cDBx4ten,cDBx4tenuv,c*p1,c*(p1-p3),c*(p4+k),
-c$$$     .        c*mm2,c*mm2,c*me2,c*p4pk2,c*t13,c*u23,
-c$$$     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
+         call Dten_cll(cDBx1ten,cDBx1tenuv,c*(p1c-k1c),c*(p4c-p2c),
+     .        c*p4c,c*p1mk2,c*mm2,c*me2,c*me2,c*t24,c*u23,
+     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
+         call Dten_cll(cDBx2ten,cDBx2tenuv,c*p1c,c*(p4c-p2c),c*p4c,
+     .        c*mm2,c*p3pk2,c*me2,c*me2,c*t24,c*u14,
+     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
+         call Dten_cll(cDBx3ten,cDBx3tenuv,c*p1c,c*(p1c-p3c),c*p4c,
+     .        c*mm2,c*mm2,c*p2mk2,c*me2,c*t13,c*u14,
+     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
+         call Dten_cll(cDBx4ten,cDBx4tenuv,c*p1c,c*(p1c-p3c),
+     .        c*(p4c+k1c),c*mm2,c*mm2,c*me2,c*p4pk2,c*t13,c*u23,
+     .        c*0.d0,c*mm2,c*0.d0,c*me2,r2)
+
 c$$$         
 c$$$****  standard routing         
 c$$$         call Eten_cll(dEPt1ten,dEPt1tenuv,
@@ -2870,33 +3445,124 @@ c$$$     .        c*mm2,c*mm2,c*me2,c*0.d0,c*me2,
 c$$$     .        c*t13,c*u23,c*p2mk2,c*p4pk2,c*u14,
 c$$$     .        c*0.d0,c*mm2,c*0.d0,c*me2,c*me2,r3)
 c$$$         
-c$$$c     dEPt1ten = (0.d0,0.d0)
-c$$$c     dEPt2ten = (0.d0,0.d0)
-c$$$c     cEPt1ten = (0.d0,0.d0)
-c$$$c     cEPt2ten = (0.d0,0.d0)
-c$$$***** second routing, doesn't change much... uff
-c$$$***** trying recola routing         
-c$$$c     call Eten_cll(dEPt1ten,dEPt1tenuv,
-c$$$c     .        c*p1,c*(p1+p2),c*(p3+k),c*k,
-c$$$c     .        c*mm2,c*me2,c*me2,c*mm2,c*0.d0,
-c$$$c     .        c*s12,c*t24,c*s34,c*p3pk2,c*p1mk2,
-c$$$c     .        c*mm2,c*0.d0,c*me2,c*0.d0,c*mm2,r3)
-c$$$c     call Eten_cll(dEPt2ten,dEPt2tenuv,
-c$$$c     .        c*p1,c*(p1+p2),c*(p3+p4),c*p3,
-c$$$c     .        c*mm2,c*me2,c*0.d0,c*me2,c*mm2,
-c$$$c     .        c*s12,c*p2mk2,c*p4pk2,c*s34,c*t13,
-c$$$c     .        c*mm2,c*0.d0,c*me2,c*me2,c*0.d0,r3)
-c$$$c     call Eten_cll(cEPt1ten,cEPt1tenuv,
-c$$$c     .        c*p1,c*(p1-p4),c*(p3+k),c*k,
-c$$$c     .        c*mm2,c*me2,c*me2,c*mm2,c*0.d0,
-c$$$c     .        c*u14,c*t24,c*u23,c*p3pk2,c*p1mk2,
-c$$$c     .        c*mm2,c*0.d0,c*me2,c*0.d0,c*mm2,r3)
-c$$$c     call Eten_cll(cEPt2ten,cEPt2tenuv,
-c$$$c     .        c*p1,c*(p1-p4),c*(p3-p2),c*p3,
-c$$$c     .        c*mm2,c*me2,c*0.d0,c*me2,c*mm2,
-c$$$c     .        c*u14,c*p4pk2,c*p2mk2,c*u23,c*t13,
-c$$$c     .        c*mm2,c*0.d0,c*me2,c*me2,c*0.d0,r3)
-c$$$***********************
+c         call SwitchOnCacheSystem_cll
+c         call SwitchOffCacheSystem_cll
+*** NEW ROUTING!
+c         call Eten_cll(dEPt1ten,dEPt1tenuv,
+c     .        c*(-k1c),c*(-p3c-k1c),c*(-p1c-p2c),c*(-p1c),
+c     .        0.d0*c,mm2*c,me2*c,me2*c,mm2*c,
+c     .        p3pk2*c,s34*c,t24*c,s12*c,p1mk2*c,
+c     .        mm2*c,mm2*c,0.d0*c,me2*c,0.d0*c,r3)
+c         call Eten_cll(dEPt2ten,dEPt2tenuv,
+c     .        c*p2c,c*(p2c+p1c),c*(p4c+k1c),c*(k1c),
+c     .        me2*c,mm2*c,mm2*c,me2*c,0.d0*c,
+c     .        s12*c,t13*c,s34*c,p4pk2*c,p2mk2*c,
+c     .        me2*c,0.d0*c,mm2*c,0.d0*c,me2*c,r3)        
+c         call Eten_cll(cEPt1ten,cEPt1tenuv,
+c     .        -c*k1c,c*(-p3c-k1c),c*(-p1c+p4c),c*(-p1c),
+c     .        0.d0*c,mm2*c,me2*c,me2*c,mm2*c,
+c     .        p3pk2*c,u23*c,t24*c,u14*c,p1mk2*c,
+c     .        mm2*c,mm2*c,0.d0*c,me2*c,0.d0*c,
+c     .        r3)        
+c         call Eten_cll(cEPt2ten,cEPt2tenuv,
+c     .        c*p2c,c*(p2c-p3c),c*(p4c+k1c),c*(k1c),
+c     .        me2*c,mm2*c,mm2*c,me2*c,0.d0*c,
+c     .        u23*c,t13*c,u14*c,p4pk2*c,p2mk2*c,
+c     .        me2*c,0.d0*c,mm2*c,0.d0*c,me2*c,r3)
+***   NEW ROUTING!
+
+         Pmomvec(:,1) = c*(-k1c)
+         Pmomvec(:,2) = c*(-p3c-k1c)
+         Pmomvec(:,3) = c*(-p1c-p2c)
+         Pmomvec(:,4) = c*(-p1c)
+         Pmominv(1)   = 0.d0*c
+         Pmominv(2)   = mm2*c
+         Pmominv(3)   = me2*c
+         Pmominv(4)   = me2*c
+         Pmominv(5)   = mm2*c
+         Pmominv(6)   = p3pk2*c
+         Pmominv(7)   = s34*c
+         Pmominv(8)   = t24*c
+         Pmominv(9)   = s12*c
+         Pmominv(10)  = p1mk2*c
+         Pmass2(0)    = mm2*c
+         Pmass2(1)    = mm2*c
+         Pmass2(2)    = 0.d0*c 
+         Pmass2(3)    = me2*c
+         Pmass2(4)    = 0.d0*c 
+         call TNten_cll(dEPt1ten,dEPt1tenuv,
+     .        Pmomvec,Pmominv,Pmass2,
+     .        5,r3)
+
+         Pmomvec(:,1) = c*p2c
+         Pmomvec(:,2) = c*(p2c+p1c)
+         Pmomvec(:,3) = c*(p4c+k1c)
+         Pmomvec(:,4) = c*(k1c)
+         Pmominv(1)   = me2*c
+         Pmominv(2)   = mm2*c
+         Pmominv(3)   = mm2*c
+         Pmominv(4)   = me2*c
+         Pmominv(5)   = 0.d0*c
+         Pmominv(6)   = s12*c
+         Pmominv(7)   = t13*c
+         Pmominv(8)   = s34*c
+         Pmominv(9)   = p4pk2*c
+         Pmominv(10)  = p2mk2*c
+         Pmass2(0)    = me2*c
+         Pmass2(1)    = 0.d0*c
+         Pmass2(2)    = mm2*c
+         Pmass2(3)    = 0.d0*c
+         Pmass2(4)    = me2*c
+         call TNten_cll(dEPt2ten,dEPt2tenuv,
+     .        Pmomvec,Pmominv,Pmass2,
+     .        5,r3)
+         
+         Pmomvec(:,1) = -c*k1c
+         Pmomvec(:,2) = c*(-p3c-k1c)
+         Pmomvec(:,3) = c*(-p1c+p4c)
+         Pmomvec(:,4) = c*(-p1c)
+         Pmominv(1)   = 0.d0*c
+         Pmominv(2)   = mm2*c
+         Pmominv(3)   = me2*c
+         Pmominv(4)   = me2*c
+         Pmominv(5)   = mm2*c
+         Pmominv(6)   = p3pk2*c
+         Pmominv(7)   = u23*c
+         Pmominv(8)   = t24*c
+         Pmominv(9)   = u14*c
+         Pmominv(10)  = p1mk2*c
+         Pmass2(0)    = mm2*c
+         Pmass2(1)    = mm2*c
+         Pmass2(2)    = 0.d0*c
+         Pmass2(3)    = me2*c
+         Pmass2(4)    = 0.d0*c
+         call TNten_cll(cEPt1ten,cEPt1tenuv,
+     .        Pmomvec,Pmominv,Pmass2,
+     .        5,r3)
+
+         Pmomvec(:,1) = c*p2c
+         Pmomvec(:,2) = c*(p2c-p3c)
+         Pmomvec(:,3) = c*(p4c+k1c)
+         Pmomvec(:,4) = c*(k1c)
+         Pmominv(1)   = me2*c
+         Pmominv(2)   = mm2*c
+         Pmominv(3)   = mm2*c
+         Pmominv(4)   = me2*c
+         Pmominv(5)   = 0.d0*c
+         Pmominv(6)   = u23*c
+         Pmominv(7)   = t13*c
+         Pmominv(8)   = u14*c
+         Pmominv(9)   = p4pk2*c
+         Pmominv(10)  = p2mk2*c
+         Pmass2(0)    = me2*c
+         Pmass2(1)    = 0.d0*c
+         Pmass2(2)    = mm2*c
+         Pmass2(3)    = 0.d0*c
+         Pmass2(4)    = me2*c
+         call TNten_cll(cEPt2ten,cEPt2tenuv,
+     .        Pmomvec,Pmominv,Pmass2,
+     .        5,r3)
+c         call SwitchOnCacheSystem_cll
       ENDIF
 
 c      if (iprint.eq.1) then 
@@ -2911,13 +3577,17 @@ c      endif
       integer i,j,k,nact,rank
       double precision pa(0:3),pb(0:3),pc(0:3)
       double precision pam(0:3),pbm(0:3),pcm(0:3)
-      double complex ten(0:rank,0:rank,0:rank,0:rank),tmp
+      double complex ten(0:rank,0:rank,0:rank,0:rank),tmp,cu
       integer ifirst,indexes(0:3,4)
       double precision st
       data ifirst /0/
       double precision u,uo2,uo3,uo6
-      common/dottencmn/u,uo2,uo3,uo6,ifirst,indexes
+      common/dottencmn/u,uo2,uo3,uo6,cu,ifirst,indexes
 
+      double complex epsfuncmom
+      external epsfuncmom
+      double complex vten(0:3)
+      
       if (ifirst.eq.0) then
          indexes      = 0
          indexes(0,1) = 1
@@ -2928,10 +3598,20 @@ c      endif
          uo2 = u/2.d0
          uo3 = u/3.d0
          uo6 = u/6.d0
+         cu  = (1.d0,0.d0)
          ifirst = 1
       endif
 
       dotten = (0.d0,0.d0)
+      if (nact.eq.-2) then
+         vten(0) = ten(1,0,0,0)
+         vten(1) = ten(0,1,0,0)
+         vten(2) = ten(0,0,1,0)
+         vten(3) = ten(0,0,0,1)
+         dotten  = epsfuncmom(cu*pa,cu*pb,cu*pc,vten)
+         return
+      endif
+      
       if (nact.eq.-1) then
          dotten = ten(2,0,0,0)-ten(0,2,0,0)-ten(0,0,2,0)-ten(0,0,0,2)
          return
@@ -2964,11 +3644,8 @@ c      endif
       if (nact.eq.2) then
          do i = 0,3
             do j = i,3
-               if (j.eq.i) then
-                  st = uo2
-               else
-                  st = u
-               endif               
+               st = u               
+               if (j.eq.i) st = uo2
                dotten = dotten + st*(pam(i)*pbm(j)+pam(j)*pbm(i))
      .              *ten(
      .              indexes(i,1)+indexes(j,1),
@@ -2987,11 +3664,10 @@ c      endif
          do i = 0,3
             do j = i,3
                do k = j,3
+                  st = u                  
                   if (i.eq.j.or.k.eq.j)  then
                      st = uo2
                      if (j.eq.i.and.k.eq.j) st = uo6
-                  else
-                     st = u
                   endif
                   dotten = dotten +
      .                 st*(
@@ -3009,30 +3685,127 @@ c      endif
             enddo
          enddo
       endif
-
-c$$$      if (nact.eq.3) then
-c$$$         do i = 0,3
-c$$$            do j = 0,3
-c$$$               do k = 0,3
-c$$$                  st = 1.d0
-c$$$                  dotten = dotten +
-c$$$     .                 st*(
-c$$$     .                 pam(i)*pbm(j)*pcm(k)
-c$$$     .                 )
-c$$$     .                 *ten(
-c$$$     .                 indexes(i,1)+indexes(j,1)+indexes(k,1),
-c$$$     .                 indexes(i,2)+indexes(j,2)+indexes(k,2),
-c$$$     .                 indexes(i,3)+indexes(j,3)+indexes(k,3),
-c$$$     .                 indexes(i,4)+indexes(j,4)+indexes(k,4)
-c$$$     .                 )
-c$$$               enddo
-c$$$            enddo
-c$$$         enddo
-c$$$      endif      
-
       return
       end
 *********************************************************
+*********************************************************
+      double complex function dottencmom(ten,nact,rank,pa,pb,pc)
+! as the previous one but with complex momenta
+      implicit none
+      integer i,j,k,nact,rank
+      double complex pa(0:3),pb(0:3),pc(0:3)
+      double complex pam(0:3),pbm(0:3),pcm(0:3)
+      double complex ten(0:rank,0:rank,0:rank,0:rank),tmp,cu
+      integer ifirst,indexes(0:3,4)
+      double precision st
+      double precision u,uo2,uo3,uo6
+      common/dottencmncmom/u,uo2,uo3,uo6,cu,ifirst,indexes
+      data ifirst /0/
+
+      double complex epsfuncmom
+      external epsfuncmom
+      double complex vten(0:3)
+      
+      if (ifirst.eq.0) then
+         indexes      = 0
+         indexes(0,1) = 1
+         indexes(1,2) = 1
+         indexes(2,3) = 1
+         indexes(3,4) = 1
+         u   = 1.d0
+         uo2 = u/2.d0
+         uo3 = u/3.d0
+         uo6 = u/6.d0
+         cu  = (1.d0,0.d0)
+         ifirst = 1
+      endif
+
+      dottencmom = (0.d0,0.d0)
+      if (nact.eq.-2) then
+         vten(0) = ten(1,0,0,0)
+         vten(1) = ten(0,1,0,0)
+         vten(2) = ten(0,0,1,0)
+         vten(3) = ten(0,0,0,1)
+         dottencmom  = epsfuncmom(pa,pb,pc,vten)
+         return
+      endif
+
+      if (nact.eq.-1) then
+         dottencmom =ten(2,0,0,0)-ten(0,2,0,0)-ten(0,0,2,0)-ten(0,0,0,2)
+         return
+      endif
+
+      if (nact.eq.0.and.rank.gt.2) then
+       dottencmom =
+     .+(ten(3,0,0,0) - ten(1,2,0,0) - ten(1,0,2,0) - ten(1,0,0,2))*pa(0)
+     .-(ten(2,1,0,0) - ten(0,3,0,0) - ten(0,1,2,0) - ten(0,1,0,2))*pa(1)
+     .-(ten(2,0,1,0) - ten(0,2,1,0) - ten(0,0,3,0) - ten(0,0,1,2))*pa(2)
+     .-(ten(2,0,0,1) - ten(0,2,0,1) - ten(0,0,2,1) - ten(0,0,0,3))*pa(3)         
+       return
+      endif
+
+      pam(0)   =  pa(0)
+      pam(1:3) = -pa(1:3)      
+      if (nact.eq.1) then
+         do i = 0,3
+            dottencmom = dottencmom + pam(i)*ten(
+     .           indexes(i,1),
+     .           indexes(i,2),
+     .           indexes(i,3),
+     .           indexes(i,4))
+         enddo
+         return
+      endif
+
+      pbm(0)   =  pb(0)
+      pbm(1:3) = -pb(1:3)
+      if (nact.eq.2) then
+         do i = 0,3
+            do j = i,3
+               st = u
+               if (j.eq.i) st = uo2
+               dottencmom=dottencmom+st*(pam(i)*pbm(j)+pam(j)*pbm(i))
+     .              *ten(
+     .              indexes(i,1)+indexes(j,1),
+     .              indexes(i,2)+indexes(j,2),
+     .              indexes(i,3)+indexes(j,3),
+     .              indexes(i,4)+indexes(j,4)
+     .              )
+            enddo
+         enddo
+         return
+      endif
+
+      pcm(0)   =  pc(0)
+      pcm(1:3) = -pc(1:3)
+      if (nact.eq.3) then
+         do i = 0,3
+            do j = i,3
+               do k = j,3
+                  st = u
+                  if (i.eq.j.or.k.eq.j)  then
+                     st = uo2
+                     if (j.eq.i.and.k.eq.j) st = uo6
+                  endif
+                  dottencmom = dottencmom +
+     .                 st*(
+     .                 pam(i)*pbm(j)*pcm(k)+pam(i)*pbm(k)*pcm(j)+
+     .                 pam(j)*pbm(i)*pcm(k)+pam(j)*pbm(k)*pcm(i)+
+     .                 pam(k)*pbm(i)*pcm(j)+pam(k)*pbm(j)*pcm(i)
+     .                 )
+     .                 *ten(
+     .                 indexes(i,1)+indexes(j,1)+indexes(k,1),
+     .                 indexes(i,2)+indexes(j,2)+indexes(k,2),
+     .                 indexes(i,3)+indexes(j,3)+indexes(k,3),
+     .                 indexes(i,4)+indexes(j,4)+indexes(k,4)
+     .                 )
+               enddo
+            enddo
+         enddo
+      endif
+      return
+      end
+*********************************************************      
       subroutine getQEDvertexes(vertexes)
       implicit none
       double complex C0ltmu,C1ltmu,C2ltmu,C11ltmu,C12ltmu,C22ltmu
@@ -3118,7 +3891,6 @@ c      vertexes = amplvertexes * tm1 * cover
 #else
       parameter (uquad=1.d0)
 #endif
-      
       integer*8 id,ic
       common/boxesfuns/
      .     D0ltd,D1ltd,D2ltd,D3ltd,
@@ -3128,7 +3900,8 @@ c      vertexes = amplvertexes * tm1 * cover
      .     D00ltc,D11ltc,D12ltc,D13ltc,
      .     D22ltc,D23ltc,D33ltc
       integer ifirst
-      common/loadboxes/pard,parc,ifirst
+      double complex cu
+      common/loadboxes/pard,parc,cu,ifirst
       data ifirst /0/
 
       data 
@@ -3157,6 +3930,8 @@ c      vertexes = amplvertexes * tm1 * cover
          pard(10) = me2
 
          parc = pard
+
+         cu = (1.d0,0.d0)
          
          ifirst = 1
       endif
@@ -3213,22 +3988,25 @@ c      vertexes = amplvertexes * tm1 * cover
       end
 **************************************************************************
       subroutine getQEDboxes(boxes)
-      implicit none
-      double complex Z1_,Z2_,Z3_,Z4_,Z5_,Z6_,Z7_
-      double complex Z8_,Z9_,Z10_,Z11_,Z12_,Z13_
-      double complex Z14_,Z15_,Z16_,Z17_,Z18_,Z19_,Z20_
-      double complex Z21_,Z22_,Z23_,Z24_,Z25_,Z26_
-      double complex Z27_
+c      implicit none
+c      double complex Z1_,Z2_,Z3_,Z4_,Z5_,Z6_,Z7_
+c      double complex Z8_,Z9_,Z10_,Z11_,Z12_,Z13_
+c      double complex Z14_,Z15_,Z16_,Z17_,Z18_,Z19_,Z20_
+c      double complex Z21_,Z22_,Z23_,Z24_,Z25_,Z26_
+c      double complex Z27_
+      implicit double complex (Z)
       double complex D0ltd,D1ltd,D2ltd,D3ltd
       double complex D0ltc,D1ltc,D2ltc,D3ltc
       double complex D00ltd,D11ltd,D12ltd,D13ltd
       double complex D22ltd,D23ltd,D33ltd
       double complex D00ltc,D11ltc,D12ltc,D13ltc
       double complex D22ltc,D23ltc,D33ltc
-      double complex boxes,cover
+      double complex boxes,cover,box1
       integer ifirst
-      data ifirst /0/
-      common/ifirstbox/cover,ifirst
+      double complex cu
+      double precision zerop(0:3),k1(0:3),k2(0:3),k3(0:3)
+      common/ifirstbox/cover,zerop,cu,ifirst
+      data ifirst /0/      
 #include "invariants.h"
       common/boxesfuns/
      .     D0ltd,D1ltd,D2ltd,D3ltd,
@@ -3238,14 +4016,25 @@ c      vertexes = amplvertexes * tm1 * cover
      .     D00ltc,D11ltc,D12ltc,D13ltc,
      .     D22ltc,D23ltc,D33ltc
 
-
+      integer rank
+      parameter (rank = 2)
+      double complex Dtend(0:rank,0:rank,0:rank,0:rank)
+      double complex Dtenc(0:rank,0:rank,0:rank,0:rank)
+      double complex Dtenduv(0:rank,0:rank,0:rank,0:rank)
+      double complex Dtencuv(0:rank,0:rank,0:rank,0:rank)
+      common/boxestenfuns/Dtend,Dtenc
+      double complex dottencmom
+      external dottencmom
+c      print*,cmu      
       if (QRmu.eq.0.or.QRe.eq.0) then
          boxes = (0.d0,0.d0)
          return
       endif
       
       if (ifirst.eq.0) then
-         cover  = ec4*im*pi216m1*2.d0
+         cover = ec4*im*pi216m1*2.d0
+         cu    = (1.d0,0.d0)
+         zerop = 0.d0
          ifirst = 1
       endif
 
@@ -3256,6 +4045,16 @@ c      vertexes = amplvertexes * tm1 * cover
       endif
       boxes = boxes * cover
 
+c      box1 = boxes
+c      print*,'line 3988 loops.F'
+c      if (Qmu.lt.0.d0) then
+c         include 'oneloop/boxesminus-ten.f'
+c      else
+c         include 'oneloop/boxesplus-ten.f'
+c      endif
+c      boxes = boxes * cover
+c      print*,boxes-box1
+      
 !!!      boxes = boxes * vpt ! done outside, it's better
       
       return
@@ -3489,21 +4288,11 @@ cc            p0 = p ! for cross-checks
                   p(1:3,i2) = + qtm/sqrt(p2s)*p2r
                endif
             endif
-
-c            print*,' '
-c            print*,p0(0:3,3),dot(p0(:,3),p0(:,3))/mm2
-c            print*,p(0:3,3),dot(p(:,3),p(:,3))/mm2
-c            print*,p0(0:3,4),dot(p0(:,4),p0(:,4))/me2
-c            print*,p(0:3,4),dot(p(:,4),p(:,4))/me2
-c            print*,p0(:,3)+p0(:,4)+p0(:,5)-p0(:,1)-p0(:,2)
-c            print*,p(:,3)+p(:,4)+p(:,5)-p(:,1)-p(:,2)
-
             p1h = p(:,1)
             p2h = p(:,2)
             p3h = p(:,3)
             p4h = p(:,4)
             kh  = p(:,5)
-            
          endif
       
          p1p2  = dot(p1h,p2h)
@@ -3526,9 +4315,7 @@ c            print*,p(:,3)+p(:,4)+p(:,5)-p(:,1)-p(:,2)
          p2mk2 = me2 - 2.d0*p2k !dot(p2-k,p2-k)
          p3pk2 = mm2 + 2.d0*p3k !dot(p3+k,p3+k)
          p4pk2 = me2 + 2.d0*p4k !dot(p4+k,p4+k)
-         
       endif
-      
       return
       end
 **************************************************************************
@@ -3554,15 +4341,6 @@ c            print*,p(:,3)+p(:,4)+p(:,5)-p(:,1)-p(:,2)
       e12cec5mu = epsfun2cmom(p1,p2,ce,c5mu)
       e23cec5mu = epsfun2cmom(p2,p3,ce,c5mu)
 
-c      print*,'<<<'
-c      print*,e13cmuc5e
-c      print*,e14cmuc5e
-c      print*,e14cec5mu
-c      print*,e34cec5mu
-c      print*,e12cmuc5e
-c      print*,e12cec5mu
-c      print*,e23cec5mu
-
       p1c5mu = dot1cmom(p1,c5mu)
       p2c5mu = dot1cmom(p2,c5mu)
       p3c5mu = dot1cmom(p3,c5mu)
@@ -3573,14 +4351,10 @@ c      print*,e23cec5mu
       p4c5e  = dot1cmom(p4,c5e)
 
       c5muc5e = dotcmom(c5mu,c5e)            
-      
-c$$$      emy12cmuc5e = epsfuncmom(cuno*p1,cuno*p2,cmu,c5e)*im
-c$$$      emy12cec5mu = epsfuncmom(cuno*p1,cuno*p2,ce,c5mu)*im
-c$$$      emy13cmuc5e = epsfuncmom(cuno*p1,cuno*p3,cmu,c5e)*im
-c$$$      emy14cmuc5e = epsfuncmom(cuno*p1,cuno*p4,cmu,c5e)*im
-c$$$      emy14cec5mu = epsfuncmom(cuno*p1,cuno*p4,ce,c5mu)*im
-c$$$      emy23cec5mu = epsfuncmom(cuno*p2,cuno*p3,ce,c5mu)*im
-c$$$      emy34cec5mu = epsfuncmom(cuno*p3,cuno*p4,ce,c5mu)*im
+
+! if needed      
+      cmucmn = cmu 
+      cecmn  = ce
       return
       end
 ***
@@ -3591,7 +4365,6 @@ c$$$      emy34cec5mu = epsfuncmom(cuno*p3,cuno*p4,ce,c5mu)*im
       parameter (im = (0.d0,1.d0))
 *      double complex dot_product
 *      external dot_product
-
 ** c(0) =        u1(1)d * u2(1) + u1(2)d * u2(2) + u1(3)d * u2(3) + u1(4)d * u2(4)
 ** c(1) =        u1(1)d * u2(4) + u1(2)d * u2(3) + u1(3)d * u2(2) + u1(4)d * u2(1)
 ** c(2) = im * (-u1(1)d * u2(4) + u1(2)d * u2(3) - u1(3)d * u2(2) + u1(4)d * u2(1))
@@ -3963,27 +4736,12 @@ c$$$      emy34cec5mu = epsfuncmom(cuno*p3,cuno*p4,ce,c5mu)*im
       return
       end
 ***************************************************
-
       
 *** Levi-Civita tensor contracted with 4 COMPLEX momenta
       double complex function epsfuncmom(q1,q2,q3,q4)
       implicit none
       double complex q1(0:3),q2(0:3),q3(0:3),q4(0:3)
       double complex e,e1
-      
-c      e = q1(1)*q2(2)*q3(3)*q4(0) - q1(1)*q2(2)*q3(0)*q4(3) +
-c     .    q1(1)*q2(3)*q3(0)*q4(2) - q1(1)*q2(3)*q3(2)*q4(0) +
-c     .    q1(1)*q2(0)*q3(2)*q4(3) - q1(1)*q2(0)*q3(3)*q4(2) +
-c     .    q1(2)*q2(1)*q3(0)*q4(3) - q1(2)*q2(1)*q3(3)*q4(0) +
-c     .    q1(2)*q2(3)*q3(1)*q4(0) - q1(2)*q2(3)*q3(0)*q4(1) +
-c     .    q1(2)*q2(0)*q3(3)*q4(1) - q1(2)*q2(0)*q3(1)*q4(3) +
-c     .    q1(3)*q2(1)*q3(2)*q4(0) - q1(3)*q2(1)*q3(0)*q4(2) +
-c     .    q1(3)*q2(2)*q3(0)*q4(1) - q1(3)*q2(2)*q3(1)*q4(0) +
-c     .    q1(3)*q2(0)*q3(1)*q4(2) - q1(3)*q2(0)*q3(2)*q4(1) +
-c     .    q1(0)*q2(1)*q3(3)*q4(2) - q1(0)*q2(1)*q3(2)*q4(3) +
-c     .    q1(0)*q2(2)*q3(1)*q4(3) - q1(0)*q2(2)*q3(3)*q4(1) +
-c     .    q1(0)*q2(3)*q3(2)*q4(1) - q1(0)*q2(3)*q3(1)*q4(2)
-
       
       e = q1(1) * (q2(2)*(q3(3)*q4(0) - q3(0)*q4(3))  +
      .             q2(3)*(q3(0)*q4(2) - q3(2)*q4(0))  +
@@ -3997,7 +4755,6 @@ c     .    q1(0)*q2(3)*q3(2)*q4(1) - q1(0)*q2(3)*q3(1)*q4(2)
      .    q1(0) * (q2(1)*(q3(3)*q4(2) - q3(2)*q4(3))  +
      .             q2(2)*(q3(1)*q4(3) - q3(3)*q4(1))  +
      .             q2(3)*(q3(2)*q4(1) - q3(1)*q4(2)))
-
       
       epsfuncmom = -(0.d0,1.d0) * e!! e chittemmuorto!!!
       return
@@ -4011,18 +4768,6 @@ c     .    q1(0)*q2(3)*q3(2)*q4(1) - q1(0)*q2(3)*q3(1)*q4(2)
       double precision q1(0:3),q2(0:3)
       double complex e,ev(0:3),dot1cmom
       external dot1cmom
-c      e = q1(1)*q2(2)*q3(3)*q4(0) - q1(1)*q2(2)*q3(0)*q4(3) +
-c     .    q1(1)*q2(3)*q3(0)*q4(2) - q1(1)*q2(3)*q3(2)*q4(0) +
-c     .    q1(1)*q2(0)*q3(2)*q4(3) - q1(1)*q2(0)*q3(3)*q4(2) +
-c     .    q1(2)*q2(1)*q3(0)*q4(3) - q1(2)*q2(1)*q3(3)*q4(0) +
-c     .    q1(2)*q2(3)*q3(1)*q4(0) - q1(2)*q2(3)*q3(0)*q4(1) +
-c     .    q1(2)*q2(0)*q3(3)*q4(1) - q1(2)*q2(0)*q3(1)*q4(3) +
-c     .    q1(3)*q2(1)*q3(2)*q4(0) - q1(3)*q2(1)*q3(0)*q4(2) +
-c     .    q1(3)*q2(2)*q3(0)*q4(1) - q1(3)*q2(2)*q3(1)*q4(0) +
-c     .    q1(3)*q2(0)*q3(1)*q4(2) - q1(3)*q2(0)*q3(2)*q4(1) +
-c     .    q1(0)*q2(1)*q3(3)*q4(2) - q1(0)*q2(1)*q3(2)*q4(3) +
-c     .    q1(0)*q2(2)*q3(1)*q4(3) - q1(0)*q2(2)*q3(3)*q4(1) +
-c     .    q1(0)*q2(3)*q3(2)*q4(1) - q1(0)*q2(3)*q3(1)*q4(2)
             
       e = q1(1) * (q2(2)*(q3(3)*q4(0) - q3(0)*q4(3))  +
      .             q2(3)*(q3(0)*q4(2) - q3(2)*q4(0))  +
@@ -4036,10 +4781,6 @@ c     .    q1(0)*q2(3)*q3(2)*q4(1) - q1(0)*q2(3)*q3(1)*q4(2)
      .    q1(0) * (q2(1)*(q3(3)*q4(2) - q3(2)*q4(3))  +
      .             q2(2)*(q3(1)*q4(3) - q3(3)*q4(1))  +
      .             q2(3)*(q3(2)*q4(1) - q3(1)*q4(2)))
-
-c      call getev(ev,q2,q3,q4)
-c      print*,'here',e-dot1cmom(q1,ev)
-
       
       epsfun2cmom = -(0.d0,1.d0) * e!! e chittemmuorto!!!
       return

@@ -9,8 +9,8 @@ Authors are listed in the [`AUTHORS`](AUTHORS.md) file.
 
 ### Citing the code
 We'd be grateful if you could cite the following papers when using the **`MESMER`** generator:  
-1. [Carloni Calame *et al.*, Towards muon-electron scattering at NNLO, JHEP 11 (2020) 028](https://inspirehep.net/literature/1805205)  
-2. [Alacevich *et al.*, Muon-electron scattering at NLO, JHEP 02 (2019) 155](https://inspirehep.net/literature/1703989)
+1. [Alacevich *et al.*, Muon-electron scattering at NLO, JHEP 02 (2019) 155](https://inspirehep.net/literature/1703989)
+2. [Carloni Calame *et al.*, Towards muon-electron scattering at NNLO, JHEP 11 (2020) 028](https://inspirehep.net/literature/1805205)  
 3. [E. Budassi *et al.*, NNLO virtual and real leptonic corrections to muon-electron scattering, 2109.14606 [hep-ph]](https://inspirehep.net/literature/1933852)
 
 ## Prerequisites & Compilation
@@ -53,7 +53,7 @@ The **`MESMER`** prompt	 looks like:
    [ type "run" to start generation, "help" for help or "quit" to abort ]
    [ Qmu       ] Incoming muon charge = 1 (in e+ charge units)
    [ Ebeam     ] Muon beam energy = 150. GeV
-   [ bspr      ] Beam energy spread = 0. %
+   [ extmubeam ] Feed generic muon beam externally (beam profile): no
    [ Eemin     ] Minimum electron LAB energy = 1. GeV
    [ themin    ] Minimum electron LAB angle = 0. mrad
    [ themax    ] Maximum electron LAB angle = 100. mrad
@@ -67,7 +67,7 @@ The **`MESMER`** prompt	 looks like:
    [ arun      ] alpha running is on
    [ hadoff    ] Hadronic VP is off: no
    [ nev       ] n. of events to generate: 10000000.
-   [ store     ] events storage: no
+   [ store     ] events storage: no old no
    [ storemode ] mode to store: 0
    [ path      ] files saved in test-run/
    [ seed      ] seed for pseudo-RNG = 42
@@ -85,7 +85,7 @@ The **`MESMER`** prompt	 looks like:
    [ wnorm     ] normalization cross section = -1.
    [ sync      ] random numbers sequence syncronization: 0 [0/1]
   
- Insert "parameter value" or "run" or "quit":
+ Insert "parameter value" or "run" or "quit": 
 ```
 
 By typing `help` at the prompt, a short description of the parameters that can be set is displayed (more details [here](#running-parameters-description)):
@@ -95,6 +95,8 @@ By typing `help` at the prompt, a short description of the parameters that can b
  Qmu       ---> incoming muon charge in e+ charge units [-1/1]
  Ebeam     ---> nominal muon beam energy (GeV)
  bspr      ---> beam energy spread percentage (%)
+ extmubeam ---> if muon beam 3-momentum is externally fed (beam profile) [yes/no].
+                If 'yes', the beam 3-momentum must be fed into the pipe 'path'/beamprofile.fifo
  Eemin     ---> minimum electron energy in the LAB (GeV)
  themin    ---> minimum electron angle in the LAB (mrad)
  themax    ---> maximum electron angle in the LAB (mrad)
@@ -108,7 +110,9 @@ By typing `help` at the prompt, a short description of the parameters that can b
  arun      ---> if running of alpha must be used [off/on/hadr5/nsk/knt]
  hadoff    ---> if switching off hadronic VP [yes/no]
  nev       ---> number of events to generate
- store     ---> if events have to be stored [yes/no]
+ store     ---> (3 parameters) if events have to be stored [yes/no],
+                which format [new/old] (for v2/v1),
+                if writing also coefficients for VP reweighting [yes/no] (active only for v2)
  storemode ---> which mode to use to store events [0/1/2]
              └> [0] plain ascii file 
              └> [1] root file (see README)
@@ -137,16 +141,18 @@ By typing `help` at the prompt, a short description of the parameters that can b
 ```
 ## Running parameters description
 
-In general, the routine `cuts(...)` in the file `cuts.F` can be modified according to the needs of the user. The default one applies the selection criteria described below.
+In general, the routine `cuts(...)` in the file `cuts.F` can be modified according to the needs of the user. The default one applies the selection criteria described below. The only mandatory generator level cut is `Eemin`, which **must** be stricty larger than *m<sub>e</sub>*. The other cuts can be set at their kinematical limits.
 
-The parameters that can be set are split into *principal* and *internal* parameters.  
-They are set by typing at the prompt `parameter value` (case sensitive).
+The parameters that can be set are split into *principal* and *internal* parameters and they are set by typing at the prompt `parameter value(s)` (case sensitive).
 
 ### Principal parameters
 
 * `Qmu [default 1]`: charge of the incoming muon in e+ units `[1 / -1]`
 * `Ebeam [150]`: nominal incoming muon energy in GeV
-* `bspr [0]`: Gaussian beam energy spread, in % of `Ebeam`
+* `extmubeam [no]`: feed generic muon beam externally (beam profile, see [below](#beam-profile)) `[yes/no]`.  
+The muon beam 3-momenta in the format *p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>* must be piped into the file `'path'/beamprofile.fifo`. The three components are generic, not necessarity along the positive z-axis.  
+**Notice:** when the muom beam is not along the positive z-axis, all the angles described below, used as generator level cuts, must be intended as relative to the muon beam direction
+* `bspr [0]`: Gaussian beam energy spread, in % of `Ebeam`. Active only if `extmubeam no`
 * `Eemin [1]`: minimum outgoing electron energy in GeV
 * `themax [100]`: maximum outgoing electron angle in mrad
 * `thmumin [0]`: minimum outgoing muon angle in mrad
@@ -166,8 +172,8 @@ They are set by typing at the prompt `parameter value` (case sensitive).
   * `knt`: include leptonic VP and for hadronic VP use Keshavarzi-Nomura-Teubner's parameterization
 * `hadoff [no]`: if hadronic VP has to be switched off `[yes/no]`
 * `nev [10000000.]`: number of events to be generated
-* `store [no]`: if events have to be stored `[yes/no]`
-* `storemode [0]`: if `store yes`, which mode to use to store events `[0/1/2]` (see [below](#description-of-event-format) for a short description of the event format)
+* `store [no old no]`: if events have to be stored `[yes/no]`, which storage version is to be used (`[old]` for v1, `[new]` for v2), if in the v2 event record the coefficients for the VP reweighting have to be written `[yes/no]`. See [below](#description-of-event-format) for a short description of the v1/v2 (old/new) event formats
+* `storemode [0]`: if `store yes`, which mode to use to store events `[0/1/2]`
   * `0`: plain ASCII text file
   * `1`: `ROOT` format. **`MESMER`** runs in parallel `write-root-events` (a symbolic link to `root-interface/write_MuE_MCevents.exe`), developed by G. Abbiendi, which writes through a named pipe a `.root` file with the events
   * `2`: an `xz` compressed file is saved
@@ -205,14 +211,15 @@ For unweightening, the maximum weight `sdmax` can be alternatively set by hand (
 * `ndistr [1]`: number of distributions at different orders. For example, if running at NNLO (`ord alpha2`), the distribution files saved in `path` can be produced also at NLO and LO with the same run. The defaults `ndistr 1` produces distributions only at the selected order. If `ord alpha` and `ndistr >=2`, distributions are produced at NLO and LO. If `ord alpha2`,  if `ndistr 2` they are produced at NNLO and NLO, if `ndistr 3`, distributions at NNLO, NLO and LO are saved
 * `sync [0]`: syncronization mode for random numbers `[0/1]`. This is used to make as correlated as possible two samples with same `seed` but different `Ebeam`. *This feature needs more cross-checks*
 
+### Beam profile
+If the code is run with `extmubeam yes`, it expects to read muon beam 3-momenta for each event from the named pipe `'path'/beamprofile.fifo`. As an example, a sample of 10<sup>5</sup> incoming muon momenta is provided in the file `beamprofile-example.txt.gz` (thanks to Mateusz Goncerz). To test it, run `mesmer` with `extmubeam yes` (and `nev` < 10<sup>5</sup>), which creates the pipe and waits to read muon beam 3-momenta, and issue in another shell `zcat beamprofile-example.txt.gz > 'path'/beamprofile.fifo`. Any provider of muon beam momenta must write on the same pipe, using the format *p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>* (in GeV). If `store yes new yes|no`, the momenta of the stored particles will account for the generic direction of the incoming muon.
+
 ## Description of event format
 The event format has been developed together with G. Abbiendi.
 
 Version 1 is compliant with the current version of the `ROOT` file writer ([mantained by G. Abbiendi](https://gitlab.cern.ch/muesli/nlo-mc/mue/-/tree/master/writer)), but it is limited to parse only LO, NLO and NNLO events (*events with extra leptonic pairs are not supported yet*).  
 
-**A more general event format will be agreed upon soon.**
-
-### Version 2 (not released yet)
+### Version 2 (still under development)
 
 The simple ASCII file (`storemode 0`) contains an header section between the tags `<header>` and `</header>` and a closing section between the tags `<footer>` and `</footer>`. After the header, each *event record* is enclosed between the `<event>` and `</event>` tags.  
 The header contains useful info about the run and the set parameters. The footer contains some statistics of the generated sample.  
@@ -221,21 +228,24 @@ In the header, the first lines define the `SAMPLE TAG`, independent generations 
 A typical *event record* looks like
 ```
  <event>
-  29
+  42
+  3
   4
-   1288.0833213939834        1274.1380019004034        1288.0485923275990     
+   7.8095926596468930        7.6978162481410175        7.8080524876985837     
    0.0000000000000000        0.0000000000000000     
-  13   0.0000000000000000        0.0000000000000000        149.99996278769049     
-  13   4.7351763229257753E-003  -3.7788242076383663E-002   148.56596423784202     
-  11  -4.7380575116014048E-003   3.7727552624132459E-002   1.4320550665709977     
-  22  -3.7225710186970653E-007   2.3176521780370965E-006   7.8860160895178325E-005
-  22   3.2534457774992014E-006   5.8371800073170300E-005   1.8646228958474713E-003
+  0.0000000000000000 6.5364544453905386E-008 1.4984872179145210E-006 1.0217440564926995E-005 -3.5773619113353054E-004 4.3651960301712784E-004 5.9685156108649662E-004 7.7928861519833872E-002 1.1381502449965999E-003 1.5852826328852689E-002 7.6022089937820363
+  -13   0.0000000000000000        0.0000000000000000        149.99996278769049     
+  -13 -0.10037474236270096        3.5966016117402458E-005   139.27262373767550     
+  11   1.2912320479053441E-002   1.7581244722062357E-003   1.4103729937323426     
+  22   6.8958665161184984E-002  -2.9624268532748676E-003   7.4286187467893452     
+  22   1.8503756722462530E-002   1.1683363649512295E-003   1.8883473092725849     
  </event>
 ```
-After the `<event>` tag, the first line is the event number and the second is the number (`nfs`) of final state particles (in this case a &mu;, an *e* and two &gamma;s).  
-In the third line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
-The fourth line represents the weights *w<sub>LO</sub>* and *w<sub>NLO</sub>* which can be used to get LO distributions from a NLO sample and LO and NLO distributions from a NNLO sample (in this case they are `0` because it's a 4-body final state).  
-The fifth line is the incoming &mu;, in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*, where *id* is the [PDG Monte Carlo code](https://pdg.lbl.gov/2021/web/viewer.html?file=%2F2021/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle and *p<sub>x</sub>*, *p<sub>y</sub>* and *p<sub>z</sub>* (in GeV) are the three-momentum components of the incoming muon. Its energy can be calculated with the muon mass which is stored in the header section.    
+After the `<event>` tag, the first line is the `seed` of the sample, the second line is the event number and the third is the number (`nfs`) of final state particles (in this case a &mu;, an *e* and two &gamma;s).  
+In the fourth line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
+The fifth line represents the weights *w<sub>LO</sub>* and *w<sub>NLO</sub>* which can be used to get LO distributions from a NLO sample and LO and NLO distributions from a NNLO sample (in this case they are `0` because it's a 4-body final state).  
+The sixth line (present only if `store yes new yes` is selected, i.e. the option to store coefficients for VP reweighting is chosen) represents 11 coefficients needed by the analysis tool to reweight the event when changing VP functions.  
+The seventh  line is the incoming &mu;, in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*, where *id* is the [PDG Monte Carlo code](https://pdg.lbl.gov/2021/web/viewer.html?file=%2F2021/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle and *p<sub>x</sub>*, *p<sub>y</sub>* and *p<sub>z</sub>* (in GeV) are the three-momentum components of the incoming muon. Its energy can be calculated with the muon mass which is stored in the header section.    
 Finally, the last `nfs` lines represent the *id* and three-momenta (in GeV) of the final state &mu;, *e* and two &gamma;s respectively, again in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*.  
 The tag `</event>` closes the *event record*.
 
@@ -262,7 +272,7 @@ After the `<event>` tag, the first line is the `seed` of the sample, the second 
 In the fourth line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
 The fifth line represents the weight *w<sub>LO</sub>* which can be used to get LO distributions from a NLO sample (in this case it is `0` because it's a 3-body final state).  
 The sixth line is the incoming &mu; energy in GeV.  
-Finally, the last three lines represent the momenta (in GeV) of the final state &mu;, *e* and &gamma; respectively, in the format E p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>.  
+Finally, the last three lines represent the momenta (in GeV) of the final state &mu;, *e* and &gamma; respectively, in the format *E p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*.  
 The tag `</event>` closes the *event record*.
 
 The `ROOT` file writer reads through a named pipe this event format and writes all the information into a `.root` file.

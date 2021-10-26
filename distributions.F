@@ -94,7 +94,9 @@
       tmp(31) = 'en6lab_'
       tmp(32) = 'm56_'
 
-
+c      tmp(33) = 'emuin'
+c      tmp(34) = 'thmuin'
+      
 
 c      tmp(35) = 'tripleprod_'
 c      tmp(36) = 'acoplGA_'
@@ -220,7 +222,7 @@ c         print*,trim(distrstring(1:i2+2))
       common/ionlyfirsttime/ifirst,icount
       data ifirst,icount /1,0/ 
 
-      common/tmintmax/tmin,tmax
+      common/tmintmaxfordistributions/tmin,tmax
       common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
@@ -410,7 +412,8 @@ c         bma(11) = sqrt(s)*0.5d0
 
          bmi(14) = bmi(11)+ m1 !bmi(13)
          bma(14) = bma(11)+bma(13)
-
+         bma(14) = bma(14)!*1.15d0
+         
          bmi(15) = 0.d0
          bma(15) = 40.d0 !1.25d0*bma(1) !pi * 1d3
          bmi(16) = max(atleasteg,0.005d0*emulab)
@@ -466,6 +469,12 @@ c         bma(32) = 1.d0
          
          bmi(23) = bmi(2)
          bma(23) = bma(2)
+
+c         bmi(33) = 50.d0
+c         bma(33) = 180.d0
+c         bmi(34) = 0d0
+c         bma(34) = 10.d0
+         
          
 c         do k = 1,100
 c         print*,'RESET limits for: 2,5,11 '
@@ -575,7 +584,7 @@ c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
       fun(13) = p3(0)
       
       fun(14) = sqrt(dot(p3+p4,p3+p4))
-
+      
       fun(21) = acollinearity(p3,p4)
       fun(22) = -1d3
       
@@ -617,6 +626,10 @@ c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
             fun(27) = qb2(0)
          endif
 
+c         fun(33) = truep1lab(0)
+c         fun(34) = acos(truep1lab(3)/sqrt(tridot(truep1lab,truep1lab)))
+c         fun(34) = fun(34)*1d3
+         
 
          fun(23) = pinside_e(0)
 ***********pairs
@@ -625,7 +638,6 @@ c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
          fun(6) = bmi(6) - 1d3
          fun(9) = bmi(9) - 1d3         
          if (p6(0).gt.0.5d0*ame) then
-
             fun(24) = acos(pinside_e(3)/
      .           sqrt(tridot(pinside_e,pinside_e)))*1d3
             fun(25) = dot(p2lab - pinside_e,p2lab - pinside_e)

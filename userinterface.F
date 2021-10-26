@@ -7,7 +7,7 @@
       logical istop
       character*50 r8tostr,r4tostr,itostr,i8tostr
       double precision csi(2)
-      character*20  c,ctmp
+      character*20  c,ctmp,ctmp2,ctmp3
       character*100 cinput
       character*6   ord,arun,chadoff
       character*10  model
@@ -31,8 +31,9 @@
       common/zparameters/mz,mz2,gz,gz2,mw,mw2,stw,ctw,gv,ga
       common/qedORDER/ord
       integer*8 iwriteout
-      integer isync,seed,nsearch,iverbose,nw
-      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
+      integer isync,seed,nsearch,iverbose,nw,istorver,icwvp
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
       common/charinput/model,eventlimiter,store,storefile,outfile
       common/cmnpath/path
       common/realinput/anpoints,sdifmax
@@ -67,7 +68,7 @@
       data iper,iid /0,0/
 !!!      
       common/weightnormalization/wnorm
-      character*9 setkey(40)
+      character*9 setkey(41)
 c$$$      
 c$$$ for teubner routine, 2010/05/19
 c$$$
@@ -121,7 +122,8 @@ c$$$
      +     'wnorm ',  ! 37
      +     'themin', ! 38
      +     'Ethr', ! 39
-     +     'ththr'  ! 40
+     +     'ththr',  ! 40
+     +     'extmubeam'  ! 41
      +     /
 * BSM parameters
       common/bsmparams/bsmmass,yae,yam,bsmlambda,gagg,ibsm
@@ -149,9 +151,15 @@ c$$$
 *** opening stdout as utf-8!      
       open(stdout,encoding='UTF-8')
 ***
-
+      istorver   = 2
+      icwvp      = 1
+#ifdef RELEASE
+      istorver   = 1
+      icwvp      = 0
+#endif      
       ismualongz = 1
-      
+c      ismualongz = 0
+
 *** for real pairs
       iid   = 1
       iper  = 1
@@ -166,24 +174,22 @@ c$$$
 #ifndef RELEASE
       print*,'iid iper and noper'
       read*,iid,iper,noper
-      
 **********************      
 *******************************
-
 c      print*,'Input ionlybubbles'
 c      read*,ionlybubbles
-      print*,'Input iexnnlobubbles (0/1/2'
+      print*,'Input iexnnlobubbles (0/1/2)'
+!     0 -- no nnlo exact bubbles
+!     1 -- only VP NLO blob
+!     2 -- add also non factorizable corrections via DR relations
       read*,iexnnlobubbles
-      
       print*,'only bubbles on verter and/or boxes'
       read*,ibubbleonv,ibubbleonboxsub
-      
       print*,'bubble mask?'
       read*,bubblemask
       print*,bubblemask
 c      stop
 #endif
-      
       colch2(1:3) = 1.d0      * bubblemask(1:3)
       colch2(4)   = 4.d0/3.d0 * bubblemask(4)    ! i.e. for top 3 colors * (2/3 charge)^2 = 12/9 = 4/3
       colch2(5)   = 1.d0      * bubblemask(5)    ! for Rhad!
@@ -295,7 +301,6 @@ c      stop
       themax  = 100d0
       Ethr    = 0.2d0
       ththr   = 100.d0
-
       
       ecms = ame*ame + ammu*ammu + 2.d0*emulab*ame
       ecms = sqrt(ecms)      
@@ -361,6 +366,10 @@ c            print*,'>> Overwriting run parameters <<'
          print*,trim(stringa)
          write(stringa,*)' [ '//setkey(2)//' ] Beam energy spread = ',
      .        trim(r8tostr(spremu)),' %'
+         ctmp2 = 'yes'
+         if (ismualongz.eq.1) ctmp2 = 'no'
+         write(stringa,*)' [ '//setkey(41)//' ] Feed generic'//
+     .    '  muon beam externally (beam profile): ',trim(ctmp2)
          print*,trim(stringa)
          write(stringa,*)' [ '//setkey(3)//' ] Minimum electron'//
      .       ' LAB energy = ',trim(r8tostr(eemin)),' GeV'
@@ -423,9 +432,15 @@ c            print*,'>> Overwriting run parameters <<'
          write(stringa,*)' [ '//setkey(6)
      .//' ] n. of events to generate: ',trim(r8tostr(anpoints))
          print*,trim(stringa)
-         
+
+         if (icwvp.eq.0) ctmp2 = 'no'
+         if (icwvp.eq.1) ctmp2 = 'yes'
+         if (istorver.eq.1) ctmp3 = 'old'
+         if (istorver.eq.2) ctmp3 = 'new'
          write(stringa,*)' [ '//setkey(8)
-     .        //' ] events storage: '//store
+     .        //' ] events storage: '//
+     .        trim(store)//' '//trim(ctmp3)//
+     .        ' '//trim(ctmp2)
          print*,trim(stringa)
 
          write(stringa,*)' [ '//setkey(27)
@@ -440,7 +455,7 @@ c            print*,'>> Overwriting run parameters <<'
             path(lpath:lpath)='/'
          endif
          write(stringa,*)' [ '//setkey(7)
-     .//' ] files saved in '//path(1:lpath)
+     .//' ] files saved in '//trim(path)
          print*,trim(stringa)
          write(stringa,*)' [ '//setkey(10)
      .//' ] seed for pseudo-RNG = ',trim(itostr(iseed))
@@ -505,7 +520,7 @@ c         print*,trim(stringa)
          print*,trim(stringa)
 *********
          print*,' '
-cc 111     write(*,'(''Insert "variable value" or "run" or "quit": '',$)')
+         
  111     write(*,42)trim(bbf//'Insert "parameter value" or'
      .        //' "run" or "quit": '//ebf)
  42      format(A54,$)
@@ -526,13 +541,26 @@ cc 111     write(*,'(''Insert "variable value" or "run" or "quit": '',$)')
      .        c.eq.'mode'.or.
      .        c.eq.'hadoff'.or.
      .        c.eq.'acoplcut'.or.
+     .        c.eq.'extmubeam'.or.
      .        c.eq.'elastcut'.or.
      .        c.eq.'radchs') then
             read(cinput(k+1:),'(bn,A)') cx
             if (c.eq.'ord')     ord     = cx
             if (c.eq.'model')   model   = cx
             if (c.eq.'path')    path    = cx
-            if (c.eq.'store')   store   = cx
+            if (c.eq.'store') then
+               read(cx,*)ctmp,ctmp3,ctmp2
+               if (ctmp2.eq.'yes') icwvp = 1
+               if (ctmp2.eq.'no')  icwvp = 0
+               if (ctmp3.eq.'new') istorver = 2
+               if (ctmp3.eq.'old') istorver = 1
+               store   = ctmp
+            endif
+            if (c.eq.'extmubeam') then
+               read(cx,*)ctmp
+               if (ctmp.eq.'yes') ismualongz = 0
+               if (ctmp.eq.'no')  ismualongz = 1
+            endif
             if (c.eq.'arun')    arun    = cx
             if (c.eq.'hadoff')  chadoff = cx    
             if (c.eq.'radchs')  read(cx,*)QRmu,QRe
@@ -596,7 +624,6 @@ cc 111     write(*,'(''Insert "variable value" or "run" or "quit": '',$)')
          endif
          if (c(1:4).eq.'quit') stop
       enddo
-
 **********************************************************************
       iarun  = 0
       iteubn = 0
@@ -638,15 +665,7 @@ c               print*,'                  '
             endif
          endif
       endif
-***********************************************************************            
-      do k = 1,200
-         if (path(k:k).ne.' ') lpath=k
-      enddo
-      if (path(lpath:lpath).ne.'/') then
-         lpath = lpath+1
-         path(lpath:lpath)='/'
-      endif
-
+***********************************************************************
       call execute_command_line('[ -d '//trim(path)//' ]',exitstat=ierr)      
       if (ierr.eq.0) then ! i.e. if the directory exists
          print*,' '
@@ -671,7 +690,13 @@ c               print*,'                  '
       
       outfile  = path(:lpath)//
      .     'stat_'//corrections(1:len_trim(corrections))//'.txt'
-c
+
+****
+      open(42,file=trim(path)//'iwriteout',status='unknown')
+      write(42,*)iwriteout
+      close(42)
+****      
+      
       if (store.eq.'yes') then
 *** checking if nsearch, sdifmax and wnorm are consistent      
          if (nsearch.gt.0) then
@@ -701,8 +726,15 @@ c
                stop
             endif
          endif
+***********************************************************************
       endif
-
+      
+      if (eventlimiter.eq.'unw'.and.icwvp.eq.1.and.store.eq.'yes') then
+         print*,' Storing unweighted events selected, resetting writing'
+         print*,' coefficients for VP reweight to ''no'''
+         icwvp = 0
+      endif
+      
       spremu = spremu * 0.01d0
       semu   = spremu * emulab 
       Eemin = max(Eemin,ame)
@@ -763,18 +795,6 @@ c     .     .or.(nphotmode.gt.999.or.nphotmode.lt.-999)) then
       iseed = iii
       call initrng(iseed)
 ****  end RNG initialization
-
-c      a = ammu*ammu + emulab*ame
-c      b = emulab + ame
-c      ac = sqrt(1.d0-ame*ame/ammu/ammu)
-c      g = sqrt(emulab*emulab-ammu*ammu)*(ac)
-c      em1 = a*b + abs(g)*sqrt((g*g-b*b)*ammu*ammu+a*a)
-c      em1 = em1 / (b*b-g*g)
-c      em2 = a*b - abs(g)*sqrt((g*g-b*b)*ammu*ammu+a*a)
-c      em2 = em2 / (b*b-g*g)      
-c      print*,em1,em2,em1-em2,sqrt((g*g-b*b)*ammu*ammu+a*a)
-c      stop
-      
       return
       end
 cccccccccccccccccccccccccccccccccccccccccccccccc
@@ -789,9 +809,13 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
       print*,'Principal parameters:'
       print*,setkey(4) ,' ---> incoming muon charge in e+ charge'//
      .     ' units [-1/1]'
-      print*,setkey(1)  ,' ---> nominal muon beam energy (GeV)'
-      print*,setkey(2)  ,' ---> beam energy spread percentage (%)'
-      print*,setkey(3)  ,' ---> minimum electron energy in the LAB'//
+      print*,setkey(1) ,' ---> nominal muon beam energy (GeV)'
+      print*,setkey(2) ,' ---> beam energy spread percentage (%)'
+      print*,setkey(41),' ---> if muon beam 3-momentum is externally'//
+     .     ' fed (beam profile) [yes/no].'
+      print*,'               If ''yes'', the beam 3-momentum must'//
+     .     ' be fed into the pipe ''path''/beamprofile.fifo'
+      print*,setkey(3) ,' ---> minimum electron energy in the LAB'//
      .     ' (GeV)'
       print*,setkey(38) ,' ---> minimum electron angle in the LAB'//
      .     ' (mrad)'      
@@ -814,7 +838,12 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
      .     ' [off/on/hadr5/nsk/knt]'
       print*,setkey(25) ,' ---> if switching off hadronic VP [yes/no]'
       print*,setkey(6)  ,' ---> number of events to generate'
-      print*,setkey(8)  ,' ---> if events have to be stored [yes/no]'
+      print*,setkey(8)  ,' ---> (3 parameters) if events have to be'//
+     .     ' stored [yes/no],'
+      print*,'               which format [new/old] (for v2/v1),'
+      print*,'               if writing also'//
+     .     ' coefficients for VP reweighting [yes/no]'//
+     .     ' (active only for v2)'
       print*,setkey(27) ,' ---> which mode to use to store events'//
      .     ' [0/1/2]'
       print*,'            ',greekmu,'> [0] plain ascii file '

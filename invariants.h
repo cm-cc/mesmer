@@ -1,4 +1,5 @@
       double complex cmu(0:3),ce(0:3),c5mu(0:3),c5e(0:3)
+      double complex cmucmn(0:3),cecmn(0:3)
       double precision p1(0:3),p2(0:3),p3(0:3),p4(0:3)
       double precision p1p2,p1p3,p1p4,p2p3,p2p4,p3p4,tm1
       double precision p1k,p2k,p3k,p4k,s12,s34,t24,t13,u14,u23
@@ -21,7 +22,7 @@
      .     e34cec5mu,e12cmuc5e, e12cec5mu, e23cec5mu,
      .     p1c5mu,p2c5mu,p3c5mu,p4c5mu, 
      .     p1c5e, p2c5e, p3c5e, p4c5e,
-     .     c5mu,c5e
+     .     c5mu,c5e,cmucmn,cecmn
       double complex cuno,im,czero
       parameter (cuno  = (1.d0,0.d0))
       parameter (im    = (0.d0,1.d0))
@@ -73,12 +74,21 @@ c      common/dZsdm/dZrliimu,dmassmu,dZrliie,dmasse
       double precision vpvect(5)
       common/vp_dalphas/vpdal,vpdah,vpvect
       double precision vp13,vp24
-      common/vp1g1L/vp13,vp24
-
+      double precision dah13,dal13,dah24,dal24
+      common/vp1gand1g1L/vp13,vp24,dah13,dal13,dah24,dal24
+      
       integer ionlybubbles,ibubbleonv,ibubbleonboxsub,iexnnlobubbles
       common/ionlybubblescmn/iexnnlobubbles,ionlybubbles,ibubbleonv,
      .     ibubbleonboxsub
 ***
+*****
+****  needed in case I want to use 1-loop tensors instead of 1-loop tensors coefficients
+***   this common is filled at the beginning of squared_matrix, and modified later in case crossing
+***   symmetry is used      
+      double precision p1c(0:3),p2c(0:3),p3c(0:3),p4c(0:3),k1c(0:3),
+     .     k2c(0:3)
+      common/momentaforloopcalculation/p1c,p2c,p3c,p4c,k1c,k2c
+****      
 ***   for reweighenting
       integer nextraweights
       parameter (nextraweights=4)
@@ -86,4 +96,7 @@ c      common/dZsdm/dZrliimu,dmassmu,dZrliie,dmasse
       double precision reweightLO,reweightNLO,wnorm
       common/weights/reweightLO,reweightNLO,weightdefault,extraweights
       common/weightnormalization/wnorm
-***
+**************************
+! coefficients for VP reweighting
+      double precision cwvp(0:10),cwvpl(0:10)
+      common/coeffforvpreweighting/cwvp,cwvpl

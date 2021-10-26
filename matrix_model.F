@@ -26,36 +26,22 @@
       common/momentainitialred/pin1b(0:3),pin2b(0:3),pin1r(0:3),
      >     pin2r(0:3)
       common/forborncrosssection/phsp2b,flux2b,bornme,bornmeq2,bornmez,
-     > bornmenovp 
+     >     bornmenovp 
       common/radpattern/nph(4)
       common/parameters/ame,ammu,convfac,alpha,pi
       common/epssoft/eps
       common/fortests/prod
       common/for_debug/ppp(0:3),denphsp,dir3(0:3),dir4(0:3),br,bq,onm
       common/singlefactors/singleeikfact(imaxph)
-      common/ialpharunning/iarun
       double complex vpolc
       external vpolc
       double precision muemuegg
       external muemuegg
 !     imtx is to say that the matrix el. has been calculated..
 ! summt2 is the squared ME summed over all all spins
-
-      integer iteubn
-      common/teubner/iteubn
       
-** VP UNC      
-      parameter (nvps = 26)
-      dimension remtx(nvps)
-      common/rationsvpunc/remtx,invp
-
-      parameter (nvpst = 728)
-      dimension remtxt(nvpst)
-      integer ist(nvpst,6)
-      common/rationsvpunct/remtxt,invpt,ist
-***   
       common/firstsqmatrix/icount,ifirst
-      data icount,ifirst /0,1/
+      data icount,ifirst /0,0/
 
       integer irecola
       common/recolamode/irecola
@@ -81,7 +67,6 @@
       common/invariants/p1p2,p1p3,p1p4,p2p3,p2p4,p3p4,tm1
       common/invariants1g/p1k,p2k,p3k,p4k,s12,s34,t24,t13,u14,u23,
      .     p1mk2,p2mk2,p3pk2,p4pk2
-
       double precision epsk(0:3),epsk1(0:3),epsk2(0:3)
       double precision q5(0:3),q6(0:3)
       double precision p1_eps,p2_eps,p3_eps,p4_eps,k_eps
@@ -89,7 +74,6 @@
       common/gaugeinv/p1_eps, p2_eps, p3_eps, p4_eps, k_eps,
      .     p1_epss,p2_epss,p3_epss,p4_epss,k_epss
 * end can be commented ************************************      
-
       double precision facIS,facFS
       integer iaxial,itnir1,itir1,itnir2,itir2,itnir3,itir3,itnir4,itir4
       integer ib1dir,ib1dnir,ib2dir,ib2dnir
@@ -122,71 +106,73 @@
       double precision weightdefault,extraweights(0:nextraweights)
       double precision reweightLO,reweightNLO,wnorm
       common/weights/reweightLO,reweightNLO,weightdefault,extraweights
-****  
-      if (ifirst.eq.1) then
-
-         iaxial = 1
-         
-         iii = 0
-         do i1 = -1,1
-         do i2 = -1,1
-         do i3 = -1,1
-         do i4 = -1,1
-         do i5 = -1,1
-         do i6 = -1,1
-            if (i1.ne.0.or.i2.ne.0.or.i3.ne.0.or.
-     >           i4.ne.0.or.i5.ne.0.or.i6.ne.0) then
-               iii = iii + 1
-               ist(iii,1) = i1
-               ist(iii,2) = i2
-               ist(iii,3) = i3
-               ist(iii,4) = i4
-               ist(iii,5) = i5
-               ist(iii,6) = i6
-            endif
-         enddo
-         enddo
-         enddo
-         enddo
-         enddo
-         enddo
-
-         ifirst = 0
+**************************
+      double precision p1c(0:3),p2c(0:3),p3c(0:3),p4c(0:3),k1c(0:3),
+     .     k2c(0:3)
+      common/momentaforloopcalculation/p1c,p2c,p3c,p4c,k1c,k2c
+**************************
+      double precision dah13,dal13,dah24,dal24
+      common/vp1gand1g1L/vp13,vp24,dah13,dal13,dah24,dal24
+! coefficients for VP reweighting, from  invariants.h
+      double precision cwvp(0:10),cwvpl(0:10)
+      common/coeffforvpreweighting/cwvp,cwvpl
+****
+c      integer xx(4)
+c      xx    = 0
+c      xx(1) = 1
+c      xx(2) = 1
+c      do i = 1,4
+c         do j=i,4
+c            print*,i,j,xx(i)*xx(j)
+c         enddo
+c      enddo
+c      stop
+      if (ifirst.eq.0) then
+         iaxial = 1 ! actually not used anymore
+         vp13   = 1.d0
+         vp24   = 1.d0
+         dah13  = 0.d0
+         dal13  = 0.d0
+         dah24  = 0.d0
+         dal24  = 0.d0
+         ifirst = 1
       endif
       
-      iarunbck = iarun
-      
-      imtx  = 0
+      cwvp     = 0.d0
+      imtx     = 0
       summt2   = 0.d0
-      bornme   = 1.d-13
-      bornmeq2 = 1.d-13
+      bornme   = 0.d0 !1.d-13
+      bornmeq2 = 0.d0 !1.d-13
       bornmez  = 0.d0 !1.d-13
       
       if (ie.gt.0) return
-
+      
+**** needed in the case I want to use 1-loop tensors instead of 1-loop tensors coefficients,
+**** which now it's the default for up-down boxes and pentagons      
+**** the common momentaforloopcalculation is brought around in invariants.h
+      p1c = pbeam1
+      p2c = pbeam2
+      p3c = p1
+      p4c = p2
+      k1c = qph(1,:)
+      k2c = qph(2,:)
+***********************************      
       imtx = 1
-      nspinconf = 2**(4+ng)
-
-*********************
-**    MATCHING     **
-*********************
-! doing as if only the k-th photon was present
+c     nspinconf = 2**(4+ng)
+      
       if (model.eq.'matched') then
-
 ****  EXACT REAL PAIRS
          if (npairs.gt.0) then
 cphsp
 ctest phspace volume
 c            summt2 = 1000.d0
-c            return            
-
+c            return
             q1 = pbeam1
             q2 = pbeam2
             q3 = p1
             q4 = p2
             q5 = p3
             q6 = p4
-
             if (Qmu.gt.0.d0) then
                if (npairs.eq.1) then
                   call realpairs(-q3,q2,-q1,q4,q5,q6,ame,ammu,summt2)                                    
@@ -202,16 +188,6 @@ c            return
                   call realpairs(q2,q1,q4,q3,q5,q6,ammu,ame,summt2)
                endif
             endif
-c            if (summt2.lt.0.d0) summt2 = 0.d0            
-c            if (summt2.lt.0.d0) then
-c               print*,summt2
-c               print*,q1
-c               print*,q2
-c               print*,q3
-c               print*,q4
-c               print*,q5
-c               print*,q6
-c            endif            
 #ifdef RECOLA
             IF (npairs.eq.1) THEN
 cc               if (summt2.lt.0.d0) then
@@ -264,36 +240,35 @@ c     .            (rclborn*8.d0-summt2)/summt2
           return
        endif
 ****  END EXACT REAL PAIRS
-         
-         if (ng.eq.0) then
-            call born_me(pbeam1,pbeam2,p1,p2,bornmenovp,bornmeq2,
-     >           vuoto,iq2)
-            summt2 = bornmeq2            
-            imtx = 1
-            return
-         endif
+       
+       if (ng.eq.0) then
+          call twototwo(pbeam1,pbeam2,p1,p2,tttmeq2)
+          summt2 = tttmeq2
+          imtx = 1
+! to get the new weight, cwwp(x)*f(vpt(x)) * default_weight          
+          cwvp = cwvpl/tttmeq2 ! normalized to the default weight, usually with full running
+c          print*,sum(cwvp)/extraweights(1)
+          return
+       endif
 
-         reweightLO  = 0.d0
-         reweightNLO = 1.d0
-         
-         iarun = iarunbck         ! added ! ON OFF
-ccccc
-         if (ng.eq.1) then
-            q = qph(1,:)
-               
-            summt2 = radmue(pbeam1,pbeam2,p1,p2,q)
-            imtx   = 1
-******************************************            
-            if (ord.eq.'born')  return
+       reweightLO  = 0.d0
+       reweightNLO = 1.d0
+       if (ng.eq.1) then
+          q = qph(1,:)
+          summt2 = radmue(pbeam1,pbeam2,p1,p2,q)
+          imtx   = 1
 ******************************************
-            if (ord.eq.'alpha') return 
-******************************************
+          if (ord.eq.'born'.or.ord.eq.'alpha') then
+             cwvp = cwvpl/summt2 ! normalized to the default (usually the full running)
+c             print*,sum(cwvp)/extraweights(1)
+             return
+          endif
 ****************************
 ***** 1G1L
-            sff = soft_integral_mue(egmin,pbeam1,pbeam2,p1,p2)
-            tree = summt2
+          sff = soft_integral_mue(egmin,pbeam1,pbeam2,p1,p2)
+          tree = summt2
             
-            imtx = 1
+          imtx = 1
 #ifdef RECOLA
 cccccccccccccccccccccccccccccc
 c            if (Qmu.lt.0.d0) then
@@ -310,55 +285,69 @@ c            summt2  = rclloop
 c            return
 ccccccccccccccccccccccccccccc
 #endif
-            call getQEDcts(cts)
-            
-            if (Qmu.gt.0.d0) then
+          call getQEDcts(cts)
+          
+          if (Qmu.gt.0.d0) then
 *** crossing symmetry
 ! for Qmu = -1 it's called inside radmuesum with correct momenta, no need to recall it here
-               call loadinvariants1g(-p1,pbeam2,-pbeam1,p2,q)
-            endif
+             call loadinvariants1g(-p1,pbeam2,-pbeam1,p2,q)
+             p1c = -p1
+             p3c = -pbeam1
+          endif
 ***            
 #ifndef COLLIER
-            call clearcache
-            call loadQEDfuns1g1L
+          call clearcache
+          call loadQEDfuns1g1L
 #else
 ** for collier the cache is cleared inside the functions
-            call loadQEDfuns1g1LCOLLIER
+          call loadQEDfuns1g1LCOLLIER
 #endif
 ! using axial gauge for external photon, see e.g. https://arxiv.org/pdf/1403.6557.pdf
-            udno  = 0.d0
-            udyes = 0.d0
-            if (Qmu.lt.0.d0) then
-               udno  = muemue1g1Lnoupdown(pbeam1,pbeam2,p1,p2,q)
-               udyes =   muemue1g1Lupdown(pbeam1,pbeam2,p1,p2,q)
-            else
-               udno  = muemue1g1Lnoupdown(-p1,pbeam2,-pbeam1,p2,q)
-               udyes =   muemue1g1Lupdown(-p1,pbeam2,-pbeam1,p2,q)
-            endif
-
-            xxx    = 0.d0 ! -1.5d0*alpha/pi ! XXX IS NOT NEEDED ANYMORE
-            summt2 = (1.d0+cts+sff+xxx)*tree + udno + udyes
-
-            reweightNLO = tree/summt2
-
-            imtx = 1
-            iarun = iarunbck
-            return
-         endif
+! no, defaulting to no-axial, the file from form has less operations
+          udno  = 0.d0
+          udyes = 0.d0
+          cwvp = cwvpl * (1.d0+cts+sff)
+          if (Qmu.lt.0.d0) then
+             udno  = muemue1g1Lnoupdown(pbeam1,pbeam2,p1,p2,q)
+             cwvp  = cwvp + cwvpl             
+             udyes = muemue1g1Lupdown(pbeam1,pbeam2,p1,p2,q)
+             cwvp  = cwvp + cwvpl
+          else
+             udno  = muemue1g1Lnoupdown(-p1,pbeam2,-pbeam1,p2,q)
+             cwvp  = cwvp + cwvpl             
+             udyes = muemue1g1Lupdown(-p1,pbeam2,-pbeam1,p2,q)
+             cwvp  = cwvp + cwvpl             
+          endif
+          xxx    = 0.d0 ! -1.5d0*alpha/pi ! XXX IS NOT NEEDED ANYMORE
+          summt2 = (1.d0+cts+sff+xxx)*tree + udno + udyes
+************
+          cwvp = cwvp/summt2
+************
+          extraweights(0) = 1.d0
+          extraweights(1) = cwvp(1)+cwvp(2)+cwvp(5)
+          extraweights(2) =
+     .         cwvp(1)*1.d0/(1.d0-dal24)/(1.d0-dal24) +
+     .         cwvp(2)*1.d0/(1.d0-dal24)/(1.d0-dal13) +
+     .         cwvp(5)*1.d0/(1.d0-dal13)/(1.d0-dal13)
+***********          
+c          print*,sum(cwvp)/extraweights(1) ! OK! check it again, for QRe,QRmu=1. 1 0 and 0 1 are ok
+          reweightNLO = tree/summt2
+          imtx = 1
+          return
+       endif
 **********************************************************************************************
-         if (ng.eq.2) then
-
-            reweightNLO = 0.d0
-
-            icount = icount + 1
-
-            q1 = qph(1,:)
-            q2 = qph(2,:)
-            if (Qmu.gt.0.d0) then            
-               summt2 = muemuegg(pbeam1,pbeam2,p1,p2,q1,q2)
-            else
-               summt2 = muemuegg(-p1,pbeam2,-pbeam1,p2,q1,q2)
-            endif            
+       if (ng.eq.2) then
+          reweightNLO = 0.d0
+          icount = icount + 1
+          q1 = qph(1,:)
+          q2 = qph(2,:)
+          if (Qmu.gt.0.d0) then            
+             summt2 = muemuegg(pbeam1,pbeam2,p1,p2,q1,q2)
+          else
+             summt2 = muemuegg(-p1,pbeam2,-pbeam1,p2,q1,q2)
+          endif
+          cwvp = cwvpl / summt2
+!         print*,sum(cwvp)/extraweights(1) ! OK
 **
 c            if (Qmu.lt.0.d0) then
 c               call recola_ampl(1,pbeam1,pbeam2,p1,p2,q1,q2,rcl,rcl1l) ! mu-
@@ -372,10 +361,9 @@ c            stop
 c            print*,summt2,rcl,(summt2-rcl)/rcl
 c            if (icount.eq.40) stop
 **
-            imtx = 1
-            iarun = iarunbck
-            return
-         endif         
+          imtx = 1
+          return
+       endif         
       endif
 *******************
 **      PS       **
@@ -390,7 +378,6 @@ c            if (icount.eq.40) stop
          stop
       endif
 ******
-      iarun = iarunbck
       return
       end
 ****************************************************************************
@@ -514,19 +501,17 @@ c p4 = mu
       s4(2,2) =  conjg(s4(1,1)) !(p4(1)+im*p4(2))/(p4(0)+mm)
       s4(2,3) =  den
       s4(2,4) =  0.d0
-
       return
       end
-
 *************************************************************
-      subroutine born_me(p1,p2,p3,p4,smt,smtq2,smtz,iq2)
+      subroutine twototwo(p1,p2,p3,p4,smtq2)
 #ifdef COLLIER
       use collier
 #endif      
       implicit double precision (a-h,l,m,o-z)
       dimension ptmp(0:3),p1b(0:3),p2b(0:3),p3b(0:3),p4b(0:3)
       double complex chis,chit,xi(1)
-      double complex vpolc,ec2s,ctmp,cmuceZ
+      double complex vpolc,ctmp,cmuceZ
       double precision leptonicbubble
       double precision Pi02L_Boncianietal
       external Pi02L_Boncianietal
@@ -568,27 +553,23 @@ c p4 = mu
       common/sffudandnoud/sffud,sffnoud
 
       double complex virtvupvdwn      
-      common/testvirtvevmu/virtvupvdwn
-      
+      common/testvirtvevmu/virtvupvdwn      
 *****************
       double precision sffij(4,4)
       common/softFFij/sffij
 *****************
       logical is2L
       double precision p3lab(0:3),p4lab(0:3)
-c      double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
 ****
       double precision dalo(3),danlo(3),dannlo(3)
       common/dalonlonnlo/dalo,danlo,dannlo
 
       common/FsPi02Ldebug/F1,F2,F3,F4,F5,F6,F7,F8
       
-      common/ialpharunning/iarun
       common/forbubbles/ctandvmph0,boxmph0
       integer bubblemask(5)
       double precision colch2(5)
-      common/colorandch2factors/colch2,bubblemask
-      
+      common/colorandch2factors/colch2,bubblemask      
 *********
 *** for 2 loops, calculated in getQEDvertexes
       double complex amplve,amplvmu
@@ -596,7 +577,7 @@ c      double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
 ! calculated in getQEDcts
       double precision ctsmu,ctse
       common/qedcts_e_mu/ctsmu,ctse
-*****       
+*****
 #include "invariants.h"
 
       integer ionoff(4,4)
@@ -604,11 +585,6 @@ c      double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
       if (ifirst.eq.0) then
 
          extraweight = 1.d0
-
-! in userinterface.F         
-c         mz = 91.1876d0
-c         gz = 2.4952d0
-c         mw = 80.398d0
 
          mz2 = mz*mz
          mw2 = mw*mw
@@ -627,23 +603,18 @@ c         mw = 80.398d0
          ifirst = 1
       endif
 
-      smt   = 0.d0
       smtq2 = 0.d0
-      smtz  = 0.d0
-
-      iq2 = 0
       
       ptmp = p1+p2
       s    = dot(ptmp,ptmp)
       ptmp = p1-p3
       t    = dot(ptmp,ptmp)
 
-      ect  = sqrt(ec2)
-      ec2s  = ec2               !* vpolc(s) ! * 0.d0
-      tm1 = 1.d0/t
-      vpt = 1.d0
-      sff = 0.d0
-***   analytic check w form
+      tm1   = 1.d0/t
+      vpt   = 1.d0
+      sff   = 0.d0
+      cwvpl = 0.d0
+***   analytic check with form
 c      ptmp = p1-p4
 c      u    = dot(ptmp,ptmp)
 c      s2   = s*s
@@ -654,21 +625,18 @@ c     & 2.D0*t2 + 4.D0*s*t + 4.D0*s2 + 4.D0*mm4 - 8.D0*mm2*s + 4.D0*
 c     & me4 - 8.D0*me2*s + 8.D0*me2*mm2
 c         xform = 4.d0*ec2*ec2/t2*xform                  
 c         smtq2 = xform
-c         smt   = smtq2
 c         return
 ******************************
 
       if (ioneloop.eq.1) then
          call loadinvariants(p1,p2,p3,p4)
          call getQEDcts(cts)
-***
 #ifdef COLLIER
          call InitEvent_cll(1)
 #else
          call clearcache        ! this is after getQEDcts
 ! because there only at first event Bs are called...
-#endif            
-***
+#endif
          call getVP1loop(t,dal,dah) ! it's in common at the beginning!
          if (ifixedorder.eq.0) then
             vpt  = 1.d0/(1.d0-dal-dah)
@@ -735,16 +703,14 @@ ccc END TEST YFS oal
       
       cyfs    = cyfse+cyfsmu+cyfsbox
 
-      do hh = 0, 7              ! only half, below the factor of 2!!
+      do hh = 0,7              ! only half, below the factor of 2!!
 c         do hh = 0, 15           ! only half, below the factor of 2!!            
 c         do hh = 8, 15 !15 ! only half, below the factor of 2!!
 c         do hh = 15, 15 !15 ! only half, below the factor of 2!!
-
          h1  = mod(hh,16)/8 + 1
          h2  = mod(hh, 8)/4 + 1
          h3  = mod(hh, 4)/2 + 1
          h4  = mod(hh, 2)   + 1
-
 c            s1l = sp1(h1,:)
 c            s2l = sp2(h2,:)
 c            s3l = sp3(h3,:)
@@ -761,14 +727,11 @@ c            call getcurrent(s3l,s1l,cmu,cImu,c5mu)
          
          cmuce   = dotcmom(cmu,ce)
             
-           !! per la Z devo usare dotcmom(v*cmu+a*c5mu,v*ce+a*c5e)
-c            cmuceZ = dotcmom(gv*cmu+ga*c5mu,gv*ce+ga*c5e)
-            
-cc better to leave the i's explicit
-cc            amplborn = amplborn * (im*ect*im*ect) * (-im)/t      
+!! for the Z I need to use dotcmom(v*cmu+a*c5mu,v*ce+a*c5e)
+c         cmuceZ = dotcmom(gv*cmu+ga*c5mu,gv*ce+ga*c5e)
 
          amplborn = cmuce*im*ec2*tm1 
-!! per la Z
+!! for the Z
 c           amplborn = amplborn + im*cmuceZ/(t-mz2+im*mz*gz)
 
          bbar    = amplborn*conjg(amplborn)
@@ -799,7 +762,6 @@ ccc END TEST YFS oal
                
                tmp2l     = vertamp + 0.5d0*cts*amplborn + boxamp
                oneloopm2 = oneloopm2 + tmp2l*conjg(tmp2l)
-                  
 ! approximates the 2 loop vertex e                  
                ctmp3 = cyfse*cyfse*0.5d0 * amplborn
      .              + (ctmp1-cyfse*amplborn)*cyfse ! funziona!!                             
@@ -840,20 +802,22 @@ ccc END TEST YFS oal
          endif            
          call getcurrentnew(-1.d0,h4,h2,p4,p2,me,me,ce,cIe,c5e)
          cmuce   = dotcmom(cmu,ce)
-!! per la Z devo usare dotcmom(v*cmu+a*c5mu,v*ce+a*c5e)
-         amplowz = cmuce*im*ec2*tm1*vpt 
-!! per la Z
+         amplowz = cmuce*im*ec2*tm1 ! *vpt ! no vpt here, added below
+!! for Z I need to use dotcmom(v*cmu+a*c5mu,v*ce+a*c5e)
          cmuceZ  = dotcmom(gv*cmu+ga*c5mu,gv*ce+ga*c5e)
          amplowz = amplowz + im*cmuceZ/(t-mz2+im*mz*gz)
          bornwz  = bornwz + amplowz*conjg(amplowz)
       enddo
-      DZ = bornwz - 2.d0*born*vpt*vpt
+      DZ = bornwz - 2.d0*born ! notice: DZ must haves a vpt factorized in front of 2*M^*_z*M_qed
 **** end Z LO
  42   continue
-      
-      ampm2      = 2.d0 * ampm2 * vpt*vpt ! because summing only on half of helicities
-      born       = 2.d0 * born  * vpt*vpt
 
+      vpt2 = vpt*vpt      
+      
+      ampm2      = 2.d0 * ampm2 * vpt2 ! because summing only on half of helicities
+      born       = 2.d0 * born  * vpt2
+!      DZ         = DZ * vpt ! I assume there is no vpt dependency, but there is in front of 2*M^*_z*M_qed
+      
       ampm2      = ampm2 + DZ ! adding Z at LO
 
       boxmph0    = 2.d0 * boxmph0 ! no vp here
@@ -862,43 +826,36 @@ ccc END TEST YFS oal
       blobsexact = 0.d0
 
       extrareweightLO = 1.d0
-      
-      IF (ionlybubbles.gt.0) THEN ! this was used for nnlo pairs paper
-         vp    = dot_product(vpvect,bubblemask)
-         
-         extrareweightLO = 1.d0/vpt/vpt
-         
-         xx1      = alf_lep_carlo(1,t) ! to fill the common
-         xx1      = alf_lep_carlo(2,t) ! to fill the common
-         xx1      = alf_lep_carlo(3,t) ! to fill the common
-         danlo(1) = danlo(1)*bubblemask(1)
-         danlo(2) = danlo(2)*bubblemask(2)
-         danlo(3) = danlo(3)*bubblemask(3)
-         vpnlo    = danlo(1) + danlo(2) + danlo(3)
-         
-         bornclean = born/vpt/vpt
-         boxbubble  = 0.d0
-         vertbubble = 0.d0
-         ibubblev  = ibubbleonv
-         ibubbleb  = ibubbleonboxsub
-         if (QRe.eq.0.or.QRmu.eq.0) ibubbleb = 0
-         call leptonicbubbles(p1,p2,p3,p4,ibubblev,ibubbleb,
-     .        vertbubble,boxbubble)
-!! that's good!            
-         ampm2 = (ctandvmph0 + boxmph0 + bornclean*sff)*vp*2.d0
-     .        + boxbubble + vertbubble
-     .        + 1.d0 * bornclean * (3.d0*vp*vp + 2.d0*vpnlo)
 
-c            ampm2 = vertbubble
-c           call leptonicbubblequadpack(p1,p2,p3,p4,1,0,
-c     .           ctandv,boxsub)
-c           print*,t,ctandv,twoloop_onlynf1(s,t,u)
-c           stop
-cc            ampm2 = twoloop_onlynf1(s,t,u)
-      ENDIF
+! [[ --- THE FOLLOWING WAS USED FOR NNLO PAIR PAPER
+c      IF (ionlybubbles.gt.0) THEN
+c         vp    = dot_product(vpvect,bubblemask)         
+c         extrareweightLO = 1.d0/vpt/vpt        
+c         xx1      = alf_lep_carlo(1,t) ! to fill the common
+c         xx1      = alf_lep_carlo(2,t) ! to fill the common
+c         xx1      = alf_lep_carlo(3,t) ! to fill the common
+c         danlo(1) = danlo(1)*bubblemask(1)
+c         danlo(2) = danlo(2)*bubblemask(2)
+c         danlo(3) = danlo(3)*bubblemask(3)
+c         vpnlo    = danlo(1) + danlo(2) + danlo(3)
+c         
+c         bornclean = born/vpt/vpt
+c         boxbubble  = 0.d0
+c         vertbubble = 0.d0
+c         ibubblev  = ibubbleonv
+c         ibubbleb  = ibubbleonboxsub
+c         if (QRe.eq.0.or.QRmu.eq.0) ibubbleb = 0
+c         call leptonicbubbles(p1,p2,p3,p4,ibubblev,ibubbleb,
+c     .        vertbubble,boxbubble)
+c!! that's good!            
+c         ampm2 = (ctandvmph0 + boxmph0 + bornclean*sff)*vp*2.d0
+c     .        + boxbubble + vertbubble
+c     .        + 1.d0 * bornclean * (3.d0*vp*vp + 2.d0*vpnlo)
+c      ENDIF
+! --- ]]
 
       if (iexnnlobubbles.gt.1) then
-! this is the non-factorizable NNLO virtual pair contribution
+! this is the "non-factorizable" NNLO virtual pair contribution
          boxbubble  = 0.d0
          vertbubble = 0.d0
          ibubblev  = ibubbleonv
@@ -907,41 +864,13 @@ cc            ampm2 = twoloop_onlynf1(s,t,u)
          call leptonicbubbles(p1,p2,p3,p4,ibubblev,ibubbleb,
      .        vertbubble,boxbubble)
 !! that's good!            
-         blobsexact = (boxbubble + vertbubble)*vpt*vpt ! with vpt^2 I add VP on non-loop photon...
+         blobsexact = (boxbubble + vertbubble)*vpt2 ! with vpt^2 I add VP on non-loop photon...
       endif
       
       ampm2 = ampm2 + blobsexact ! added to the 1L contribution...
-         
-c$$$         tmin = -0.143d0
-c$$$         tmax = 0.d0
-c$$$         dt = (tmax - tmin)/40d0
-c$$$         do k = 0,40-1
-c$$$            t = tmin + k*dt
-c$$$           call wrap_Fred_hadVP(-sqrt(-t),dfred,edfred)
-c$$$         call d_alpha_reso_carlo(sqrt(-t),das,ddas,dat,ddat)
-c$$$         das = alpha*das
-c$$$           dqp = dahadquadpackv2(t)
-c$$$         write(500,*)t,dfred,dqp,das
-c$$$      enddo
-c$$$         stop
-
-c         tmin = -0.143d0
-c         tmax =  0.d0
-c         dt = (tmax - tmin)/40d0
-c         do k = 0,40-1
-c            t = tmin + k*dt
-c            xx1      = alf_lep_carlo(1,t) ! to fill the common
-c            xx1      = alf_lep_carlo(2,t) ! to fill the common
-c            xx1      = alf_lep_carlo(3,t) ! to fill the common
-c            write(299,*)t,danlo(1),danlo(2),dalnloquadpack(t,ame*ame),
-c     .           dalnloquadpack(t,ammu*ammu),dalo(1),dalo(2)
-c         enddo
-c         stop
-         
 *******************************************************
       if (is2L) then
 *******************************************************        
-         vpt2 = vpt*vpt
          oneloopm2 = 2.d0 * oneloopm2 * vpt2 ! |1L|^2 
 
          yfs2Lee   = 2.d0*yfs2Lee   * vpt2
@@ -961,9 +890,11 @@ c         stop
          ampm2NNLO = ampm2
       endif     
          
- 999  extraweights(0) = 1.d0
-      extraweights(1) = 1.d0/vpt/vpt
-      extraweights(2) = 1.d0/vpt/vpt/(1.d0-dalw)/(1.d0-dalw)
+      extraweights(0) = 1.d0
+      extraweights(1) = ((ampm2 - DZ )*1.d0/vpt2 + DZ) / ampm2
+c      extraweights(2) = 1.d0/vpt2/(1.d0-dalw)/(1.d0-dalw)
+      extraweights(2) = ((ampm2 - DZ )*1.d0/vpt2/(1.d0-dalw)/(1.d0-dalw)
+     .     + DZ) / ampm2
 
       reweightLO  = (born + DZ)/ampm2  * extrareweightLO
       
@@ -972,28 +903,11 @@ c         stop
       if (ord.eq.'born') reweightNLO = 0.d0
          
       smtq2 = ampm2
-         
-c         eee = ame - t*0.5d0/ame
-c         delta =  max(2.d0*ame,0.1d00*eee) ! 0.01*eee almost cancels out the virtual part
-c         delta = 0.5d0*sqrt(-t)
-c         smtq2 = smtq2
-c     .        * Fsoftrealpairs(delta,ame)        
-c         uuuu = Fsoftrealpairs(delta,ame)
-c         stop
-         
-      smt   = smtq2
-
-*** analytic check w form    
-c         xform = !! OK !! already averaged over IS
-c     & 2.D0*t**2 + 4.D0*s*t + 4.D0*s**2 + 4.D0*mm4 - 8.D0*mm2*s + 4.D0*
-c     & me4 - 8.D0*me2*s + 8.D0*me2*mm2
-c         xform = 4.d0*ec2*ec2/t/t*xform                  
-c         smtq2 = xform
-c         smt   = smtq2
-c         print*,ampm2/xform
-*********************************
-c         stop         
-********************
+      
+****** VP reweighting stuff
+      cwvpl(0) = DZ
+      cwvpl(1) = (ampm2 - DZ) / vpt2
+******
       return
       end
 **************************************************************************

@@ -1,17 +1,18 @@
+RELEASE=
 RELEASE=yes
-## RELEASE=
 
 EXE = mesmer
 
 F77 = gfortran
 CC  = gcc
+
 # tune for your processor, if you want
 ifdef RELEASE
   FFLAGS = -O3 -ffast-math # safer and more portable
 else
   FFLAGS = -O3 -march=native -mtune=native -ffast-math
 endif
-#-freal-8-real-16   ! this promotes all real*8 to real*16 (quad precision)
+#-freal-8-real-16   # this promotes all real*8 to real*16 (quad precision)
 ### for debugging  FFLAGS = -g -fbounds-check -fbacktrace
 
 SMH=
@@ -54,8 +55,8 @@ VPKNT=vp_knt_v3_0_1
 ##old one vp_hlmnt_v2_2
 HPLOG=hplog
 
-LTVER = 2.16
-LTDIR = LoopTools-$(LTVER)
+LTVER=2.16
+LTDIR=LoopTools-$(LTVER)
 LTSTRING =-looptools
 ifdef QUAD
   LTSTRING =-looptools-quad
@@ -100,9 +101,12 @@ OBJECTS = main.o cuts.o sv.o matrix_model.o loops.o muemuegg.o realpairs.o vacuu
           rngs.o routines.o sampling.o phasespacemue.o distributions.o $(VPKNT).o\
           hadr5n12.o hadr5n17.o hadr5x19.o hadr5n.o ranlux.o userinterface.o muemue1g1Lnoud.o\
           muemue1g1Lud.o storage.o c_rnlx_interface.o ranlux_common.o ranlxd.o ranlxs.o recola_int.o\
-          twoloop_virtual.o $(HPLOG).o quadpack.o gsl_random.o elasticity.o
+          twoloop_virtual.o $(HPLOG).o quadpack.o elasticity.o
 ifeq ($(SMH),-DSMH)
   OBJECTS += light-heavy-2LFF.o
+endif
+ifdef GSLLIBS
+  OBJECTS += gsl_random.o
 endif
 
 #### packaging
@@ -122,16 +126,15 @@ pack: # use only to release MESMER
 	cp -ra LoopTools-$(LTVER)-clean/ $(RELEASEDIR)/LoopTools-$(LTVER) &&\
 	cp -ra collier/COLLIER-1.2.5-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.5 &&\
         cp -ra root-interface/ write-root-events MuEtreeDict_rdict.pcm Makefile README.md input-example\
-        distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h LICENSE.md\
-        main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat muemue1g1Lud.F AUTHORS.md\
+        distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h AUTHORS.md\
+        main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat muemue1g1Lud.F LICENSE.md\
         vacuumpolarization.F cuts.F sv.F routines.f sampling.f phasespacemue.F $(VPKNT).f recola_int.F\
         rngs.F hadr5n12.f hadr5n17.f hadr5x19.f hadr5n.f ranlux.f userinterface.F\
         loops.F storage.F muemuegg-minus.f muemuegg-plus.f muemuegg.F muemue1g1Lnoupdown.f realpairs.F\
-        realpairs_ampl2.f muemue1g1Lupdown.f funssettozero.f printltfun cts1g1L.f\
+        realpairs_ampl2.f muemue1g1Lupdown.f funssettozero.f printltfun cts1g1L.f muemue1g1Lupdownten.f\
         twoloop_virtual.F dalhadslow17.f dalhadshigh17.f dalhadt17.f quadpack.F $(HPLOG).f\
-        f1_light_heavy.f f2_light_heavy.f f1_light_heavy_quad.f f2_light_heavy_quad.f\
-        light-heavy-2LFF.F constgpl_defs.f vargpl_defs.f gsl_random.c Rhad-scan.dat\
-        elasticity.F\
+        f1_light_heavy.f f2_light_heavy.f f1_light_heavy_quad.f f2_light_heavy_quad.f beamprofile-example.txt.gz\
+        light-heavy-2LFF.F constgpl_defs.f vargpl_defs.f gsl_random.c Rhad-scan.dat elasticity.F\
         $(RELEASEDIR) &&\
 	cp oneloop/*.f $(RELEASEDIR)/oneloop/ &&\
 	cp c_ranlux/*.* $(RELEASEDIR)/c_ranlux/ && $(STRINGSMH) \
@@ -143,6 +146,8 @@ pack: # use only to release MESMER
 
 clean:
 	rm -f $(OBJECTS) *.a $(EXE) *~
+deepclean: clean
+	rm -rf root-interface/write_MuE_MCevents.exe $(LTDIR)/lib64/libooptools.a $(LTDIR)/build/ $(CLLDIR)/build/ $(CLLDIR)/lib/libcollier.a
 
 # source files
 main.o: main.F
@@ -152,14 +157,14 @@ cuts.o: cuts.F
 $(HPLOG).o: $(HPLOG).f
 	$(F77) -c $(HPLOG).f
 matrix_model.o: matrix_model.F invariants.h funsdeccmn1g1L.h Makefile $(LIBFILES)
-	$(F77) -c $(RECOLA) $(COLLIER) $(CLLMOD) matrix_model.F
+	$(F77) -c $(COLLIER) $(CLLMOD) $(RECOLA) matrix_model.F 
 sv.o: sv.F
 	$(F77) -c sv.F
 loops.o: loops.F Makefile oneloop/*.f invariants.h funsdeccmn1g1L.h $(LIBFILES)
-	$(F77) -c $(QUAD) $(COLLIER) $(RECOLA) -I$(LTDIR)/include loops.F $(CLLMOD)
+	$(F77) -c $(COLLIER) $(RECOLA) $(QUAD) -I$(LTDIR)/include loops.F $(CLLMOD)
 muemuegg.o: muemuegg.F invariants.h muemuegg-minus.f muemuegg-plus.f
 	$(F77) -c muemuegg.F
-muemue1g1Lud.o: muemue1g1Lud.F invariants.h funsdeccmn1g1L.h muemue1g1Lupdown.f
+muemue1g1Lud.o: muemue1g1Lud.F invariants.h funsdeccmn1g1L.h muemue1g1Lupdown.f muemue1g1Lupdownten.f
 	$(F77) $(QUAD) -c muemue1g1Lud.F
 muemue1g1Lnoud.o: muemue1g1Lnoud.F  invariants.h funsdeccmn1g1L.h muemue1g1Lnoupdown.f
 	$(F77) $(QUAD) -c muemue1g1Lnoud.F
@@ -203,19 +208,19 @@ twoloop_virtual.o: twoloop_virtual.F Makefile $(LIBFILES)
 	$(F77) $(QUAD) $(COLLIER) -I$(LTDIR)/include $(SMH) -c twoloop_virtual.F $(CLLMOD)
 light-heavy-2LFF.o: light-heavy-2LFF.F f1_light_heavy.f f2_light_heavy.f constgpl_defs.f vargpl_defs.f $(LIBFILES)
 	$(F77) $(QUAD) -I$(LTDIR)/include $(HANDYG) $(SMH) -c light-heavy-2LFF.F -ffixed-line-length-85
-
-# C version of ranlux by Martin Luscher, http://luscher.web.cern.ch/luscher/ranlux/index.html
-c_rnlx_interface.o: c_ranlux/c_rnlx_interface.c  Makefile
-	$(CC) $(FFLAGS) $(RLXOPT) -std=c99 -Ic_ranlux/ -c c_ranlux/c_rnlx_interface.c
-ranlxd.o: c_ranlux/ranlxd.c  Makefile 
-	$(CC) $(FFLAGS) $(RLXOPT) -std=c99 -Ic_ranlux/ -c c_ranlux/ranlxd.c
-ranlxs.o: c_ranlux/ranlxs.c  Makefile
-	$(CC) $(FFLAGS) $(RLXOPT) -std=c99 -Ic_ranlux/ -c c_ranlux/ranlxs.c
-ranlux_common.o: c_ranlux/ranlux_common.c  Makefile
-	$(CC) $(FFLAGS) $(RLXOPT) -std=c99 -Ic_ranlux/ -c c_ranlux/ranlux_common.c
-##########
 gsl_random.o: gsl_random.c
 	$(CC) $(FFLAGS) -c gsl_random.c
+
+# C version of ranlux by Martin Luscher, http://luscher.web.cern.ch/luscher/ranlux/index.html
+c_rnlx_interface.o: c_ranlux/c_rnlx_interface.c Makefile
+	$(CC) $(FFLAGS) $(RLXOPT) -std=c99 -Ic_ranlux/ -c c_ranlux/c_rnlx_interface.c
+ranlxd.o: c_ranlux/ranlxd.c Makefile 
+	$(CC) $(FFLAGS) $(RLXOPT) -std=c99 -Ic_ranlux/ -c c_ranlux/ranlxd.c
+ranlxs.o: c_ranlux/ranlxs.c Makefile
+	$(CC) $(FFLAGS) $(RLXOPT) -std=c99 -Ic_ranlux/ -c c_ranlux/ranlxs.c
+ranlux_common.o: c_ranlux/ranlux_common.c Makefile
+	$(CC) $(FFLAGS) $(RLXOPT) -std=c99 -Ic_ranlux/ -c c_ranlux/ranlux_common.c
+##########
 
 ### external libraries (LoopTools, Collier, HandyG, Chaplin, ROOT interface by Giovanni Abbiendi ####
 extlibs: looptools collier handyg chaplin rootinterface
@@ -232,7 +237,7 @@ $(CLLDIR)/lib/libcollier.a:
 	@echo " "
 	@echo "Building Collier"
 	@echo " "
-	mkdir $(CLLDIR)/build/
+	mkdir -p $(CLLDIR)/build/
 	cd $(CLLDIR)/build/ && cmake .. -DCMAKE_INSTALL_PREFIX=.. -Dstatic=ON && make && make install
 
 handyg: $(HANDYGDIR)/lib/libhandyg.a

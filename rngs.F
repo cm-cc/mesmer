@@ -43,8 +43,9 @@ c      return
       subroutine syncrndseq
       implicit double precision (a-h,o-z)
       integer*8 iwriteout
-      integer isync,seed,nsearch,iverbose,nw
-      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
+      integer isync,seed,nsearch,iverbose,nw,istorver,icwvp
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
       parameter (nvec=1000)
       double precision r(nvec)
       common/getrndwvcmn/r,last,ifirst
@@ -58,8 +59,9 @@ c      return
       subroutine getrnd(xi,n)
       implicit double precision (a-h,o-z)
       integer*8 iwriteout
-      integer isync,seed,nsearch,iverbose,nw
-      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
+      integer isync,seed,nsearch,iverbose,nw,istorver,icwvp
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
       dimension xi(n)
       parameter (nvec=1000)
       parameter (nvecsync=30) ! must be <= nvec

@@ -12,4 +12,4 @@ echo "Compiling"
 
 rootcling -f MuEtreeDict.C -c MuEtree.h MuEtreeLinkDef.h
 
-g++ -I${ROOTINCDIR} ${fileC} MuEtreeDict.C ${ROOTLIBS} -lX11 -o ${fileEXE}
+g++ -I${ROOTINCDIR} ${fileC} MuEtreeDict.C ${ROOTLIBS} -o ${fileEXE}

@@ -201,9 +201,15 @@ c         distf = dist
       subroutine beamprofile(e,s,es,truep1lab)
       implicit double precision (a-h,o-z)
       double precision truep1lab(0:3)
+      character*150 line
+      character*200 path
+      common/cmnpath/path      
       common/parameters/ame,ammu,convfac,alpha,pi
-      integer ismualongz
-      common/ISmuondirection/ismualongz      
+      integer ismualongz,ifirst
+      common/ISmuondirection/ismualongz
+      common/bmprfl/ic,ifirst
+      data ic,ifirst /0,0/
+
       es = e
       if (s.gt.1d-8) then
          es  = gau_spread(e,s)      
@@ -216,11 +222,37 @@ c         distf = dist
          truep1lab(2) = 0.d0
          truep1lab(3) = sqrt(es*es-ammu*ammu)
       else
-         p = sqrt(es*es-ammu*ammu)
-         truep1lab(0) = es
-         truep1lab(1) = p * sin(45.d0*pi/180.d0)
-         truep1lab(2) = 0.d0
-         truep1lab(3) = p * cos(45.d0*pi/180.d0)
+         if (ifirst.eq.0) then
+            print*,'Creating fifo for feeding in muon beam momenta...'
+            call EXECUTE_COMMAND_LINE('mkfifo '
+     >           //trim(path)//'beamprofile.fifo 2>/dev/null')
+
+            print*,'Waiting for muon beam momenta from '//
+     >           trim(path)//'beamprofile.fifo'
+            open(82,file=trim(path)//'beamprofile.fifo',status='old')
+c            read(82,'(A)')line ! not needed, dealt with below with the err directive in read statement
+c            print*,'Starting!'
+            ifirst = 1
+         endif
+         
+ 999     continue
+c ! this was for the file with E,posx,posy,px,py,pz         
+c         read(82,*,err=999)energyinfile,posx,posy,
+c     .        truep1lab(1),truep1lab(2),truep1lab(3)
+c ! this is for the file with px,py,pz         
+         read(82,*,err=999)truep1lab(1),truep1lab(2),truep1lab(3)
+c         ic = ic + 1
+c         print*,ic,truep1lab(3)
+         
+! forcing the muon on-shell again
+         truep1lab(0)=sqrt(tridot(truep1lab,truep1lab) + ammu*ammu)
+
+         es = truep1lab(0)
+c         p = sqrt(es*es-ammu*ammu)
+c         truep1lab(0) = es
+c         truep1lab(1) = p * sin(45.d0*pi/180.d0)
+c         truep1lab(2) = 0.d0
+c         truep1lab(3) = p * cos(45.d0*pi/180.d0)
       endif
       return
       end

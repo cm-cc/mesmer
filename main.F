@@ -27,16 +27,17 @@
       common/nphot_mode/nphotmode
       common/epssoft/eps
       common/parameters/ame,ammu,convfac,alpha,pi
-      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
       common/qedORDER/ord
       common/charinput/model,eventlimiter,store,storefile,outfile
+      character*200 path
+      common/cmnpath/path
       common/realinput/anpoints,sdifmax
       common/iseedoninput/iseedext
-
       common/ialpharunning/iarun
       common/teubner/iteubn
       common/nskvp/inskvp
-
       common/idebugging/idebug
 *********************************************
       double precision Qmu
@@ -45,6 +46,7 @@
       common/momentainitial/pin1,pin2
 
       common/tmintmax/tmin,tmax
+      common/tmintmaxfordistributions/tmind,tmaxd
       common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
@@ -95,17 +97,20 @@ c      double precision m1,m2,m12,m22
 
       idproc = getpid()
       call hostnm(hstnm)
-      
+
+****************************************      
       call userinterface
-
+****************************************
 ** [[begin initialization]]
-
+** [[ this is only to set distribution limits...      
+      s = ame*ame + ammu*ammu + 2.d0*ame*emulab
+      pcmm  = 0.5d0 * sqrt(lambda(s,ame*ame,ammu*ammu)/s)
+      tmind = -4.d0*pcmm*pcmm
+      tmaxd =  2.d0*ame*ame - 2.d0*Eemin*ame
+** ]]
       idebug = 0
-
       ecmsnom = ecms
-      
       emin = max(emin,ame)
-      
       npoints = anpoints
 
       in_conf_spin = 4
@@ -200,13 +205,14 @@ c      double precision m1,m2,m12,m22
       endif
 ***
       if (eventlimiter.eq.'unw') wnpoints = 1.d13
-      
+
+* [[[[[ LOOP OVER EVENTS ]]]]]      
 c      do while(k.lt.wnpoints)
       do while(kt.lt.wnpoints)
 ************************
-         call syncrndseq
+        call syncrndseq
 ************************         
-        emuspr    = emulab ! to be spreaded
+        emuspr = emulab     ! to be spreaded
         call beamprofile(emulab,semu,emuspr,truep1lab)
         
         m1  = ammu
@@ -356,7 +362,6 @@ c            call svfactor(model,ng,ecms,p1,p2,eps,sv,deltasv)
      .              sdif,sdifmax,fmax)
             endif
          endif
-
 **************************************************************
          sum  = sum  + sdif
          sum2 = sum2 + sdif**2
@@ -385,33 +390,8 @@ c            call svfactor(model,ng,ecms,p1,p2,eps,sv,deltasv)
          xsec  = xsec  + 1.d0/dble(k)*(sdif - xsec)
          xsec2 = xsec2 + 1.d0/dble(k)*(sdif*sdif - xsec2) ! media dei quadrati
          
-c original         var  = sqrt(abs((sum2/k-xsec*xsec)/k))
-         var  = sqrt(abs((xsec2-xsec*xsec)/k))
-
-c$$$         if((.not.(abs(xsec).lt.1d50)).or.isnan(xsec)) then
-c$$$            print*,'print in main'
-c$$$            print*,pin1
-c$$$            print*,pin2
-c$$$            print*,p1
-c$$$            print*,p2
-c$$$            print*,sdif
-c$$$            print*,phsp,w,emtx
-c$$$            print*,xsec,var
-c$$$            print*,'end print in main'
-c$$$         endif
-c$$$
-c$$$         if((.not.(abs(var).lt.1d50)).or.isnan(var)) then
-c$$$            print*,'print in main'
-c$$$            print*,pin1
-c$$$            print*,pin2
-c$$$            print*,p1
-c$$$            print*,p2
-c$$$            print*,sdif
-c$$$            print*,phsp,w,emtx
-c$$$            print*,xsec,var
-c$$$            print*,'end print in main'
-c$$$         endif
-         
+c original var  = sqrt(abs((sum2/k-xsec*xsec)/k))
+         var  = sqrt(abs((xsec2-xsec*xsec)/k))         
 **************************************************************
          
 !!     unweightening for unweighted events...
@@ -461,38 +441,7 @@ c$$$         endif
          tollerate = 1.8d0            
 cc         tollerate = 1.3d0
          if (var.gt.tollerate*varbefore
-     .        .and.varbefore.gt.0.d0.and.ie.eq.0) then
-
-c            print*,''
-c            print*,var,varbefore
-c            print*,'s34=',dot(p1+p2,p1+p2)
-c            print*,'s35=',dot(p1+p3,p1+p3)
-c            print*,'s36=',dot(p1+p4,p1+p4)
-c            print*,'s45=',dot(p2+p3,p2+p3)
-c            print*,'s46=',dot(p2+p4,p2+p4)
-c            print*,'s56=',dot(p3+p4,p3+p4)
-c            print*,'t13=',dot(pin1-p1,pin1-p1)
-c            print*,'t14=',dot(pin1-p2,pin1-p2)
-c            print*,'t15=',dot(pin1-p3,pin1-p3)
-c            print*,'t16=',dot(pin1-p4,pin1-p4)
-c            print*,'t23=',dot(pin2-p1,pin2-p1)
-c            print*,'t24=',dot(pin2-p2,pin2-p2)
-c            print*,'t25=',dot(pin2-p3,pin2-p3)
-c            print*,'t26=',dot(pin2-p4,pin2-p4)
-c            print*,acos(p1(3)/sqrt(tridot(p1,p1)))*180.d0/pi
-c            print*,acos(p2(3)/sqrt(tridot(p2,p2)))*180.d0/pi
-c            print*,acos(p3(3)/sqrt(tridot(p3,p3)))*180.d0/pi
-c            print*,acos(p4(3)/sqrt(tridot(p4,p4)))*180.d0/pi
-c            print*,p1(0),p2(0),p3(0),p4(0)
-c            print*,sqrt(tridot(p1,p1)),sqrt(tridot(p2,p2)),
-c     .           sqrt(tridot(p3,p3)),sqrt(tridot(p4,p4))          
-c            open(997)
-c            write(997,*)0.d0,0.d0,0.d0,p1(1),p1(2),p1(3)
-c            write(997,*)0.d0,0.d0,0.d0,p2(1),p2(2),p2(3)
-c            write(997,*)0.d0,0.d0,0.d0,p3(1),p3(2),p3(3)
-c            write(997,*)0.d0,0.d0,0.d0,p4(1),p4(2),p4(3)            
-c            close(997)
-            
+     .        .and.varbefore.gt.0.d0.and.ie.eq.0) then            
             if (iverbose.gt.0) then
                call printstatus(3,k,p1,p2,qph,ng,xsec,var,varbefore,
      .              sdif,sdifmax,fmax)
@@ -545,7 +494,7 @@ c     if (ie.eq.0.and.eventlimiter.eq.'w') then
          if (iwriteout.gt.0) then
             writecond = mod(k,iwriteout).eq.0.or.writecond
          else
-            if (mod(k,15000).eq.0) then
+            if (mod(k,30000).eq.0) then
                call cpu_time(tmptime)
                if ((tmptime-starttime).ge.-iwriteout) then
                   writecond = .true.
@@ -554,6 +503,12 @@ c     if (ie.eq.0.and.eventlimiter.eq.'w') then
          endif
          
          if (writecond) then
+
+            open(42,file=trim(path)//'iwriteout',status='unknown')
+            read(42,*)iwriteout
+            close(42)
+            
+            
             kwritenow = k
             idk   = kwritenow-kwritelast
             kwritelast = kwritenow
@@ -584,12 +539,9 @@ c     if (ie.eq.0.and.eventlimiter.eq.'w') then
             dtimetrue = endtime-truestarttime
             write(10,*)' file written last time ~',itime2-itime,'s ago'
 
-c            if (iwriteout.gt.0) then
-c               if (iii.eq.0) iii = iwriteout
             write(10,*)' CPU time to generate last         ',idk,
      .           'events',dtime,'s (',dtime/idk*1d6,
      .           greekmu,'s/ev)' 
-c            endif
             write(10,*)' CPU time to generate     ',k,'events',
      .           dtimetrue,'s (',dtimetrue/k*1d6,greekmu,'s/ev)' 
             starttime = endtime
@@ -764,6 +716,7 @@ c         read(33,*)xxxx
 ****
       enddo
  100  continue
+* [[[[[ END LOOP OVER EVENTS ]]]]]      
 c      close(33)
       if (store.eq.'yes') then
          foonhpm  = hitpmiss

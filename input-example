@@ -11,11 +11,12 @@ Ebeam 150.d0
 Qmu 1
 Eemin 1.d0
 bspr  0.d0
+extmubeam no
 radchs 1 1
 thmumin 0.
 thmumax 100.
 themax 100.
-store no
+store no new yes
 storemode 0
 acoplcut no 5.
 run

@@ -4918,27 +4918,21 @@ c            print*,'iid and iper driven in userinterface'
          m5 = m1  ! muon pair
       endif
       m6 = m5
-***********************      
-
+***********************
       p3 = 0.d0
       p4 = 0.d0
       p5 = 0.d0
       p6 = 0.d0
-      
       ier = 0
-
       sqs = sqrt(s)      
-
       if (sqs.lt.(m3+m4+m5+m6)) then
          phsp = 0.d0
          w    = 0.d0
          ier  = 1
          return
       endif
-
       phsp = 1.d0
       w    = 1.d0
-
       m12 = m1*m1
       m22 = m2*m2
       m32 = m3*m3

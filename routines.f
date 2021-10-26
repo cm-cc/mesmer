@@ -29,7 +29,9 @@
       common/nphot_mode/nphotmode
       common/parameters/ame,ammu,convfac,alpha,pi
       integer*8 kl,iwriteout
-      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync
+      integer istorver,icwvp
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
       common/ialpharunning/iarun
       common/idebugging/idebug
       common/momentainitial/pin1,pin2
