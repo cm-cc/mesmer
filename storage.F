@@ -12,6 +12,8 @@
       common/LHAparticlesidschar/cg,cmum,cmup,cem,cep
       data g,mum,mup,em,ep/22,13,-13,11,-11/
 
+      print*,'Initializing storage...'
+      
       write(cg,'(i4)')g
       write(cmum,'(i4)')mum
       write(cmup,'(i4)')mup
@@ -23,12 +25,11 @@
       cem  = adjustl(trim(cem))
       cep  = adjustl(trim(cep))
       
-      print*,'Initializing storage...'
-      
       wnormalization = wnorm
       sdmax          = sdifmax
       
       istorunit = 61
+c      ififo = 3 ! just write to the fifo, waiting to be read
 c      ififo = 2 ! for gzipped file on the fly
 c      ififo = 1 ! for writing to a fifo, used with root interface      
 c     ififo = 0 ! ascii file
@@ -37,11 +38,23 @@ c      print*,ififo
 c      stop
 
       ilens = lnblnk(storfile)-4
-         
-      if (ififo.eq.2) then  
+      
+      if (ififo.gt.0) then
          call
      >        EXECUTE_COMMAND_LINE("mkfifo "
-     >        //storfile(1:ilens)//".fifo 2>/dev/null")
+     >        //storfile(1:ilens)//".fifo 2>/dev/null")         
+         open
+     >        (istorunit,file=storfile(1:ilens)//".fifo",status='old')
+         if (ififo.eq.3) print*,' Waiting for an external process'//
+     >        '  to read events from '//storfile(1:ilens)//".fifo"
+      endif
+
+      if (ififo.eq.0) then
+         open(istorunit,file=storfile,status='unknown')
+      elseif (ififo.eq.2) then  
+c done above         call
+c     >        EXECUTE_COMMAND_LINE("mkfifo "
+c     >        //storfile(1:ilens)//".fifo 2>/dev/null")
 
 c XZ         
          call EXECUTE_COMMAND_LINE("xz -9 < "//storfile(1:ilens)//
@@ -55,23 +68,19 @@ c ZSTD
 c         call EXECUTE_COMMAND_LINE("zstd -9 -T0 < "//storfile(1:ilens)//
 c     >        ".fifo > "//storfile(1:lnblnk(storfile))//".zstd",
 c     >        wait=.false.)
-
-         open
-     >     (istorunit,file=storfile(1:ilens)//".fifo",status='unknown')
+c done above         open
+c     >     (istorunit,file=storfile(1:ilens)//".fifo",status='unknown')
 
       elseif (ififo.eq.1) then
-         call
-     >    EXECUTE_COMMAND_LINE("mkfifo "//storfile(1:ilens)//".fifo")         
-c         call EXECUTE_COMMAND_LINE("./write_MuE_MCevents.exe "
+c done above         call
+c     >    EXECUTE_COMMAND_LINE("mkfifo "//storfile(1:ilens)//".fifo")         
+ccc         call EXECUTE_COMMAND_LINE("./write_MuE_MCevents.exe "
          call EXECUTE_COMMAND_LINE("./write-root-events "
      >        //storfile(1:ilens)//".fifo "
-c     >        //storfile(1:ilens)//".footer "
      >        //storfile(1:ilens)//".root",
      >        wait=.false.)
-         open
-     >     (istorunit,file=storfile(1:ilens)//".fifo",status='unknown')
-      else
-         open(istorunit,file=storfile,status='unknown')
+c done above         open
+c     >     (istorunit,file=storfile(1:ilens)//".fifo",status='unknown')
       endif
 
       print*,'...and now starting to store...'

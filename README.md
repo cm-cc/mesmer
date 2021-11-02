@@ -117,6 +117,7 @@ By typing `help` at the prompt, a short description of the parameters that can b
              └> [0] plain ascii file 
              └> [1] root file (see README)
              └> [2] on-the-fly xz compressed ascii file
+             └> [3] just write to the fifo and wait for an external process to read events from it	     
  path      ---> path where to store outputs
  seed      ---> pseudo-RNG seed ("small" int)
   
@@ -175,8 +176,9 @@ The muon beam 3-momenta in the format *p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>
 * `store [no old no]`: if events have to be stored `[yes/no]`, which storage version is to be used (`[old]` for v1, `[new]` for v2), if in the v2 event record the coefficients for the VP reweighting have to be written `[yes/no]`. See [below](#description-of-event-format) for a short description of the v1/v2 (old/new) event formats
 * `storemode [0]`: if `store yes`, which mode to use to store events `[0/1/2]`
   * `0`: plain ASCII text file
-  * `1`: `ROOT` format. **`MESMER`** runs in parallel `write-root-events` (a symbolic link to `root-interface/write_MuE_MCevents.exe`), developed by G. Abbiendi, which writes through a named pipe a `.root` file with the events
+  * `1`: `ROOT` format. **`MESMER`** concurrently runs `write-root-events` (a symbolic link to `root-interface/write_MuE_MCevents.exe`), developed by G. Abbiendi, which writes through a named pipe a `.root` file with the events
   * `2`: an `xz` compressed file is saved
+  * `3`: just write events to the fifo file and wait for an external process to read them
 * `path [test-run/]`: the directory where all outputs are saved. It will contain some `.txt` files with differential distributions of some variables, the file `events-*.[dat,dat.xz,root]` with saved events if `store yes` and the file `stat_*.txt`, where cross sections and all info of the current run are reported
 * `seed [42]`: seed for the pseudo-random-number-generator, it must be set to a "small" integer. Independent generations must use different seeds
 
@@ -244,7 +246,7 @@ A typical *event record* looks like
 After the `<event>` tag, the first line is the `seed` of the sample, the second line is the event number and the third is the number (`nfs`) of final state particles (in this case a &mu;, an *e* and two &gamma;s).  
 In the fourth line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
 The fifth line represents the weights *w<sub>LO</sub>* and *w<sub>NLO</sub>* which can be used to get LO distributions from a NLO sample and LO and NLO distributions from a NNLO sample (in this case they are `0` because it's a 4-body final state).  
-The sixth line (present only if `store yes new yes` is selected, i.e. the option to store coefficients for VP reweighting is chosen) represents 11 coefficients needed by the analysis tool to reweight the event when changing VP functions.  
+The sixth line (present only if `store yes new yes` is selected, i.e. if the option to store coefficients for VP reweighting is chosen) represents 11 coefficients needed by the analysis tool to reweight the event when changing VP functions.  
 The seventh  line is the incoming &mu;, in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*, where *id* is the [PDG Monte Carlo code](https://pdg.lbl.gov/2021/web/viewer.html?file=%2F2021/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle and *p<sub>x</sub>*, *p<sub>y</sub>* and *p<sub>z</sub>* (in GeV) are the three-momentum components of the incoming muon. Its energy can be calculated with the muon mass which is stored in the header section.    
 Finally, the last `nfs` lines represent the *id* and three-momenta (in GeV) of the final state &mu;, *e* and two &gamma;s respectively, again in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*.  
 The tag `</event>` closes the *event record*.

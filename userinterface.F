@@ -338,6 +338,7 @@ c      stop
 c      ififo = 2 ! for gzipped file on the fly
 c      ififo = 1 ! for writing to a fifo, used with root interface      
 c      ififo = 0 ! ascii file
+c      ififo = 3 ! just write on the fifo
       ififo = 0
       
       sdifmax      = 1.d-10
@@ -845,11 +846,13 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
      .     ' coefficients for VP reweighting [yes/no]'//
      .     ' (active only for v2)'
       print*,setkey(27) ,' ---> which mode to use to store events'//
-     .     ' [0/1/2]'
+     .     ' [0/1/2/3]'
       print*,'            ',greekmu,'> [0] plain ascii file '
       print*,'            ',greekmu,'> [1] root file (see README)'
       print*,'            ',greekmu,'> [2] on-the-fly xz'//
      .     ' compressed ascii file'
+      print*,'            ',greekmu,'> [3] just write to the fifo'//
+     .     ' and wait for an external process to read events from it'
       print*,setkey(7)  ,' ---> path where to store outputs'
       print*,setkey(10) ,' ---> pseudo-RNG seed ("small" int)'
       print*,' '
