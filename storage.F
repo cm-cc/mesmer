@@ -518,6 +518,10 @@ c      write(ifoo,*)foonh
          write(istorunit,*)' ',wnormalization
          write(istorunit,*)'  Maximum weight [guessed]'
          write(istorunit,*)' ',sdmax/wnorm
+         write(istorunit,*)'  ------------------------------'
+         write(istorunit,*)'  If coefficients for VP reweighting'//
+     .        ' are present (0/1)'
+         write(istorunit,*)' ',icwvp
          write(istorunit,*)'</header>'
          ifirst = 1
       endif

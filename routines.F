@@ -33,7 +33,6 @@
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
      .     istorver,icwvp
       common/ialpharunning/iarun
-      common/idebugging/idebug
       common/momentainitial/pin1,pin2
       common/radpattern/nph(4)
 

@@ -11,7 +11,7 @@ Authors are listed in the [`AUTHORS`](AUTHORS.md) file.
 We'd be grateful if you could cite the following papers when using the **`MESMER`** generator:  
 1. [Alacevich *et al.*, Muon-electron scattering at NLO, JHEP 02 (2019) 155](https://inspirehep.net/literature/1703989)
 2. [Carloni Calame *et al.*, Towards muon-electron scattering at NNLO, JHEP 11 (2020) 028](https://inspirehep.net/literature/1805205)  
-3. [E. Budassi *et al.*, NNLO virtual and real leptonic corrections to muon-electron scattering, 2109.14606 [hep-ph]](https://inspirehep.net/literature/1933852)
+3. [E. Budassi *et al.*, NNLO virtual and real leptonic corrections to muon-electron scattering, JHEP 11 (2021) 098](https://inspirehep.net/literature/1933852)
 
 ## Prerequisites & Compilation
 The program is mainly written in `Fortran 77` and it has been extensively tested with `GCC` compilers on `GNU/Linux`.
@@ -27,6 +27,9 @@ The interface to Cern ROOT event format requires the [`ROOT`](https://root.cern/
 A `Makefile` is provided and the executable `mesmer` is build by simply issuing the command `make`.
 
 **NOTICE: as of now, the released code runs only at LO, NLO and NNLO. If NNLO extra leptonic pair production are selected, the execution stops with a warning.** 
+
+## Warning
+**When running at NNLO, please understand that a subset of the purely virtual NNLO photonic corrections are approximate as described in 2. of the list of references, i.e. the subset of virtual corrections where at least two photons connect the muon and the electron fermionic lines.** 
 
 ## Running the code
 Once compiled, **`MESMER`** is run by issuing in the working directory the command `./mesmer`, which displays a command prompt
@@ -67,7 +70,7 @@ The **`MESMER`** prompt	 looks like:
    [ arun      ] alpha running is on
    [ hadoff    ] Hadronic VP is off: no
    [ nev       ] n. of events to generate: 10000000.
-   [ store     ] events storage: no old no
+   [ store     ] events storage: no yes
    [ storemode ] mode to store: 0
    [ path      ] files saved in test-run/
    [ seed      ] seed for pseudo-RNG = 42
@@ -110,9 +113,8 @@ By typing `help` at the prompt, a short description of the parameters that can b
  arun      ---> if running of alpha must be used [off/on/hadr5/nsk/knt]
  hadoff    ---> if switching off hadronic VP [yes/no]
  nev       ---> number of events to generate
- store     ---> (3 parameters) if events have to be stored [yes/no],
-                which format [new/old] (for v2/v1),
-                if writing also coefficients for VP reweighting [yes/no] (active only for v2)
+ store     ---> (2 parameters) if events have to be stored [yes/no],
+                if writing also coefficients for VP reweighting [yes/no]
  storemode ---> which mode to use to store events [0/1/2]
              └> [0] plain ascii file 
              └> [1] root file (see README)
@@ -176,12 +178,11 @@ The muon beam 3-momenta in the format *p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>
 * `store [no old no]`: if events have to be stored `[yes/no]`, which storage version is to be used (`[old]` for v1, `[new]` for v2), if in the v2 event record the coefficients for the VP reweighting have to be written `[yes/no]`. See [below](#description-of-event-format) for a short description of the v1/v2 (old/new) event formats
 * `storemode [0]`: if `store yes`, which mode to use to store events `[0/1/2]`
   * `0`: plain ASCII text file
-  * `1`: `ROOT` format. **`MESMER`** concurrently runs `write-root-events` (a symbolic link to `root-interface/write_MuE_MCevents.exe`), developed by G. Abbiendi, which writes through a named pipe a `.root` file with the events
+  * `1`: `ROOT` format. **`MESMER`** concurrently runs `write-root-events` (a symbolic link to `root-interface/write_MuE_MCevents.exe`), developed by Giovanni Abbiendi, which writes through a named pipe a `.root` file with the events
   * `2`: an `xz` compressed file is saved
   * `3`: just write events to the fifo file and wait for an external process to read them
 * `path [test-run/]`: the directory where all outputs are saved. It will contain some `.txt` files with differential distributions of some variables, the file `events-*.[dat,dat.xz,root]` with saved events if `store yes` and the file `stat_*.txt`, where cross sections and all info of the current run are reported
 * `seed [42]`: seed for the pseudo-random-number-generator, it must be set to a "small" integer. Independent generations must use different seeds
-
 
 ### Inner parameters
 
@@ -217,11 +218,13 @@ For unweightening, the maximum weight `sdmax` can be alternatively set by hand (
 If the code is run with `extmubeam yes`, it expects to read muon beam 3-momenta for each event from the named pipe `'path'/beamprofile.fifo`. As an example, a sample of 10<sup>5</sup> incoming muon momenta is provided in the file `beamprofile-example.txt.gz` (thanks to Mateusz Goncerz). To test it, run `mesmer` with `extmubeam yes` (and `nev` < 10<sup>5</sup>), which creates the pipe and waits to read muon beam 3-momenta, and issue in another shell `zcat beamprofile-example.txt.gz > 'path'/beamprofile.fifo`. Any provider of muon beam momenta must write on the same pipe, using the format *p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>* (in GeV). If `store yes new yes|no`, the momenta of the stored particles will account for the generic direction of the incoming muon.
 
 ## Description of event format
-The event format has been developed together with G. Abbiendi.
+The event format has been developed together with Giovanni Abbiendi. The code uses by default Version 2 described in the following. The version flag is hard-wired, but can be easily modified if needed (see [below](#version-1-old-superseded)).
 
-Version 1 is compliant with the current version of the `ROOT` file writer ([mantained by G. Abbiendi](https://gitlab.cern.ch/muesli/nlo-mc/mue/-/tree/master/writer)), but it is limited to parse only LO, NLO and NNLO events (*events with extra leptonic pairs are not supported yet*).  
+<!--
+Version 1 is compliant with the current version of the `ROOT` file writer ([mantained by Giovanni Abbiendi](https://gitlab.cern.ch/muesli/nlo-mc/mue/-/tree/master/writer)), but it is limited to parse only LO, NLO and NNLO events (*events with extra leptonic pairs are not supported yet*).  
+-->
 
-### Version 2 (still under development)
+### Version 2 (default)
 
 The simple ASCII file (`storemode 0`) contains an header section between the tags `<header>` and `</header>` and a closing section between the tags `<footer>` and `</footer>`. After the header, each *event record* is enclosed between the `<event>` and `</event>` tags.  
 The header contains useful info about the run and the set parameters. The footer contains some statistics of the generated sample.  
@@ -246,14 +249,22 @@ A typical *event record* looks like
 After the `<event>` tag, the first line is the `seed` of the sample, the second line is the event number and the third is the number (`nfs`) of final state particles (in this case a &mu;, an *e* and two &gamma;s).  
 In the fourth line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
 The fifth line represents the weights *w<sub>LO</sub>* and *w<sub>NLO</sub>* which can be used to get LO distributions from a NLO sample and LO and NLO distributions from a NNLO sample (in this case they are `0` because it's a 4-body final state).  
-The sixth line (present only if `store yes new yes` is selected, i.e. if the option to store coefficients for VP reweighting is chosen) represents 11 coefficients needed by the analysis tool to reweight the event when changing VP functions.  
+The sixth line (present only if `store yes yes` is selected, i.e. if the option to store coefficients for VP reweighting is chosen) represents 11 coefficients needed by the analysis tool to reweight the event when changing VP functions.  
 The seventh  line is the incoming &mu;, in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*, where *id* is the [PDG Monte Carlo code](https://pdg.lbl.gov/2021/web/viewer.html?file=%2F2021/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle and *p<sub>x</sub>*, *p<sub>y</sub>* and *p<sub>z</sub>* (in GeV) are the three-momentum components of the incoming muon. Its energy can be calculated with the muon mass which is stored in the header section.    
 Finally, the last `nfs` lines represent the *id* and three-momenta (in GeV) of the final state &mu;, *e* and two &gamma;s respectively, again in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*.  
 The tag `</event>` closes the *event record*.
 
-The upcoming `ROOT` file writer will read through a named pipe this event format and will write all the information into a `.root` file.
+The `ROOT` file writer reads through a named pipe this event format and writes all the information into a `.root` file.
 
-### Version 1 (default)
+### `ROOT` file writer
+
+To download and compile the `.root` file writer, issue the command `make rootwriter`, which clones [Giovanni's repository](https://gitlab.cern.ch/muesli/nlo-mc/mue/), compiles the writer and links it to `./write-root-events`, which in turn is used inside the code to write the `.root` file.  
+In order to clone Giovanni's repository, a CERN account is needed. In case you don't have one, please ask for a copy of the writer to one of the authors.
+
+### Version 1 (old, superseded)
+
+If needed, modify in `userinterface.F` the line saying `istorver = 2` to `istorver = 1` and recompile.
+
 The simple ASCII file (`storemode 0`) contains an header section between the tags `<header>` and `</header>` and a closing section between the tags `<footer>` and `</footer>`. After the header, each *event record* is enclosed between the `<event>` and `</event>` tags.  
 The header contains useful info about the run and the set parameters. The footer contains some statistics of the generated sample.  
 A typical *event record* looks like
@@ -276,8 +287,6 @@ The fifth line represents the weight *w<sub>LO</sub>* which can be used to get L
 The sixth line is the incoming &mu; energy in GeV.  
 Finally, the last three lines represent the momenta (in GeV) of the final state &mu;, *e* and &gamma; respectively, in the format *E p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*.  
 The tag `</event>` closes the *event record*.
-
-The `ROOT` file writer reads through a named pipe this event format and writes all the information into a `.root` file.
 
 ##### Footnotes
 KNT: Available upon request from the authors

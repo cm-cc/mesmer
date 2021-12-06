@@ -1,4 +1,4 @@
-seed 4
+seed 42
 path test-run
 nev 1000000
 mode weighted
@@ -16,7 +16,8 @@ radchs 1 1
 thmumin 0.
 thmumax 100.
 themax 100.
-store no new yes
+store no yes
 storemode 0
 acoplcut no 5.
+elast cut no 0.2
 run

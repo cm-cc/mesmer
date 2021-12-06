@@ -1,14 +1,8 @@
       program main
       implicit double precision (a-h,o-z)
-      integer*8 npoints,k,naccepted,iwriteout,kt,itime,itime2,nh
-      integer*8 kwritenow,kwritelast
       parameter (mph=40,maxnw=3)
       double precision distwgts(maxnw)
       double precision csi(1)
-      dimension sump(0:mph-1),sum2p(0:mph-1)
-      double precision sumpairs,sumpairs2
-      dimension fractions(0:mph-1)
-      dimension xsecp(0:mph-1),varp(0:mph-1)
       dimension p1(0:3),p2(0:3),qph(mph,0:3)
       dimension p3(0:3),p4(0:3)
       dimension pin1(0:3),pin2(0:3),ptmp(0:3)
@@ -38,7 +32,6 @@
       common/ialpharunning/iarun
       common/teubner/iteubn
       common/nskvp/inskvp
-      common/idebugging/idebug
 *********************************************
       double precision Qmu
       common/muoncharge/Qmu
@@ -50,9 +43,6 @@
       common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
-      double precision ntomicro
-      common/nanotomicro/ntomicro,intomi
-
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
       double precision truep1lab(0:3)
       common/labmomenta/p1lab,p2lab,truep1lab,p12lab
@@ -62,8 +52,6 @@
 
 c      double precision m1,m2,m12,m22
       common/processmasses/m1,m2,m12,m22
-
-      integer rlxstate(104)
       
 ***   for reweighenting
       integer nextraweights
@@ -72,17 +60,34 @@ c      double precision m1,m2,m12,m22
       double precision reweightLO,wnorm
       common/weights/reweightLO,reweightNLO,weightdefault,extraweights
       common/weightnormalization/wnorm
-***
-      integer*8 foonhpm,foonh
-      common/forfooter/xsw,exsw,xsunw,exsunw,
-     .     xsbias,exsbias,xsbiasn,exsbiasn,truemax,sum,sum2,sumneg,
-     .     sum2neg,foonhpm,foonh,nabove,nlt0
-      
+***      
+      logical writecond
+      real starttime,endtime,truestarttime,tmptime
+
+      dimension sump(0:mph-1),sum2p(0:mph-1)
+      dimension fractions(0:mph-1)
+      dimension xsecp(0:mph-1),varp(0:mph-1)
+      double precision sumpairs,sumpairs2,sumpairsv(2),sumpairsv2(2)      
+      integer*8 npoints,k,naccepted,iwriteout,kt,itime,itime2,nh
+      integer*8 kwritenow,kwritelast
       integer ucs4
       parameter (ucs4  = selected_char_KIND ('ISO_10646'))
       character(len=1,kind=ucs4) greekmu
-      logical writecond
-      real starttime,endtime,truestarttime,tmptime
+      integer*8 foonhpm,foonh
+      double precision ntomicro
+      integer rlxstate(104)      
+      common/forfooter/xsw,exsw,xsunw,exsunw,
+     .     xsbias,exsbias,xsbiasn,exsbiasn,truemax,sum,sum2,sumneg,
+     .     sum2neg,foonhpm,foonh,nabove,nlt0
+      common/oldmain/greekmu,truestarttime,s,sumw1,sumw2,sumw12,sumw22,
+     .     sumLO,sumLO2,sumNLO,sumNLO2,sumpairs,sumpairs2,sumpairsv,
+     .     sumpairsv2,sump,sum2p,sdiftruemax,sdiftruemin,hit,hitpmiss,
+     .     istopsearch,nneg,sumover,sum2over,fmax,wnpoints,
+     .     ntomicro,k,npoints,naccepted,kt,itime,rlxstate,nphmax,nover, 
+     .     in_conf_spin
+****************************************      
+      call userinterface
+****************************************      
 
       greekmu = ucs4_'\u03BC'
       greekmu = char (int (z'03BC'), ucs4) 
@@ -93,14 +98,6 @@ c      double precision m1,m2,m12,m22
       
       ntomicro = 0.001d0
       
-      irepeat = 0
-
-      idproc = getpid()
-      call hostnm(hstnm)
-
-****************************************      
-      call userinterface
-****************************************
 ** [[begin initialization]]
 ** [[ this is only to set distribution limits...      
       s = ame*ame + ammu*ammu + 2.d0*ame*emulab
@@ -108,9 +105,7 @@ c      double precision m1,m2,m12,m22
       tmind = -4.d0*pcmm*pcmm
       tmaxd =  2.d0*ame*ame - 2.d0*Eemin*ame
 ** ]]
-      idebug = 0
       ecmsnom = ecms
-      emin = max(emin,ame)
       npoints = anpoints
 
       in_conf_spin = 4
@@ -128,18 +123,12 @@ c      double precision m1,m2,m12,m22
       sum2 = 0.d0
       sumpairs = 0.d0
       sumpairs2 = 0.d0
+      sumpairsv  = 0.d0
+      sumpairsv2 = 0.d0
       do kk = 0,mph-1
          sump(kk) = 0.d0
          sum2p(kk) = 0.d0
       enddo
-      sumv  = 0.d0
-      sum2v = 0.d0
-      diffv = 0.d0
-      xsecv = 0.d0
-      sumvt  = 0.d0
-      sum2vt = 0.d0
-      diffvt = 0.d0
-      xsecvt = 0.d0
 
       sdiftruemax = -1d30
       sdiftruemin =  1d30
@@ -149,14 +138,7 @@ c      double precision m1,m2,m12,m22
       xsec2        = 0.d0
       var          = 0.1d0
       naccepted    = 0
-      sumb1        = 0.d0
-      sumb2        = 0.d0
-      bornmax      = 0.d0
-      phspmax      = 0.d0
       nwhenmax     = 0
-      wmax         = 0.d0
-      prodmax      = 0.d0
-      elmmax       = 0.d0
       nover        = 0
       hitpmiss     = 0.d0
       hit          = 0.d0
@@ -310,12 +292,9 @@ c     .        p1,p2,qph,phsp,w,ie)
          if (ng.gt.nphmax.and.ie.eq.0) nphmax = ng
          if (icut.eq.0) naccepted = naccepted + 1
 
-         irepeat = irepeat + 1
-
 ! notice: this is calculated where pin[12] are along z, while cuts are applied in the rotated frame
          call squared_matrix(model,ng,npairs,ecms,p1,p2,p3,p4,pin1,pin2,
      .         qph,ie,icalc,emtx)
-         irepeat = 0
          
          flux = 4.d0*sqrt(dot(pin1,pin2)**2-m12*m22)
 !     also this ! flux = 2.d0*sqrt(lambda(s,me*me,mm*mm)) !!
@@ -382,6 +361,8 @@ c            call svfactor(model,ng,ecms,p1,p2,eps,sv,deltasv)
          else
             sumpairs  = sumpairs  + sdif
             sumpairs2 = sumpairs2 + sdif*sdif
+            sumpairsv(npairs)  = sumpairsv(npairs)  + sdif
+            sumpairsv2(npairs) = sumpairsv2(npairs) + sdif*sdif
          endif
          varbefore = var
          xsec = sum/k
@@ -446,31 +427,6 @@ cc         tollerate = 1.3d0
                call printstatus(3,k,p1,p2,qph,ng,xsec,var,varbefore,
      .              sdif,sdifmax,fmax)
             endif
-c$$$!---------- Nullifying this event ------------!
-c$$$            ratio = var/varbefore
-c$$$c            if (k.gt.5000000.and.ratio.gt.3) then
-c$$$            if (k.gt.5000000.and.ratio.gt.6.and.ord.ne.'born') then
-c$$$               print*,' ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-c$$$               print*,' ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-c$$$               print*,' >>>>>>>> REJECTING THE EVENT <<<<<<<<'
-c$$$               print*,' ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-c$$$               print*,' ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-c$$$               if (iverbose.gt.0) then
-c$$$                  call printstatus(4,k,p1,p2,qph,ng,xsec,var,varbefore,
-c$$$     .                 sdif,sdifmax,fmax)
-c$$$               endif
-c$$$c               print*,'WELL... actually not rejecting it...'
-c$$$c               goto 12345
-c$$$               kt = kt - 1
-c$$$               sum = sum - sdif
-c$$$               sum2 = sum2 - (sdif)**2
-c$$$               sump(ng) = sump(ng) - sdif
-c$$$               sum2p(ng) = sum2p(ng) - (sdif**2)
-c$$$               xsec = sum/k
-c$$$               var  = sqrt((sum2/k-xsec**2)/k)
-c$$$               sdif = 0.d0
-c$$$12345          continue
-c$$$            endif
          endif
 
          if (ie.eq.0) then
@@ -503,11 +459,11 @@ c     if (ie.eq.0.and.eventlimiter.eq.'w') then
          endif
          
          if (writecond) then
-
+ccc   call printoutput
+            
             open(42,file=trim(path)//'iwriteout',status='unknown')
             read(42,*)iwriteout
-            close(42)
-            
+            close(42)            
             
             kwritenow = k
             idk   = kwritenow-kwritelast
@@ -615,11 +571,19 @@ c     if (ie.eq.0.and.eventlimiter.eq.'w') then
             enddo
             if (sumpairs.gt.0.d0) then
                xsecpairs = sumpairs/k
+               xsecpairs1 = sumpairsv(1)/k
+               xsecpairs2 = sumpairsv(2)/k
                varpairs  = sqrt((abs(sumpairs2/k-xsecpairs**2))/k)
+               varpairs1  = sqrt((abs(sumpairsv2(1)/k-xsecpairs1**2))/k)
+               varpairs2  = sqrt((abs(sumpairsv2(2)/k-xsecpairs2**2))/k)
                fracpairs = xsecpairs/xsec * 100.d0
                write(10,'(A,f22.11,A,f22.11,A,f8.4,A)')
      :              ' real pairs: ',xsecpairs,' +-',varpairs,
      :              '     (',fracpairs,' %)'
+               write(10,'(A,f17.11,A,f22.11)')
+     :              '   [e+e-   pairs: ',xsecpairs1,' +-',varpairs1
+               write(10,'(A,f17.11,A,f22.11,A)')
+     :              '    mu+mu- pairs: ',xsecpairs2,' +-',varpairs2,']'
             endif
             write(10,'(1x,A,f22.11,A,f22.11,A,A,A)')
      :           'total:      ',xsec,' +-',var,' ',greekmu,'b'

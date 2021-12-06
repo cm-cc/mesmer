@@ -4727,7 +4727,7 @@ cc            p0 = p ! for cross-checks
       c5(2) = c52
       c5(3) = c53
       
-      nm1 = 1.d0/sqrt(den12*den22)
+      nm1 = 1.d0/sqrt(abs(den12*den22)) ! abs needed, discovered when porting to e+e- > mu+ mu.
       
       c  = c*nm1
       c5 = c5*nm1
@@ -6552,21 +6552,8 @@ c      call loadQEDfuns1g1L ! loads all needed LT functions
       p3km1 = 1.d0/p3k
       p4km1 = 1.d0/p4k
 
-c      print*,t13,t24,s12,s34,u14,u23,p1k,p2k,p3k,
-c     -     p4k,p1mk2,p2mk2,p3pk2,p4pk2
-      
-
-c      print*,'Reenable includes in muemue1g1Lnoud.F!!! stopping'
-c      stop
       include 'cts1g1L.f'
 
-c      print*,' '
-c      print*,el8,cover
-c      print*,muemueg1L
-c      print*,t13m1,t24m1
-c      print*,p1km1,p2km1,p3km1,p4km1
-
-      
       cts1g1L = cts1g1L*ec4*ec2
 
       return

@@ -1,5 +1,5 @@
-RELEASE=
 RELEASE=yes
+RELEASE=
 
 EXE = mesmer
 
@@ -41,8 +41,14 @@ endif
 QUAD=-DRealType=real*16 -DComplexType=complex*32 -DQUAD
 QUAD=
 
-ROOTINTERFACE=
 ROOTINTERFACE=yes
+# not needed anymore, it's replaced by make rootwriter
+ROOTINTERFACE=
+
+GADIR=GAwriter
+GANAME=mue
+GAREPO=https://gitlab.cern.ch/muesli/nlo-mc/$(GANAME).git
+GAREPO=ssh://git@gitlab.cern.ch:7999/muesli/nlo-mc/$(GANAME).git
 
 GSLLIBS= -lgsl -lgslcblas
 GSLLIBS=
@@ -86,6 +92,7 @@ ifeq ($(RECOLA),-DRECOLA)
 endif
 
 LIBFILES  = $(LTDIR)/lib64/libooptools.a
+# ROOTINTERFACE not needed anymore, replaced by make rootwriter
 ifeq ($(ROOTINTERFACE),yes)
   LIBFILES += root-interface/write_MuE_MCevents.exe
 endif
@@ -125,16 +132,17 @@ pack: # use only to release MESMER
 	mkdir -p $(RELEASEDIR)/collier/ &&\
 	cp -ra LoopTools-$(LTVER)-clean/ $(RELEASEDIR)/LoopTools-$(LTVER) &&\
 	cp -ra collier/COLLIER-1.2.5-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.5 &&\
-        cp -ra root-interface/ write-root-events MuEtreeDict_rdict.pcm Makefile README.md input-example\
+        cp -ra Makefile README.md input-example\
         distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h AUTHORS.md\
         main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat muemue1g1Lud.F LICENSE.md\
-        vacuumpolarization.F cuts.F sv.F routines.f sampling.f phasespacemue.F $(VPKNT).f recola_int.F\
+        vacuumpolarization.F cuts.F sv.F routines.F sampling.f phasespacemue.F $(VPKNT).f recola_int.F\
         rngs.F hadr5n12.f hadr5n17.f hadr5x19.f hadr5n.f ranlux.f userinterface.F\
         loops.F storage.F muemuegg-minus.f muemuegg-plus.f muemuegg.F muemue1g1Lnoupdown.f realpairs.F\
         realpairs_ampl2.f muemue1g1Lupdown.f funssettozero.f printltfun cts1g1L.f muemue1g1Lupdownten.f\
         twoloop_virtual.F dalhadslow17.f dalhadshigh17.f dalhadt17.f quadpack.F $(HPLOG).f\
-        f1_light_heavy.f f2_light_heavy.f f1_light_heavy_quad.f f2_light_heavy_quad.f beamprofile-example.txt.gz\
+        f1_light_heavy.f f2_light_heavy.f f1_light_heavy_quad.f f2_light_heavy_quad.f\
         light-heavy-2LFF.F constgpl_defs.f vargpl_defs.f gsl_random.c Rhad-scan.dat elasticity.F\
+        beamprofile-example.txt.gz\
         $(RELEASEDIR) &&\
 	cp oneloop/*.f $(RELEASEDIR)/oneloop/ &&\
 	cp c_ranlux/*.* $(RELEASEDIR)/c_ranlux/ && $(STRINGSMH) \
@@ -143,6 +151,7 @@ pack: # use only to release MESMER
 	tar cjvf $(SAVEDIR)/$(RELEASEDIR).tar.bz2 $(RELEASEDIR)/ &&\
 	rm -rf $(RELEASEDIR)
 ##### end packaging
+# root-interface/ write-root-events MuEtreeDict_rdict.pcm  # not needed anymore
 
 clean:
 	rm -f $(OBJECTS) *.a $(EXE) *~
@@ -190,8 +199,8 @@ quadpack.o: quadpack.F
 	$(F77) -c quadpack.F
 sampling.o: sampling.f
 	$(F77) -c sampling.f
-routines.o: routines.f 
-	$(F77) $(QUAD) -c routines.f
+routines.o: routines.F
+	$(F77) $(QUAD) -c routines.F
 distributions.o: distributions.F distributions_inc.F Makefile
 	$(F77) -c distributions.F
 ranlux.o: ranlux.f 
@@ -223,7 +232,22 @@ ranlux_common.o: c_ranlux/ranlux_common.c Makefile
 ##########
 
 ### external libraries (LoopTools, Collier, HandyG, Chaplin, ROOT interface by Giovanni Abbiendi ####
-extlibs: looptools collier handyg chaplin rootinterface
+extlibs: looptools collier handyg chaplin rootwriter
+# rootinterface # not needed anymore
+
+rootwriter: $(GADIR)/$(GANAME)/ $(GADIR)/$(GANAME)/writer/write_MuE_MCevents.exe
+$(GADIR)/$(GANAME)/:
+	@echo " "
+	@echo "Cloning MuE software (by G. Abbiendi)"
+	@echo " "
+	mkdir -p $(GADIR) && cd $(GADIR) && git clone $(GAREPO)
+$(GADIR)/$(GANAME)/writer/write_MuE_MCevents.exe:
+	@echo " "
+	@echo "Pulling MuE software and building .root writer"
+	@echo " "
+	cd $(GADIR)/$(GANAME)/ && git pull $(GAREPO)
+	cd $(GADIR)/$(GANAME)/writer/ && ./compile_writer.sh
+	ln -sf $(GADIR)/$(GANAME)/writer/write_MuE_MCevents.exe write-root-events
 
 looptools: $(LTDIR)/lib64/libooptools.a
 $(LTDIR)/lib64/libooptools.a:
@@ -254,12 +278,13 @@ $(CHAPLINDIR)/lib/libchaplin.a:
 	@echo " "
 	cd $(CHAPLINDIR)/chaplin-1.2/ && ./configure --prefix=`pwd`/../ --disable-shared && make && make install
 
-rootinterface: root-interface/write_MuE_MCevents.exe
-root-interface/write_MuE_MCevents.exe:
-	@echo " "
-	@echo "Building ROOT interface (by G. Abbiendi)"
-	@echo " "
-	cd root-interface && ./compile_writer.sh
+# not needed anymore, superseded by rootwriter
+#rootinterface: root-interface/write_MuE_MCevents.exe
+#root-interface/write_MuE_MCevents.exe:
+#	@echo " "
+#	@echo "Building ROOT interface (by G. Abbiendi)"
+#	@echo " "
+#	cd root-interface && ./compile_writer.sh
 ##########
 
 # MESMER library

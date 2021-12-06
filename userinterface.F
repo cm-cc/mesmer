@@ -42,6 +42,8 @@
       integer ififo
       common/ififocmn/ififo
 
+      character*20 hstnm
+      common/hostandpid/hstnm,idproc      
 ******************************
       integer ifredv
       common/fredversion/ifredv
@@ -151,12 +153,9 @@ c$$$
 *** opening stdout as utf-8!      
       open(stdout,encoding='UTF-8')
 ***
-      istorver   = 2
-      icwvp      = 1
-#ifdef RELEASE
-      istorver   = 1
-      icwvp      = 0
-#endif      
+      istorver = 2
+      icwvp    = 1
+***
       ismualongz = 1
 c      ismualongz = 0
 
@@ -440,8 +439,9 @@ c            print*,'>> Overwriting run parameters <<'
          if (istorver.eq.2) ctmp3 = 'new'
          write(stringa,*)' [ '//setkey(8)
      .        //' ] events storage: '//
-     .        trim(store)//' '//trim(ctmp3)//
-     .        ' '//trim(ctmp2)
+     .        trim(store)//' '//trim(ctmp2)
+c         //
+c     .        ' '//trim(ctmp3)
          print*,trim(stringa)
 
          write(stringa,*)' [ '//setkey(27)
@@ -546,15 +546,17 @@ c         print*,trim(stringa)
      .        c.eq.'elastcut'.or.
      .        c.eq.'radchs') then
             read(cinput(k+1:),'(bn,A)') cx
-            if (c.eq.'ord')     ord     = cx
-            if (c.eq.'model')   model   = cx
-            if (c.eq.'path')    path    = cx
+            if (c.eq.'ord')     ord   = cx
+            if (c.eq.'model')   model = cx
+            if (c.eq.'path')    path  = cx
             if (c.eq.'store') then
-               read(cx,*)ctmp,ctmp3,ctmp2
+c               read(cx,*)ctmp,ctmp3,ctmp2
+               ctmp3 = 'new'
+               read(cx,*)ctmp,ctmp2
                if (ctmp2.eq.'yes') icwvp = 1
                if (ctmp2.eq.'no')  icwvp = 0
-               if (ctmp3.eq.'new') istorver = 2
-               if (ctmp3.eq.'old') istorver = 1
+c               if (ctmp3.eq.'new') istorver = 2
+c               if (ctmp3.eq.'old') istorver = 1
                store   = ctmp
             endif
             if (c.eq.'extmubeam') then
@@ -738,7 +740,7 @@ c               print*,'                  '
       
       spremu = spremu * 0.01d0
       semu   = spremu * emulab 
-      Eemin = max(Eemin,ame)
+      Eemin  = max(Eemin,ame)
       if (abs(iqmu).ne.1) then
          print*,'Wrong charge selected! stopping...'
          stop
@@ -796,6 +798,10 @@ c     .     .or.(nphotmode.gt.999.or.nphotmode.lt.-999)) then
       iseed = iii
       call initrng(iseed)
 ****  end RNG initialization
+
+      idproc = getpid()
+      call hostnm(hstnm)
+
       return
       end
 cccccccccccccccccccccccccccccccccccccccccccccccc
@@ -839,12 +845,13 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
      .     ' [off/on/hadr5/nsk/knt]'
       print*,setkey(25) ,' ---> if switching off hadronic VP [yes/no]'
       print*,setkey(6)  ,' ---> number of events to generate'
-      print*,setkey(8)  ,' ---> (3 parameters) if events have to be'//
+      print*,setkey(8)  ,' ---> (2 parameters) if events have to be'//
      .     ' stored [yes/no],'
-      print*,'               which format [new/old] (for v2/v1),'
+c      print*,'               which format [new/old] (for v2/v1),'
       print*,'               if writing also'//
-     .     ' coefficients for VP reweighting [yes/no]'//
-     .     ' (active only for v2)'
+     .     ' coefficients for VP reweighting [yes/no]'
+c      //
+c     .     ' (active only for v2)'
       print*,setkey(27) ,' ---> which mode to use to store events'//
      .     ' [0/1/2/3]'
       print*,'            ',greekmu,'> [0] plain ascii file '
@@ -892,6 +899,300 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
      .     ' within applied cuts, used for storage in ROOT format'
       print*,setkey(30)  ,' ---> syncronization mode for'//
      .     ' random numbers (see README) [0/1]'
+      return
+      end
+**************************
+      subroutine printoutput
+      implicit double precision (a-h,o-z)
+      parameter (mph=40,maxnw=3)
+      double precision distwgts(maxnw)
+      double precision csi(1)
+      dimension p1(0:3),p2(0:3),qph(mph,0:3)
+      dimension p3(0:3),p4(0:3)
+      dimension pin1(0:3),pin2(0:3),ptmp(0:3)
+      integer isvec(25)
+      common/rlxstatus/isvec
+*** filled in the subroutine userinterface
+      character*6   ord
+      character*10  model
+      character*100 outfile,storefile
+      character*3   eventlimiter,store
+      character*2 fs
+      character*20 hstnm
+      common/hostandpid/hstnm,idproc
+      common/finalstate/fs
+      common/ecms/ecms,ecmsnom
+      common/nphot_mode/nphotmode
+      common/epssoft/eps
+      common/parameters/ame,ammu,convfac,alpha,pi
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp
+      common/qedORDER/ord
+      common/charinput/model,eventlimiter,store,storefile,outfile
+      character*200 path
+      common/cmnpath/path
+      common/realinput/anpoints,sdifmax
+      common/iseedoninput/iseedext
+      common/ialpharunning/iarun
+      common/teubner/iteubn
+      common/nskvp/inskvp
+*********************************************
+      double precision Qmu
+      common/muoncharge/Qmu
+      
+      common/momentainitial/pin1,pin2
+
+      common/tmintmax/tmin,tmax
+      common/tmintmaxfordistributions/tmind,tmaxd
+      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+     .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
+
+      double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
+      
+      double precision lambda,m1,m2,m12,m22
+      external lambda
+
+c      double precision m1,m2,m12,m22
+      common/processmasses/m1,m2,m12,m22
+      
+***   for reweighenting
+      integer nextraweights
+      parameter (nextraweights=4)
+      double precision weightdefault,extraweights(0:nextraweights)
+      double precision reweightLO,wnorm
+      common/weights/reweightLO,reweightNLO,weightdefault,extraweights
+      common/weightnormalization/wnorm
+***      
+      logical writecond
+      real starttime,endtime,truestarttime,tmptime
+
+      dimension sump(0:mph-1),sum2p(0:mph-1)
+      dimension fractions(0:mph-1)
+      dimension xsecp(0:mph-1),varp(0:mph-1)
+      double precision sumpairs,sumpairs2,sumpairsv(2),sumpairsv2(2)      
+      integer*8 npoints,k,naccepted,iwriteout,kt,itime,itime2,nh
+      integer*8 kwritenow,kwritelast
+      integer ucs4
+      parameter (ucs4  = selected_char_KIND ('ISO_10646'))
+      character(len=1,kind=ucs4) greekmu
+      integer*8 foonhpm,foonh
+      double precision ntomicro
+      integer rlxstate(104)      
+      common/forfooter/xsw,exsw,xsunw,exsunw,
+     .     xsbias,exsbias,xsbiasn,exsbiasn,truemax,sum,sum2,sumneg,
+     .     sum2neg,foonhpm,foonh,nabove,nlt0
+      common/oldmain/greekmu,truestarttime,s,sumw1,sumw2,sumw12,sumw22,
+     .     sumLO,sumLO2,sumNLO,sumNLO2,sumpairs,sumpairs2,sumpairsv,
+     .     sumpairsv2,sump,sum2p,sdiftruemax,sdiftruemin,hit,hitpmiss,
+     .     istopsearch,nneg,sumover,sum2over,fmax,wnpoints,
+     .     ntomicro,k,npoints,naccepted,kt,itime,rlxstate,nphmax,nover, 
+     .     in_conf_spin
+      
+      open(42,file=trim(path)//'iwriteout',status='unknown')
+      read(42,*)iwriteout
+      close(42)
+            
+      kwritenow = k
+      idk   = kwritenow-kwritelast
+      kwritelast = kwritenow
+      itime2 = time8()
+      call cpu_time(endtime)
+            
+      call getrndstatus(rlxstate)            
+!! hit or miss cross section...
+      hmxsect = 0.d0
+      hmerr   = 0.d0
+      if (hitpmiss.gt.0.d0)  then 
+         hmeff   = hit/hitpmiss
+         hmxsect = fmax*hmeff
+         hmerr   = fmax* sqrt(hmeff*(1-hmeff)/hitpmiss)
+      endif
+!     !            
+      xsec = sum/k
+      var  = sqrt((abs(sum2/k-xsec**2))/k)            
+c      open(10,file=outfile,status='unknown',encoding='UTF-8')
+      
+      write(*,*)'RNG status at this point:'
+      write(*,*)rlxstate
+      write(*,*)' '
+      
+      write(*,*)' Process PID:',idproc,' running on ',hstnm
+      
+      dtime     = endtime-starttime
+      dtimetrue = endtime-truestarttime
+      write(*,*)' file written last time ~',itime2-itime,'s ago'
+      
+      write(*,*)' CPU time to generate last         ',idk,
+     .     'events',dtime,'s (',dtime/idk*1d6,
+     .     greekmu,'s/ev)' 
+      write(*,*)' CPU time to generate     ',k,'events',
+     .     dtimetrue,'s (',dtimetrue/k*1d6,greekmu,'s/ev)' 
+      starttime = endtime
+      itime = itime2
+      write(*,*)' '
+      write(*,*)'Inputs & parameters for this run: '
+      iqmu = qmu
+      write(*,'(1x,A,I4)')'Incoming muon charge',iqmu
+      write(*,'(1x,A,f12.4,A)')
+     .     'nominal muon beam energy =',emulab,' GeV'
+      write(*,'(1x,A,f12.4,A)')
+     .     'muon beam energy  spread =',semu/emulab*100d0,' %'
+      write(*,'(1x,A,f12.4,A)')
+     .     'sqrt(s)   =',ecmsnom,' GeV'
+      write(*,'(1x,A,f12.4,A)')
+     .     'minimum electron LAB energy =',eemin,' GeV'
+      write(*,'(1x,A,f12.4,A)')
+     .     'maximum electron LAB angle  =',themax,' mrad'
+      write(*,'(1x,A,f12.4,A)')
+     .     'minimum muon LAB angle      =',thmumin,' mrad'
+      write(*,'(1x,A,f12.4,A)')
+     .     'maximum muon LAB angle      =',thmumax,' mrad'
+      write(*,'(1x,A,i2,1x,f12.4,A)')
+     .     'applying acopl. cut and value =',ina7,dthna7max,
+     .     ' mrad'
+      write(*,'(1x,A)')
+     .     'ord    = '//ord
+      write(*,'(1x,A)')
+     .     'model  = '//model
+      write(*,'(1x,A,i5)')
+     .     'nphot mode =',nphotmode
+      write(*,'(1x,A,i9,i9)')
+     .     'seeds   =',iseedext,iseed
+      write(*,'(1x,A,i5)')
+     .     'alpha running  =',iarun
+      if (iarun.eq.1) then
+         if (iteubn.eq.1) then
+            write(*,*)'(Teubner & al. alpha running)'
+         elseif (inskvp.eq.1) then
+            write(*,*)'(Novosibirsk alpha running)'
+         else
+            write(*,*)'(Jegerlehner alpha running)'
+         endif
+      endif
+      write(*,'(1x,A,f10.9)')
+     .     'eps    = ',eps
+      write(*,*)' '
+      write(*,*)'Weights normalization ',wnorm,' (',greekmu,'b)'
+      write(*,*)'fmax for unweightening ',fmax
+      write(*,*)'true sdifmax ',sdiftruemax
+      
+      write(*,*)' '
+      if (eventlimiter.eq.'w') then
+         write(*,'(A,f12.0,A)')'~ Generating ',wnpoints,
+     .        ' weighted events ~'
+      else
+         write(*,'(A,i12,A)')'~ Generating ',npoints,
+     .        ' unweighted events ~'
+      endif
+      write(*,*)' '
+      write(*,*)'::::::>>>>>> weighted events <<<<<<::::::'
+      do i = 0,nphmax
+         xsecp(i) = sump(i)/k
+         varp(i)  = sqrt((abs(sum2p(i)/k-xsecp(i)**2))/k)
+         fractions(i) = xsecp(i)/xsec * 100.d0
+         iii = i
+         if (fs.eq.'gg') iii = i + 2
+         write(*,'(i2,A,f22.11,A,f22.11,A,f8.4,A)')
+     :        iii,'  photons: ',xsecp(i),' +-',varp(i),
+     :        '     (',fractions(i),' %)'
+      enddo
+      if (sumpairs.gt.0.d0) then
+         xsecpairs = sumpairs/k
+         xsecpairs1 = sumpairsv(1)/k
+         xsecpairs2 = sumpairsv(2)/k
+         varpairs  = sqrt((abs(sumpairs2/k-xsecpairs**2))/k)
+         varpairs1  = sqrt((abs(sumpairsv2(1)/k-xsecpairs1**2))/k)
+         varpairs2  = sqrt((abs(sumpairsv2(2)/k-xsecpairs2**2))/k)
+         fracpairs = xsecpairs/xsec * 100.d0
+         write(*,'(A,f22.11,A,f22.11,A,f8.4,A)')
+     :        ' real pairs: ',xsecpairs,' +-',varpairs,
+     :        '     (',fracpairs,' %)'
+         write(*,'(A,f17.11,A,f22.11)')
+     :        '   [e+e-   pairs: ',xsecpairs1,' +-',varpairs1
+         write(*,'(A,f17.11,A,f22.11,A)')
+     :        '    mu+mu- pairs: ',xsecpairs2,' +-',varpairs2,']'
+      endif
+      write(*,'(1x,A,f22.11,A,f22.11,A,A,A)')
+     :     'total:      ',xsec,' +-',var,' ',greekmu,'b'
+      
+      write(*,*)' '
+      write(*,'(1x,A,i12,A,f20.0)')
+     :     'n. ',k,' of ',wnpoints
+      eff = (1.d0*naccepted)/k
+      write(*,'(1x,A,f12.8,A)')
+     :     'cut points ',abs(1.d0 - eff)*100d0,' %'
+      write(*,*)'::::::>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<::::::'
+      write(*,*)' '
+      write(*,*)'::::::>>>>>> unweighted events <<<<<<::::::'
+      write(*,'(1x,A,f10.6,A)')
+     :     'hit or miss efficiency ',hmeff*100,' %'
+      write(*,'(1x,A,f12.0)')
+     :     'unweighted events generated ',hit
+      biashit        = 0.d0
+      biashitpmiss   = 0.d0
+      biasneghit     = 0.d0
+      biasneghitmiss = 0.d0
+      sezover        = 0.d0
+      errsezover     = 0.d0
+      if (hit.gt.0.d0) then 
+         biashit      = 1.d0*nover/hit
+         biashitpmiss = 1.d0*nover/hitpmiss
+         biasneghit   = 1.d0*nneg/hit
+         biasneghitmiss = 1.d0*nneg/hitpmiss
+         sezover    = sumover/hitpmiss
+         errsezover = (sum2over/hitpmiss - sezover**2)/hitpmiss
+         errsezover = sqrt(abs(errsezover))
+         sezneg    = sumneg/hitpmiss
+         errsezneg = (sum2neg/hitpmiss - sezneg**2)/hitpmiss
+         errsezneg = sqrt(abs(errsezneg))
+      endif
+      write(*,*)' '
+      write(*,'(1x,A,A,A,f22.11,A,f22.11,A)')
+     .     'total (',greekmu,'b):   ',hmxsect,' +-',hmerr,' +'
+      write(*,'(1x,A,f22.11,A,f22.11,A)')
+     .     '       !!!!   ',sezover,' +-',
+     .     errsezover,' (bias over fmax) +'
+      write(*,'(1x,A,f22.11,A,f22.11,A)')
+     .     '       !!!!   ',-sezneg,' +-',
+     .     errsezneg,' (bias negative)'
+      write(*,'(1x,A,f22.11,A,f22.11)')
+     .     'total + biases: ',hmxsect
+     .     +sezover-sezneg,' +-',hmerr+errsezover+errsezneg
+      write(*,*)' '
+      write(*,'(1x,A,i12)')
+     .     'N. points with w > fmax (bias): ',nover
+      write(*,'(1x,A,f10.7,A,f10.7,A)')
+     .     'bias/hit and bias/(hit+missed):',
+     .     biashit*100,' % and ',biashitpmiss*100,' %'
+      write(*,'(1x,A,i12)')
+     .     'N. points with w < 0:',nneg
+      write(*,'(1x,A,f10.5,A,f10.5,A)')
+     .     'biases for w < 0:   ',
+     .     biasneghit*100,' % and ',biasneghitmiss*100,' %'
+      write(*,*)' '
+      write(*,*)
+     .     'True upper/lower limits:'
+      write(*,*)sdiftruemax,sdiftruemin
+      
+      nwhenprint = nwhenmax
+c     write(*,'(1x,A,i3,A)')
+c     :           'when there were ',nwhenprint,' photons'
+      write(*,*)'::::::>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<::::::'
+      write(*,*)' '
+      write(*,*)'reweighted cross sections'
+      xsw1 = sumw1/k
+      write(*,*)'W1  ',xsw1,'+-',sqrt((abs(sumw12/k-xsw1**2))/k)
+      xsw2 = sumw2/k
+      write(*,*)'W2  ',xsw2,'+-',sqrt((abs(sumw22/k-xsw2**2))/k)
+      xsLO = sumLO/k
+      write(*,*)'LO  ',xsLO,'+-',sqrt((abs(sumLO2/k-xsLO**2))/k)
+      xsNLO = sumNLO/k
+      write(*,*)'NLO ',xsNLO,'+-',
+     .     sqrt((abs(sumNLO2/k-xsNLO**2))/k)
+cc      close(10)
+
       return
       end
 **************************
@@ -955,5 +1256,3 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
       i8tostr  = stringa
       return
       end
-
-      
