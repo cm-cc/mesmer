@@ -175,7 +175,8 @@ The muon beam 3-momenta in the format *p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>
   * `knt`: include leptonic VP and for hadronic VP use Keshavarzi-Nomura-Teubner's parameterization
 * `hadoff [no]`: if hadronic VP has to be switched off `[yes/no]`
 * `nev [10000000.]`: number of events to be generated
-* `store [no old no]`: if events have to be stored `[yes/no]`, which storage version is to be used (`[old]` for v1, `[new]` for v2), if in the v2 event record the coefficients for the VP reweighting have to be written `[yes/no]`. See [below](#description-of-event-format) for a short description of the v1/v2 (old/new) event formats
+* `store [no yes]`: if events have to be stored `[yes/no]` and <!-- which storage version is to be used (`[old]` for v1, `[new]` for v2),-->
+if the coefficients for the VP reweighting have to be written in the event record `[yes/no]`. See [below](#description-of-event-format) for a short description of the event formats
 * `storemode [0]`: if `store yes`, which mode to use to store events `[0/1/2]`
   * `0`: plain ASCII text file
   * `1`: `ROOT` format. **`MESMER`** concurrently runs `write-root-events` (a symbolic link to `root-interface/write_MuE_MCevents.exe`), developed by Giovanni Abbiendi, which writes through a named pipe a `.root` file with the events
