@@ -19,5 +19,5 @@ themax 100.
 store no yes
 storemode 0
 acoplcut no 5.
-elast cut no 0.2
+elastcut no 0.2
 run
