@@ -534,7 +534,8 @@ c      write(ifoo,*)foonh
       write(cnstored,*)nstored
       cnstored = adjustl(trim(cnstored))
 
-      cnp = '0'
+!      cnp = '0'
+      cnp = '2' ! as requested by Giovanni
       cnp = adjustl(trim(cnp))
       
       id2 = em
