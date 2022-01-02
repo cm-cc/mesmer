@@ -22,7 +22,7 @@
       common/epssoft/eps
       common/parameters/ame,ammu,convfac,alpha,pi
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
+     .     istorver,icwvp,ivpfl
       common/qedORDER/ord
       common/charinput/model,eventlimiter,store,storefile,outfile
       character*200 path

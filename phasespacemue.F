@@ -4895,6 +4895,10 @@ c            b_45 = dot(p1-p3-p5-p4,p1-p3-p5-p4) ! i.e.
       data ifirst /0/
 
       common/xcrf/x,y,modk,ck
+
+*** for distributions      
+      double precision csid(8)
+      common/csifordistr/csid
       
       if (ifirst.eq.0) then
          twopis(0) = (2.d0*pi)**(4-6)
@@ -4960,8 +4964,10 @@ c            print*,'iid and iper driven in userinterface'
       ich  = 1                   ! default, t2[46] is anyway sampled...
       if (np.eq.1) then
          call getrnd(csi1,1)
+c         csid(1) = csi1(1)
          ich = 1
          pch1 = 0.005d0
+c         pch1 = 0.001d0
          if (iid.eq.0) pch1 = 1.d0
          pch2 = 1.d0 - pch1
          if (csi1(1).gt.pch1) ich = 2
@@ -4991,6 +4997,7 @@ c  end flat
 c as 1/m4562  DEFAULT
       an    = log( (m4562max-m4f2) / (m4562min-m4f2) )
       call getrnd(csi1,1)
+c      csid(2) = csi1(1)
       m4562 = (m4562min-m4f2)*exp(csi1(1)*an) + m4f2
       w     = w * an * (m4562 - m4f2)
       
@@ -5066,6 +5073,12 @@ c      w   = w * an * ts*ts
 c as 1/t13 THIS SEEMS TO BE BETTER, DEFAULT
       an = log(tsmax/tsmin) 
       call getrnd(csi1,1)
+
+c      csid(3) = csi1(1)
+c      call getcsifromdistr(csi1(1),xiout,wcsi,1)
+c      csi1(1) = xiout
+c      w = w * wcsi
+      
       ts = tsmin*exp(csi1(1)*an)
       w = w * an * ts
 
@@ -5152,6 +5165,12 @@ c      w = w * 1.d0/(pta/an1 + ptb/an2/ts)
 
 ! as 1/mk2 DEFAULT
       call getrnd(csi1,1)
+
+c      csid(4) = csi1(1)
+c      call getcsifromdistr(csi1(1),xiout,wcsi,2)
+c      csi1(1) = xiout
+c      w = w * wcsi
+      
       an  = log(mk2max/mk2min)
       mk2 = mk2min*exp(csi1(1)*an)
       w   = w * an * mk2
@@ -5501,3 +5520,52 @@ ccc      if (A.lt.1.d0.or.B.lt.1.d0) print*,A,B
       w = 2.d0*pi / (pra/ana/(A-ca) + prb/anb/(B-cb))
       return
       end
+********************************************************
+      subroutine getcsifromdistr(csin,csi,w,i)
+      implicit double precision (a-h,o-z)
+      parameter (np=100)
+      dimension xi(1)
+      
+      common/csifromdistr/y(2,0:np),cy(2,0:np),dxi,ifirst(2)
+      data ifirst/0,0/
+
+      if (ifirst(i).eq.0) then
+         y(i,:)  = 0.d0
+         cy(i,:) = 0.d0
+         do k = 1,np
+            y(i,k)  = 1.d0
+         enddo
+
+         if (i.eq.1) open(888,file='test/xi3_born_100.txt',status='old')
+         if (i.eq.2) open(888,file='test/xi4_born_100.txt',status='old')
+         do k = 1,np
+            read(888,*)a,y(i,k),b,c
+         enddo
+         close(888)
+         
+         y(i,:) = y(i,:)/sum(y(i,:))
+         do k = 1,np
+            cy(i,k) = cy(i,k-1) + y(i,k)
+         enddo
+         cy(i,np) = min(1.d0,cy(i,np)) ! to avoid rundoffs
+         dxi    = 1.d0/np
+         ifirst(i) = 1
+      endif
+
+c      call getrnd(xi,1)
+      k = 0
+      do while (csin.gt.cy(i,k))
+         k = k + 1
+      enddo
+c      k = k - 1
+      
+c      csi = csin*dxi + (k-1)*dxi
+      csi = (csin-cy(i,k-1))/(cy(i,k)-cy(i,k-1))*dxi + (k-1)*dxi
+
+c      if (csi.lt.0.d0.or.csi.gt.1.d0) print*,'aa',csi,k
+      
+      w = 1.d0/y(i,k)*dxi
+
+      return
+      end
+

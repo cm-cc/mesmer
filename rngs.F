@@ -45,7 +45,7 @@ c      return
       integer*8 iwriteout
       integer isync,seed,nsearch,iverbose,nw,istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
+     .     istorver,icwvp,ivpfl
       parameter (nvec=1000)
       double precision r(nvec)
       common/getrndwvcmn/r,last,ifirst
@@ -61,7 +61,7 @@ c      return
       integer*8 iwriteout
       integer isync,seed,nsearch,iverbose,nw,istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
+     .     istorver,icwvp,ivpfl
       dimension xi(n)
       parameter (nvec=1000)
       parameter (nvecsync=30) ! must be <= nvec

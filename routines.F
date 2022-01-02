@@ -31,7 +31,7 @@
       integer*8 kl,iwriteout
       integer istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
+     .     istorver,icwvp,ivpfl
       common/ialpharunning/iarun
       common/momentainitial/pin1,pin2
       common/radpattern/nph(4)
@@ -424,6 +424,29 @@ c      print*,pout(1:3)
       function factorial(n)
       integer n,nl      
       double precision factorial
+      double precision factarray(0:15)
+      common/factarray/factarray
+      data factarray /
+     .     1d0,             !  0
+     .     1d0,             !  1
+     .     2d0,             !  2
+     .     6d0,             !  3
+     .     24d0,            !  4
+     .     120d0,           !  5
+     .     720d0,           !  6
+     .     5040d0,          !  7
+     .     40320d0,         !  8
+     .     362880d0,        !  9
+     .     3628800d0,       ! 10
+     .     39916800d0,      ! 11
+     .     479001600d0,     ! 12
+     .     6227020800d0,    ! 13
+     .     87178291200d0,   ! 14
+     .     1307674368000d0/ ! 15
+      if (n.le.15) then
+         factorial = factarray(n)
+         return
+      endif      
       nl = n
       factorial = 1.d0
       do while(nl.gt.0)

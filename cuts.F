@@ -233,8 +233,7 @@ c         distf = dist
 c            read(82,'(A)')line ! not needed, dealt with below with the err directive in read statement
 c            print*,'Starting!'
             ifirst = 1
-         endif
-         
+         endif         
  999     continue
 c ! this was for the file with E,posx,posy,px,py,pz         
 c         read(82,*,err=999)energyinfile,posx,posy,
@@ -242,11 +241,9 @@ c     .        truep1lab(1),truep1lab(2),truep1lab(3)
 c ! this is for the file with px,py,pz         
          read(82,*,err=999)truep1lab(1),truep1lab(2),truep1lab(3)
 c         ic = ic + 1
-c         print*,ic,truep1lab(3)
-         
+c         print*,ic,truep1lab(3)         
 ! forcing the muon on-shell again
          truep1lab(0)=sqrt(tridot(truep1lab,truep1lab) + ammu*ammu)
-
          es = truep1lab(0)
 c         p = sqrt(es*es-ammu*ammu)
 c         truep1lab(0) = es

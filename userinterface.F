@@ -33,7 +33,7 @@
       integer*8 iwriteout
       integer isync,seed,nsearch,iverbose,nw,istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
+     .     istorver,icwvp,ivpfl
       common/charinput/model,eventlimiter,store,storefile,outfile
       common/cmnpath/path
       common/realinput/anpoints,sdifmax
@@ -668,6 +668,18 @@ c               print*,'                  '
             endif
          endif
       endif
+
+      if (iarun.eq.0) then
+         ivpfl = 0
+      else
+         if (iteubn.eq.0.and.inskvp.eq.0) then            
+            if (ifredv.eq.19) ivpfl = 19
+            if (ifredv.eq.12) ivpfl = 12
+            if (ifredv.eq.17) ivpfl = 17            
+         endif
+         if (iteubn.eq.1) ivpfl = 20
+         if (inskvp.eq.1) ivpfl = 30
+      endif
 ***********************************************************************
       call execute_command_line('[ -d '//trim(path)//' ]',exitstat=ierr)      
       if (ierr.eq.0) then ! i.e. if the directory exists
@@ -926,7 +938,7 @@ c     .     ' (active only for v2)'
       common/epssoft/eps
       common/parameters/ame,ammu,convfac,alpha,pi
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
+     .     istorver,icwvp,ivpfl
       common/qedORDER/ord
       common/charinput/model,eventlimiter,store,storefile,outfile
       character*200 path

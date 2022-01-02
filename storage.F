@@ -104,7 +104,7 @@ c     >     (istorunit,file=storfile(1:ilens)//".fifo",status='unknown')
       integer*8 iwriteout
       integer istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
+     .     istorver,icwvp,ivpfl
 
       parameter (ikind = 8)
       double precision p3lab(0:3),p4lab(0:3)
@@ -279,7 +279,7 @@ c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
       integer*8 iwriteout
       integer istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
+     .     istorver,icwvp,ivpfl
       common/momentainitial/pin1,pin2
       common/storageunit/istorunit,ilens
       common/storedevents/nstored,nevts,ifirst
@@ -362,8 +362,10 @@ c      write(ifoo,*)foonh
       integer*8 iwriteout
       integer istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
-     .     istorver,icwvp
-
+     .     istorver,icwvp,ivpfl
+      integer ihadoff
+      common/hadoff/ihadoff
+      
       parameter (ikind = 8)
       double precision p3lab(0:3),p4lab(0:3)
       double precision p5lab(0:3),p6lab(0:3)
@@ -505,14 +507,14 @@ c      write(ifoo,*)foonh
          write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  MC generation cuts:'
          write(istorunit,*)'   Eemin   = ',eemin
-         write(istorunit,*)'   themin  =',themin
-         write(istorunit,*)'   themax  =',themax
-         write(istorunit,*)'   thmumin =',thmumin
-         write(istorunit,*)'   thmumax =',thmumax
-         write(istorunit,*)'   Ethr    =',Ethr
-         write(istorunit,*)'   ththr   =',ththr
-         write(istorunit,*)'   acoplanarity cut =',ina7,dthna7max
-         write(istorunit,*)'   elasticity cut   =',iela,cutela
+         write(istorunit,*)'   themin  = ',themin
+         write(istorunit,*)'   themax  = ',themax
+         write(istorunit,*)'   thmumin = ',thmumin
+         write(istorunit,*)'   thmumax = ',thmumax
+         write(istorunit,*)'   Ethr    = ',Ethr
+         write(istorunit,*)'   ththr   = ',ththr
+         write(istorunit,*)'   acoplanarity cut = ',ina7,dthna7max
+         write(istorunit,*)'   elasticity cut   = ',iela,cutela
          write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  Normalization cross section (mub)'
          write(istorunit,*)' ',wnormalization
@@ -522,6 +524,17 @@ c      write(ifoo,*)foonh
          write(istorunit,*)'  If coefficients for VP reweighting'//
      .        ' are present (0/1)'
          write(istorunit,*)' ',icwvp
+         write(istorunit,*)'  ------------------------------'
+         write(istorunit,*)'  Further inputs:'
+         write(istorunit,'(A,i3)')'    Inclusion of hadronic VP = ',
+     .        1-ihadoff
+         write(istorunit,'(A,i3)')'    Internal hadronic VP flavor = ',
+     .        ivpfl
+         write(istorunit,'(A,i3)')'    Number of warmup events = ',
+     .        nsearch
+         write(istorunit,'(A,i3)')'    Number of saved distributions'//
+     .        ' at different orders = ',nw
+         write(istorunit,'(A,i3)')'    Syncronization flag = ',isync
          write(istorunit,*)'</header>'
          ifirst = 1
       endif
