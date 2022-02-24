@@ -182,7 +182,7 @@ if the coefficients for the VP reweighting have to be written in the event recor
   * `1`: `ROOT` format. **`MESMER`** concurrently runs `write-root-events` (a symbolic link to `root-interface/write_MuE_MCevents.exe`), developed by Giovanni Abbiendi, which writes through a named pipe a `.root` file with the events
   * `2`: an `xz` compressed file is saved
   * `3`: just write events to the fifo file and wait for an external process to read them
-* `path [test-run/]`: the directory where all outputs are saved. It will contain some `.txt` files with differential distributions of some variables, the file `events-*.[dat,dat.xz,root]` with saved events if `store yes` and the file `stat_*.txt`, where cross sections and all info of the current run are reported
+* `path [test-run/]`: the directory where all outputs are saved. It will contain some `.txt` files with differential distributions of some variables, the file `events.[dat,dat.xz,root]` with saved events if `store yes` and the file `stat_*.txt`, where cross sections and all info of the current run are reported
 * `seed [42]`: seed for the pseudo-random-number-generator, it must be set to a "small" integer. Independent generations must use different seeds
 
 ### Inner parameters
