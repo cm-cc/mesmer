@@ -6,7 +6,10 @@
       implicit double precision (a-h,o-z)
       dimension p1(0:3),p2(0:3),qph(40,0:3),q(0:3),ptmp(0:3)
       dimension p3(0:3),p4(0:3)
+
       dimension p3lab(0:3),p4lab(0:3),p5lab(0:3),p6lab(0:3)
+      common/fslabmomenta/p3lab,p4lab,p5lab,p6lab
+      
       common/momentainitial/pin1(0:3),pin2(0:3)
       common/parameters/ame,ammu,convfac,alpha,pi
 
@@ -98,10 +101,24 @@ c phspace volume test
 c      icut = 0
 c      return
 
-      icut = 1 ! rejected by default
+      icut = 1                  ! rejected by default
+
+      if (npairs.eq.10) then
+! no cuts!
+         icut = 0
+         call new_boost(p12lab,p2,p4lab,-1)
+         if (p4lab(0).lt.eemin) icut = 1
+
+!bkg to 2 -> 3         
+c         call new_boost(p12lab,p1,p3lab,-1)
+c         thmu = acos(p3lab(3)/sqrt(tridot(p3lab,p3lab)))*1d3
+c         if (thmu.lt.1.5d0) icut = 1
+c         if (p4lab(0).lt.1.d0.or.p4lab(0).gt.25d0) icut = 1        
+         return
+      endif
       
 ***
-* I put in p[3456]lab the final state lepton momenta...      
+* I put in p[3456]lab the final state lepton (or photons if there're from a pi0) momenta...      
       call new_boost(p12lab,p1,p3lab,-1) 
       call new_boost(p12lab,p2,p4lab,-1)
       if (p3(0).gt.0.d0) then
@@ -212,7 +229,8 @@ c         distf = dist
 
       es = e
       if (s.gt.1d-8) then
-         es  = gau_spread(e,s)      
+ 42      es  = gau_spread(e,s)
+         if (es.le.ammu) goto 42
       endif
 
       if (ismualongz.eq.1) then
@@ -318,64 +336,6 @@ c         truep1lab(3) = p * cos(45.d0*pi/180.d0)
          thmaxmukin = acos(cthminmu)*1d3
          cthmine    = 1.d0/r*sqrt((Eemin-ame)/(Eemin+ame))
          thmaxekin  = acos(cthmine)*1d3
-
-
-******test
-** from doc/Em_vs_thm.pdf         
-c         thtilm = 0.5d0 * 0.001d0
-c         c = cos(thtilm)
-c         al = ammu*ammu + Emulab*ame
-c         be = Emulab + ame
-c         ga = sqrt(Emulab*Emulab - ammu*ammu)*c
-c         disc = (ga*ga - be*be)*ammu*ammu + al*al
-c         Ep = al*be + abs(ga)*sqrt(disc)
-c         Ep = - Ep / (ga*ga - be*be)
-c         Em = al*be - abs(ga)*sqrt(disc)
-c         Em = - Em / (ga*ga - be*be)
-c         ptmp(0) = Em
-c         ptmp(1) = sqrt(Em*Em - ammu*ammu)*sqrt(1.d0-c*c)
-c         ptmp(2) = 0.d0
-c         ptmp(3) = sqrt(Em*Em - ammu*ammu)*c
-c         print*,dot(pmulabin-ptmp,pmulabin-ptmp)        
-c         stop
-         
-c         cth = 1.d0 + tmax*0.5d0/px/px
-c         sth = sqrt(1.d0-cth*cth)         
-c         ptmp(0) = ex
-c         ptmp(1) = px * sth
-c         ptmp(2) = 0.d0
-c         ptmp(3) = px * cth
-c         call new_boost(p12lab,ptmp,ptmp,-1)
-c         th = ptmp(3)/sqrt(tridot(ptmp,ptmp))
-c         th = acos(th)*1d3 ! this is the muon lab theta below which LO is tiny. it corresponds to set symmetric
-c                           ! theta cut in the cm, ie the angle is between x and pi - x
-c         print*,th,tmin,tmax         
-c         stop
-c$$$         thmin = 0.d0
-c$$$         thmax = pi
-c$$$         dth = (thmax-thmin)/100000d0
-c$$$         open(888)
-c$$$         do k = 0,100000
-c$$$            th = thmin + k * dth
-c$$$            cth = cos(th)
-c$$$            sth = sqrt(1.d0-cth*cth)
-c$$$            
-c$$$            ptmp(0) = ex
-c$$$            ptmp(1) = px * sth
-c$$$            ptmp(2) = 0.d0
-c$$$            ptmp(3) = px * cth
-c$$$            call new_boost(p12lab,ptmp,pinside_mu,-1)
-c$$$
-c$$$            cth = pinside_mu(3)/sqrt(tridot(pinside_mu,pinside_mu))
-c$$$            thl = acos(cth)
-c$$$
-c$$$            write(888,*)th,thl*1d3,pinside_mu(0),pinside_mu(3)
-c$$$
-c$$$         enddo
-c$$$         close(888)
-c$$$         stop
-***** test
-
          
          ifirst = 1
       endif
@@ -635,34 +595,6 @@ c      endif
       th2lo = acos(th2lo)
 
       dth = sqrt((thmu-th1lo)**2+(the-th2lo)**2)
-
-**************TEST
-c$$$      celo  = cos(th2lo)
-c$$$      cphie = p2lo(1)/sqrt(tridot(p2lo,p2lo))/sqrt(1.d0-celo*celo)
-c$$$      sphie = p2lo(2)/sqrt(tridot(p2lo,p2lo))/sqrt(1.d0-celo*celo)
-c$$$      thalo = th2lo*0.999d0
-c$$$      cthelo = cos(thalo)
-c$$$      sthelo = sqrt(1.d0-cthelo*cthelo)
-c$$$      be   = sqrt(tridot(p2lo,p2lo))/p2lo(0)
-c$$$      
-c$$$      p2lo(1) = p2lo(0)*be*cphie*sthelo
-c$$$      p2lo(2) = p2lo(0)*be*sphie*sthelo
-c$$$      p2lo(3) = p2lo(0)*be*cthelo
-c$$$
-c$$$      
-c$$$      p1lo = p1lab + p2lab - p2lo
-c$$$
-c$$$      tha = acos(p2lo(3)/sqrt(tridot(p2lo,p2lo)))
-c$$$      thb = acos(p1lo(3)/sqrt(tridot(p1lo,p1lo)))
-c$$$
-c$$$      dth2 = sqrt((thmu-thb)**2+(the-tha)**2)
-c$$$
-c$$$      print*,dth2/dth
-c$$$      
-c$$$
-      
-c      print*,dth
-c      dth = 0.d0
       
       return
       end
@@ -758,38 +690,7 @@ c$$$      endif
       
       return
       end
-************************************************************************
-      subroutine get_dangleUM(E,da)
-      implicit double precision (a-h,m,o-z)
-      common/gdaUM/Emu,dT,X0T,X0A,c0,c1,ifirst
-      data ifirst /0/
-c  3 const double Emu    = 150;
-c  4 const double me  = 0.5109989461 *1e-3; // GeV
-c  5 const double mmu = 105.6583745 * 1e-3; // GeV
-c  6 const double dT  = 2.; // cm
-c  7 const double X0T = 35.28; // cm
-c  8 const double X0A = 9.37; // cm
-c  9 const double c0  = 1.2 * 1e-3;   // rad * GeV : MSC at 1 GeV         
-c 10 const double c1  = 0.03 * 1e-3;  // rad 
-c 11 const double r = sqrt(Emu*Emu - mmu*mmu)/(Emu + me);
-      if (ifirst.eq.0) then
-         Emu = 150d0
-         dT  = 2.d0
-         X0T = 35.28d0
-         X0A = 9.37d0
-         c0  = 1.2d-3
-         c1  = 0.03d-3
-         ifirst = 1
-      endif
-      sT = 13.6d-3/E*sqrt(0.5d0*dT/X0T)*(1.d0+0.038d0*log(0.5d0*dT/X0T))
-      sA = sqrt( c1*c1 + c0*c0/E/E)
-      da = 5.d0*sqrt(sT * sT + sA * sA)
-c      sigma   = sqrt(sT * sT + sA * sA)
-c      da      = 5.d0 * sigma
-      return
-      end
-
-***********************
+*********************************************************************      
       function pseudoacoll(emub,mm,me,pml,pel)
       implicit double precision (a-h,m,o-z)
       dimension pml(0:3),pel(0:3)

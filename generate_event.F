@@ -1,9 +1,18 @@
-      program main
+      subroutine generate_event(pmubeam,nfspart,mcids,pmat,wout,itag,
+     .     ievtnr,wnovp,wnohad,wLO,wNLO,cwvpout,ierr)
       implicit double precision (a-h,o-z)
+*** inputs & outputs *****************
+      integer mcids(20),nfspart,itag,ierr
+      integer*8 ievtnr
+c      double precision pmu3beam(1:3) ! only tri-momentum!
+      double precision pmubeam(0:3)
+      double precision pmat(0:3,20),cwvpout(0:10)
+      double precision wout,wnovp,wnohad,wLO,wNLO
+**************************************
       parameter (mph=40,maxnw=3)
       double precision distwgts(maxnw)
       double precision csi(1)
-      dimension p1(0:3),p2(0:3),qph(mph,0:3)
+      dimension p1(0:3),p2(0:3),qph(mph,0:3),qphlab(mph,0:3)
       dimension p3(0:3),p4(0:3)
       dimension pin1(0:3),pin2(0:3),ptmp(0:3)
       integer isvec(25),irngstate(104)
@@ -32,6 +41,8 @@
       common/ialpharunning/iarun
       common/teubner/iteubn
       common/nskvp/inskvp
+      integer ismualongz
+      common/ISmuondirection/ismualongz
 *********************************************
       double precision Qmu
       common/muoncharge/Qmu
@@ -58,10 +69,15 @@
       double precision reweightLO,wnorm
       common/weights/reweightLO,reweightNLO,weightdefault,extraweights
       common/weightnormalization/wnorm
+
+** from cuts      
+      dimension p3lab(0:3),p4lab(0:3),p5lab(0:3),p6lab(0:3)
+      common/fslabmomenta/p3lab,p4lab,p5lab,p6lab
+***
 ***      
       logical writecond
       real starttime,endtime,truestarttime,tmptime
-      
+
       dimension sump(0:mph-1),sum2p(0:mph-1)
       dimension fractions(0:mph-1)
       dimension xsecp(0:mph-1),varp(0:mph-1)
@@ -73,7 +89,7 @@
       character(len=1,kind=ucs4) greekmu
       integer*8 foonhpm,foonh
       double precision ntomicro
-      integer rlxstate(104)      
+      integer rlxstate(104)
       common/forfooter/xsw,exsw,xsunw,exsunw,
      .     xsbias,exsbias,xsbiasn,exsbiasn,truemax,sum,sum2,sumneg,
      .     sum2neg,foonhpm,foonh,nabove,nlt0
@@ -81,60 +97,47 @@
      .     sumw12,xsec,var,hmxsect,hmerr,
      .     sumw22,sumLO,sumLO2,sumNLO,sumNLO2,sumpairs,sumpairs2,
      .     sumpairsv,sumpairsv2,sump,sum2p,sdiftruemax,sdiftruemin,hit,
-     .     hitpmiss,
-     .     istopsearch,nneg,sumover,sum2over,fmax,
+     .     hitpmiss,istopsearch,nneg,sumover,sum2over,fmax,
      .     ntomicro,k,npoints,naccepted,kt,itime,rlxstate,nphmax,nover, 
      .     in_conf_spin
       integer ifirstmain,ifirstsub
       common/firstmainsub/ifirstmain,ifirstsub
       data ifirstmain,ifirstsub /0,0/
-***
-      character*500 datacard
-      integer isstandalone
-      common/standalone/isstandalone,datacard ! set in main.F or init_mesmer() !!
-***
-      integer ismualongz,itmp
-      common/ISmuondirection/ismualongz
+      common/varversion2/xsec2v2
+      
+****** coefficients for VP reweighting, from  invariants.h, to be put in output
+      double precision cwvp(0:10),cwvpl(0:10)
+      common/coeffforvpreweighting/cwvp,cwvpl
+******************************************************************
       logical needswarmup,imwarmingup
       common/warmuppery/needswarmup,imwarmingup
       logical areweighted
       common/weightedeventsornot/areweighted
 
-**** for the header of the events      
+******* for the header      
       common/tobewrittenintheheader/wnormalization,sdmax
-****      
-      isstandalone = 1
-****************************************
-      call userinterface
-****************************************
-      if (.not.needswarmup.and.store.eq.'yes') then
-         wnormalization = wnorm
-         sdmax = 1.1d0*sdifmax
-         call initstorage(storefile)
-      endif
-****************************************      
-      if (needswarmup) then
-         imwarmingup = .true.      
-      endif
-      itmp = ismualongz
-
-*------------------------------------      
- 4242 continue
-
-      if (imwarmingup) then
-         ismualongz = 1
-      else
-         ismualongz = itmp
-      endif
+****
       
-      if (ifirstmain.eq.0) then
+      if (ifirstsub.eq.0) then
+****** RESETTING store IF USING MESMER AS SUBROUTINE
+         if (store.eq.'yes') then
+            store = 'no'
+            print*,' :::'
+            print*,' ::: Using MESMER as a subroutine, thus'
+            print*,' ::: ''store'' variable is reset to ''no'','
+            print*,' ::: because presumably events are stored'
+            print*,' ::: independently...'
+            print*,' :::'
+            print*,' '
+         endif
+******
          greekmu = ucs4_'\u03BC'
          greekmu = char(int (z'03BC'), ucs4) 
 
-****  RNG initialization
+****  RNG initialization. I do it here, so I redo it also after warmup
          call init_rnd_sequence ! uses iseedext and sets iseed
 ****  end RNG initialization
-      
+         
          itime = time8()
          call cpu_time(starttime)
          truestarttime = starttime
@@ -147,7 +150,7 @@
          pcmm  = 0.5d0 * sqrt(lambda(s,ame*ame,ammu*ammu)/s)
          tmind = -4.d0*pcmm*pcmm
          tmaxd =  2.d0*ame*ame - 2.d0*Eemin*ame
-** ]]                  
+** ]]
          ecmsnom = ecms
          npoints = anpoints
 
@@ -162,10 +165,10 @@
          sumNLO  = 0.d0
          sumNLO2 = 0.d0
          
-         sum = 0.d0
-         sum2 = 0.d0
-         sumpairs = 0.d0
-         sumpairs2 = 0.d0
+         sum        = 0.d0
+         sum2       = 0.d0
+         sumpairs   = 0.d0
+         sumpairs2  = 0.d0
          sumpairsv  = 0.d0
          sumpairsv2 = 0.d0
          do kk = 0,mph-1
@@ -179,55 +182,60 @@
          nphmax       = 0
          xsec         = 0.d0
          xsec2        = 0.d0
+         xsec2v2      = 0.d0
          var          = 0.1d0
          naccepted    = 0
          nwhenmax     = 0
          nover        = 0
          hitpmiss     = 0.d0
          hit          = 0.d0
-         istopsearch  = 0
          nneg         = 0
          sumover      = 0.d0
          sum2over     = 0.d0
          sumneg       = 0.d0
          sum2neg      = 0.d0
          ie           = 0
-
-         xsec2v2 = 0.d0
          
-         if (wnorm.gt.0.d0) istopsearch = 1
+         istopsearch  = 0 ! not used anymore here
+cc         if (wnorm.gt.0.d0) istopsearch = 1
          
-         k  = 0
-         kt = 0
+         k          = 0
+         kt         = 0
          kwritelast = 0
-         qph = 0.d0
-         qphlab = 0.d0
-         ng = 0
-         fmax = 1.1d0*sdifmax
+         qph        = 0.d0
+         qphlab     = 0.d0
+         ng         = 0
 
-***   gamma & beta boost
-         bboost = (emulab**2-ammu**2)/(emulab+ame)**2
-         bboost = sqrt(bboost)
-         gg  = 1.d0/sqrt(1.d0-bboost*bboost)
-         gumb = gg*(1-bboost)
-         gupb = gg*(1+bboost)
+! needs to be done outside after calling userinterface if (needswarmup) imwarmingup = .true.
+         fmax = 1.1d0*sdifmax
          
-         
-         ifirstmain = 1
+         ifirstsub = 1
 ** [[end initialization]]
       endif
       
 * [[[[[ LOOP OVER EVENTS ]]]]]      
+cc      do while(kt.lt.npoints)
+cc[[[[[ LOOP OVER NWARMUP !! ]]]]]
       iregenerate = 1
-      do while(kt.lt.npoints.or.imwarmingup.or.iregenerate.eq.1)
+      do while(imwarmingup.or.iregenerate.eq.1)
 ** [[begin initialization]]
          if (iverbose.eq.1) call getrndstatus(irngstate)
 ************************
          call syncrndseq
 ************************
-         emuspr = emulab        ! to be spreaded
-         call beamprofile(emulab,semu,emuspr,truep1lab)
-         
+         if (imwarmingup) then
+            call beamprofile(emulab,semu,emuspr,truep1lab)
+         else
+            truep1lab(0)   = 0.d0
+            truep1lab(1:3) = pmubeam(1:3)
+! making sure it's on shell
+            truep1lab(0) = sqrt(ammu*ammu + tridot(truep1lab,truep1lab))            
+         endif
+c         emuspr         = emulab ! to be spreaded
+c     MUST BE DONE OUTSIDE         call beamprofile(emulab,semu,emuspr,truep1lab)
+
+         emuspr = truep1lab(0)
+
          m1  = ammu
          m2  = ame
          m12 = m1*m1
@@ -241,16 +249,12 @@
          p1lab(0)   = emuspr
          p1lab(1:2) = 0.d0
          p1lab(3)   = plab
-         
+        
          p2lab(0)   = m2
          p2lab(1:3) = 0.d0
-         
+
          watom = 1.d0
-c        call getpeinverysimple(p1lab,p2lab,watom)
-c        call getpeinverysimple(ptmp,p2lab,watommmm)
-c        call getpein(p1lab,p2lab,watom)
-c        call getpein(p1lab,ptmp,watommmm)
-        
+         
          p12lab = p1lab+p2lab        
          s      = dot(p12lab,p12lab)
          
@@ -265,7 +269,7 @@ cc notice: pin[12] ALWAYS along z
          pin1(1) = 0.d0
          pin1(2) = 0.d0
          pin1(3) = pcmm
-         
+
          pin2(0) =  ee
          pin2(1) =  0.d0
          pin2(2) =  0.d0
@@ -275,22 +279,6 @@ cc notice: pin[12] ALWAYS along z
          tmax =  2.d0*m22 - 2.d0*Eemin*m2
 ** [[end initialization]]
 
-** analytic integrated LO xsection
-c        cumt2 = 2.d0*((ame*ame+ammu*ammu)**2
-c     .        + s*(s-2.d0*(ame*ame+ammu*ammu)))
-c        print*,cumt2
-c        print*,2.d0*(s-ame*ame-ammu*ammu)**2
-c        cumt1 = 2.d0*s
-c        cumt0 = 1.d0
-c        aint = cumt0 * (tmax - tmin) + cumt1 * log(tmax/tmin)
-c        aint = aint - cumt2 * (1.d0/tmax - 1.d0/tmin)
-c        aint = aint * convfac*4.d0*pi*alpha*alpha*ntomicro
-cc        aint = aint * 0.25d0/sqrt(dot(pin1,pin2)**2-ame*ame*ammu*ammu)
-c        aint = aint * 0.25d0/ame/sqrt(emuspr*emuspr-ammu*ammu)        
-c        aint = aint /sqrt(lambda(s,ame*ame,ammu*ammu))
-c        print*,aint
-c        stop       
-****************************************
          k = k + 1
 
          call multiplicity(eps,ecms,1.d0,ng,npairs,wnphot)
@@ -301,30 +289,21 @@ c        stop
      .           p1,p2,p3,p4,npairs,phsp,w,ie)            
          elseif (npairs.gt.0) then
             qph = 0.d0
-c            call phasespacemuepairs(s,m1,m2,ammu,ame,pin1,pin2,
-c     .           p1,p2,p3,p4,npairs,phsp,w,ie)
 c DEFAULT
             call phasespacemuepairsv4(s,m1,m2,ammu,ame,pin1,pin2,
      .           p1,p2,p3,p4,npairs,phsp,w,ie)            
-c            call phasespacemuep_phspcheck(s,m1,m2,ammu,ame,pin1,pin2,
-c     .           p1,p2,p3,p4,phsp,npairs,w,ie)
-c            call phasespacemuepairsCRF(s,m1,m2,ammu,ame,pin1,pin2,
-c     .           p1,p2,p3,p4,npairs,phsp,w,ie)
          else
             p3 = 0.d0
             p4 = 0.d0
             call phasespacemue_v2(s,m1,m2,ammu,ame,ng,pin1,pin2,
      .           p1,p2,qph,phsp,w,ie)
-c         call phasespacemue_v1(s,m1,m2,ammu,ame,ng,pin1,pin2,
-c     .        p1,p2,qph,phsp,w,ie)
          endif
 ***
          ieb = 0
-         ie  = ie + ieb ! ieb if beam energy spread fails
+         ie  = ie + ieb          ! ieb if beam energy spread fails
          if (ieb.gt.0) phsp = 0.d0
 ***
-         sdif = sdif * phsp * w * watom
-         
+         sdif = sdif * phsp * w * watom         
 *****************************************
          if (ie.ge.1) ie = 1
          if (ie.lt.1) then 
@@ -340,10 +319,11 @@ c     .        p1,p2,qph,phsp,w,ie)
 ! notice: this is calculated where pin[12] are along z, while cuts are applied in the rotated frame
          call squared_matrix(model,ng,npairs,ecms,p1,p2,p3,p4,pin1,pin2,
      .         qph,ie,icalc,emtx)
+         
+         flux = 4.d0*sqrt(dot(pin1,pin2)**2-m12*m22)
+!     also this ! flux = 2.d0*sqrt(lambda(s,me*me,mm*mm)) !!
 
-cphsp
-ctest phspace volume
-c         emtx = emtx / ntomicro * in_conf_spin*flux/convfac
+         emtx = emtx/in_conf_spin/flux ! divided by initial spin conf and divided by the flux
 
          if (ie.eq.0) then
 c            call svfactor(model,ng,ecms,p1,p2,eps,sv,deltasv)
@@ -354,10 +334,8 @@ c            call svfactor(model,ng,ecms,p1,p2,eps,sv,deltasv)
          endif
          sdif = sdif * emtx
 
-         flux = 4.d0*sqrt(dot(pin1,pin2)**2-m12*m22)
-!     also this ! flux = 2.d0*sqrt(lambda(s,me*me,mm*mm)) !!
-****  Converting to microbarn and standard units and divided by initial spin conf and divided by the flux
-         sdif = sdif * ntomicro * convfac/in_conf_spin/flux
+****  Converting to microbarn and standard units
+         sdif = sdif * ntomicro * convfac
 ****
          if (isnan(sdif)) then
             if (iverbose.gt.0) then
@@ -365,7 +343,7 @@ c            call svfactor(model,ng,ecms,p1,p2,eps,sv,deltasv)
      .              sdif,sdifmax,fmax)
             endif
          endif
-
+         
          if (sdif.gt.sdiftruemax) sdiftruemax = sdif
          if (sdif.lt.sdiftruemin) sdiftruemin = sdif
 **************************************************************
@@ -395,30 +373,26 @@ c            call svfactor(model,ng,ecms,p1,p2,eps,sv,deltasv)
          endif
          varbefore = var
 
-
 **** https://diego.assencio.com/?index=c34d06f4f4de2375658ed41f70177d59
          xsec  = xsec  + 1.d0/dble(k)*(sdif - xsec)
-         xsec2 = xsec2 + 1.d0/dble(k)*(sdif*sdif - xsec2) ! media dei quadrati
-cc         print*,(xsec-sum/k)/xsec,(sum2/k-xsec2)/xsec2,sum2/k,xsec2
-         
+         xsec2 = xsec2 + 1.d0/dble(k)*(sdif*sdif - xsec2) ! media dei quadrati         
 c     original xsec = sum/k
 c     original var  = sqrt(abs((sum2/k-xsec*xsec)/k))
-         var  = sqrt(abs((xsec2-xsec*xsec)/dble(k)))
+         var  = sqrt(abs((xsec2-xsec*xsec)/k))
 
 c         xsec2v2 = xsec2v2 + (sdif - xsec)**2
-c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0., but underestimates for small k
-*************************************************************
-         
+c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0.
+**************************************************************
+
          abssdif = abs(sdif)
          if (abssdif.gt.sdifmax) then 
             if (nsearch.gt.0) sdifmax = abssdif ! changing only if nsearch > 0
             nwhenmax = ng
          endif
          
-!!     unweightening for unweighted events...
          if (k.ge.nsearch.and.imwarmingup) then
             print*,'Warming-up completed.'
-            ifirstmain = 0 ! so next time everything is reset
+            ifirstsub = 0 ! so next time everything is reset
             imwarmingup = .false.
             istopsearch = 1     ! not used anymore here
             iregenerate = 0
@@ -426,31 +400,31 @@ c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0., but und
                fmax = 1.1d0*sdifmax
                if (wnorm.lt.0.d0) wnorm = xsec ! changing only if not explicitly set in input
                print*,'Starting now event generation.'
+               wnormalization = wnorm
+               sdmax = 1.1d0*sdifmax
                if (store.eq.'yes') then
-                  wnormalization = wnorm
-                  sdmax = fmax
                   call initstorage(storefile)
                endif
             endif
-            goto 4242
          endif
-
+         
          if (.not.imwarmingup) then
             hitpmiss = hitpmiss + 1.d0
             call getrnd(csi,1)
+!!     unweightening for unweighted events...
             if (fmax*csi(1).lt.abssdif) then
                uno = nint(sdif/abssdif) ! added with +-1
-               hit = hit +  uno
+               hit = hit + uno
                nh = hit
-!     !---- storing in case of unweighted generation ----
+               iregenerate = 0
+!!---- storing in case of unweighted generation ----
                if (store.eq.'yes') then
                   if (.not.areweighted) then
                      call eventstorage(1.d0*uno,k,ie,p1,p2,p3,p4,qph)
                   endif
                endif
-!     !--------------------------------------------------
+!!--------------------------------------------------
             endif
-            
             if (sdif.lt.-1.d-20) then 
                nneg  = nneg  + 1
                sumneg  = sumneg + abs(sdif)
@@ -476,7 +450,7 @@ c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0., but und
                                    ! = 1 if hit, = 0 if miss for unweighted generation
 ****************************************************************
          if (ie.eq.0.and..not.imwarmingup) kt = kt + 1
-                  
+         
          tollerate = 1.8d0 ! 1.3d0
          if (var.gt.tollerate*varbefore
      .        .and.varbefore.gt.0.d0.and.ie.eq.0) then            
@@ -502,6 +476,7 @@ c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0., but und
 !!--------------------------------------------------         
 **[[WRITING OUTPUT]]
          writecond = kt.eq.npoints.or.nint(hit).eq.npoints
+c         writecond = k.eq.npoints.or.hit.eq.npoints
          if (iwriteout.gt.0) then
             writecond = mod(k,iwriteout).eq.0.or.writecond
          else
@@ -509,45 +484,107 @@ c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0., but und
                call cpu_time(tmptime)
                if ((tmptime-starttime).ge.-iwriteout) then
                   writecond = .true.
-! done inside printoutput!  starttime = tmptime                  
+! done inside printoutput                  starttime = tmptime
                endif
             endif
-         endif
+         endif         
          if (writecond) then
             hmxsect = 0.d0
             hmerr   = 0.d0
-            if (hitpmiss.gt.0.d0)  then
+            if (hitpmiss.gt.0.d0)  then 
                hmeff   = hit/hitpmiss
                hmxsect = fmax*hmeff
                hmerr   = fmax* sqrt(hmeff*(1-hmeff)/hitpmiss)
             endif
             call printoutput
-            call writedistributions(1.d0*k,nw)
+            if (.not.imwarmingup) call writedistributions(1.d0*k,nw)
 cc            call writedistributions(hit/xsec) ! for unweighted events
          endif
 **[[END WRITING OUTPUT]]
+         
+*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+********  output momenta etc!
+         mcids   = 0
+         wout    = 0.d0
+         pmat    = 0.d0
+         wnovp   = 0.d0
+         wnohad  = 0.d0
+         wLO     = 0.d0
+         wNLO    = 0.d0
+         cwvpout = 0.d0
+         ierr    = 1
+         
+!         pmat(0:3,1) = p1lab ! this must become truep1lab
+         pmat(0:3,1) = truep1lab
+         pmat(0:3,2) = p2lab
+         itag   = iseedext
+         ievtnr = k
+         
+         mcids(1) = 13
+         if (Qmu.gt.0.d0) mcids(1) = -13
+         mcids(2) = 11
+         mcids(3) = mcids(1)
+         mcids(4) = mcids(2)
+         
+         nfspart = 2 ! default as agreed with Giovanni
+         if (ie.eq.0) then
+            ierr = ie
+            pmat(0:3,3) = p3lab ! from cuts
+            pmat(0:3,4) = p4lab
+            if (ng.gt.0) then
+               do ki = 1,ng
+                  call new_boost(p12lab,qph(ki,:),qphlab(ki,:),-1)
+                  pmat(0:3,ki+4) = qphlab(ki,0:3)
+                  mcids(ki+4)    = 22
+               enddo
+            endif
+            nppp = 0
+            if (npairs.gt.0) then
+               pmat(0:3,5+ng) = p5lab
+               pmat(0:3,6+ng) = p6lab
+               if (npairs.eq.1) then
+                  mcids(5+ng) = -mcids(2)
+                  mcids(6+ng) =  mcids(2)
+                  pmat(0:3,6+ng) = p6lab                  
+                  nppp = 2
+               elseif (npairs.eq.2) then
+                  mcids(5+ng) = -mcids(1)
+                  mcids(6+ng) =  mcids(1)
+                  pmat(0:3,6+ng) = p6lab                  
+                  nppp = 2
+               elseif (npairs.eq.10) then
+                  mcids(5+ng) = 22
+                  mcids(6+ng) = 22
+                  nppp = 2
+               endif
+            endif
+            nfspart = 2 + ng + nppp
+
+            iclean  = 1
+            wout    = sdif/wnorm
+            if (.not.areweighted) then
+               wout    = sdif/abssdif
+               iclean  = 0
+            endif
+            
+            wnovp   = wout*extraweights(1) *iclean
+            wnohad  = wout*extraweights(2) *iclean
+            wLO     = wout*reweightLO      *iclean
+            wNLO    = wout*reweightNLO     *iclean
+            cwvpout = wout * cwvp          *iclean
+****  rotating for beam profile
+            if (ismualongz.eq.0) then
+               do ii = 1,(nfspart+2)
+                  call rot(-1,truep1lab,pmat(:,ii),pmat(:,ii))
+               enddo
+            endif
+*******************************
+         endif
+*************************************************************************
+*:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       enddo
-* [[[[[ END LOOP OVER EVENTS ]]]]]      
-c      close(33)
-      foonhpm  = hitpmiss
-      foonh    = hit
-      xsw      = xsec
-      exsw     = var
-      xsunw    = hmxsect
-      exsunw   = hmerr
-      nabove   = nover
-      nlt0     = nneg
-      xsbias   = sezover
-      exsbias  = errsezover
-      truemax  = sdiftruemax/wnorm
-      xsbiasn  = sezneg
-      exsbiasn = errsezneg
-      if (store.eq.'yes') then
-         if (isstandalone.eq.1) print*,'...finalizing storage'
-         call finalizestorage(storefile)
-      endif
-      call exitlooplibraries
-      call exitrecola
-      print*,'Generation finished'
-      stop
+ 100  continue
+* [[[[[ END LOOP OVER WARMING UP EVENTS ]]]]]      
+c     close(33)
+      return
       end

@@ -1,5 +1,5 @@
 RELEASE=yes
-# RELEASE=
+## RELEASE=
 
 EXE = mesmer
 
@@ -8,9 +8,9 @@ CC  = gcc
 
 # tune for your processor, if you want
 ifdef RELEASE
-  FFLAGS = -O3 -ffast-math # safer and more portable
+  FFLAGS = -O3 -ffast-math -fPIC # safer and more portable
 else
-  FFLAGS = -O3 -march=native -mtune=native -ffast-math
+  FFLAGS = -O3 -march=native -mtune=native -ffast-math -fPIC
 endif
 #-freal-8-real-16   # this promotes all real*8 to real*16 (quad precision)
 ### for debugging  FFLAGS = -g -fbounds-check -fbacktrace
@@ -91,7 +91,7 @@ ifeq ($(RECOLA),-DRECOLA)
   RCLLIB = -L$(RCLDIR)/lib/ -lrecola -lcollier
 endif
 
-LIBFILES  = $(LTDIR)/lib64/libooptools.a
+LIBFILES = $(LTDIR)/lib64/libooptools.a
 # ROOTINTERFACE not needed anymore, replaced by make rootwriter
 ifeq ($(ROOTINTERFACE),yes)
   LIBFILES += root-interface/write_MuE_MCevents.exe
@@ -104,11 +104,11 @@ ifeq ($(SMH),-DSMH)
   LIBFILES += $(CHAPLINDIR)/lib/libchaplin.a
 endif
 
-OBJECTS = main.o cuts.o sv.o matrix_model.o loops.o muemuegg.o realpairs.o vacuumpolarization.o\
+OBJECTS = cuts.o sv.o matrix_model.o loops.o muemuegg.o realpairs.o vacuumpolarization.o\
           rngs.o routines.o sampling.o phasespacemue.o distributions.o $(VPKNT).o\
           hadr5n12.o hadr5n17.o hadr5x19.o hadr5n.o ranlux.o userinterface.o muemue1g1Lnoud.o\
           muemue1g1Lud.o storage.o c_rnlx_interface.o ranlux_common.o ranlxd.o ranlxs.o recola_int.o\
-          twoloop_virtual.o $(HPLOG).o quadpack.o elasticity.o
+          twoloop_virtual.o $(HPLOG).o quadpack.o elasticity.o wrappers.o generate_event.o pi0.o
 ifeq ($(SMH),-DSMH)
   OBJECTS += light-heavy-2LFF.o
 endif
@@ -136,33 +136,40 @@ pack: # use only to release MESMER
         distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h AUTHORS.md\
         main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat muemue1g1Lud.F LICENSE.md\
         vacuumpolarization.F cuts.F sv.F routines.F sampling.f phasespacemue.F $(VPKNT).f recola_int.F\
-        rngs.F hadr5n12.f hadr5n17.f hadr5x19.f hadr5n.f ranlux.f userinterface.F\
+        rngs.F hadr5n12.f hadr5n17.f hadr5x19.f hadr5n.f ranlux.f userinterface.F generate_event.F\
         loops.F storage.F muemuegg-minus.f muemuegg-plus.f muemuegg.F muemue1g1Lnoupdown.f realpairs.F\
         realpairs_ampl2.f muemue1g1Lupdown.f funssettozero.f printltfun cts1g1L.f muemue1g1Lupdownten.f\
-        twoloop_virtual.F dalhadslow17.f dalhadshigh17.f dalhadt17.f quadpack.F $(HPLOG).f\
-        f1_light_heavy.f f2_light_heavy.f f1_light_heavy_quad.f f2_light_heavy_quad.f\
+        twoloop_virtual.F dalhadslow17.f dalhadshigh17.f dalhadt17.f quadpack.F $(HPLOG).f pi0.F\
+        f1_light_heavy.f f2_light_heavy.f f1_light_heavy_quad.f f2_light_heavy_quad.f wrappers.F\
         light-heavy-2LFF.F constgpl_defs.f vargpl_defs.f gsl_random.c Rhad-scan.dat elasticity.F\
         beamprofile-example.txt.gz\
         $(RELEASEDIR) &&\
 	cp oneloop/*.f $(RELEASEDIR)/oneloop/ &&\
 	cp c_ranlux/*.* $(RELEASEDIR)/c_ranlux/ && $(STRINGSMH) \
-	rm -f $(RELEASEDIR)/root-interface/MuEtreeDict* $(RELEASEDIR)/root-interface/write_MuE_MCevents.exe
 	mkdir $(SAVEDIR) ;\
 	tar cjvf $(SAVEDIR)/$(RELEASEDIR).tar.bz2 $(RELEASEDIR)/ &&\
 	rm -rf $(RELEASEDIR)
 ##### end packaging
 # root-interface/ write-root-events MuEtreeDict_rdict.pcm  # not needed anymore
+# rm -f $(RELEASEDIR)/root-interface/MuEtreeDict* $(RELEASEDIR)/root-interface/write_MuE_MCevents.exe
 
 clean:
-	rm -f $(OBJECTS) *.a $(EXE) *~
+	rm -f $(OBJECTS) main.o *.a $(EXE) $(EXE)fulllib *~
 deepclean: clean
-	rm -rf root-interface/write_MuE_MCevents.exe $(LTDIR)/lib64/libooptools.a $(LTDIR)/build/ $(CLLDIR)/build/ $(CLLDIR)/lib/libcollier.a
+	rm -rf $(GADIR)/$(GANAME)/ $(LTDIR)/lib64/libooptools.a $(LTDIR)/build/ $(CLLDIR)/build/ $(CLLDIR)/lib/libcollier.a
+#root-interface/write_MuE_MCevents.exe
 
 # source files
 main.o: main.F
 	$(F77) -c main.F
 cuts.o: cuts.F
 	$(F77) -c cuts.F
+pi0.o: pi0.F
+	$(F77) -c pi0.F
+wrappers.o: wrappers.F
+	$(F77) -c wrappers.F
+generate_event.o: generate_event.F
+	$(F77) -c generate_event.F
 $(HPLOG).o: $(HPLOG).f
 	$(F77) -c $(HPLOG).f
 matrix_model.o: matrix_model.F invariants.h funsdeccmn1g1L.h Makefile $(LIBFILES)
@@ -178,7 +185,7 @@ muemue1g1Lud.o: muemue1g1Lud.F invariants.h funsdeccmn1g1L.h muemue1g1Lupdown.f 
 muemue1g1Lnoud.o: muemue1g1Lnoud.F  invariants.h funsdeccmn1g1L.h muemue1g1Lnoupdown.f
 	$(F77) $(QUAD) -c muemue1g1Lnoud.F
 userinterface.o: userinterface.F Makefile
-	$(F77) $(QUAD) $(DEFINERELEASE) -c userinterface.F
+	$(F77) $(QUAD) $(DEFINERELEASE)  -fbackslash -c userinterface.F
 realpairs.o: realpairs.F realpairs_ampl2.f 
 	$(F77) -c realpairs.F
 phasespacemue.o: phasespacemue.F 
@@ -235,30 +242,27 @@ ranlux_common.o: c_ranlux/ranlux_common.c Makefile
 extlibs: looptools collier handyg chaplin rootwriter
 # rootinterface # not needed anymore
 
-rootwriter: $(GADIR)/$(GANAME)/ $(GADIR)/$(GANAME)/writer/write_MuE_MCevents.exe
+rootwriter: $(GADIR)/$(GANAME)/ $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
 $(GADIR)/$(GANAME)/:
-	@echo " "
 	@echo "Cloning MuE software (by G. Abbiendi)"
 	@echo " "
 	mkdir -p $(GADIR) && cd $(GADIR) && git clone $(GAREPO)
-$(GADIR)/$(GANAME)/writer/write_MuE_MCevents.exe:
-	@echo " "
+$(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe:
 	@echo "Pulling MuE software and building .root writer"
 	@echo " "
 	cd $(GADIR)/$(GANAME)/ && git pull $(GAREPO)
 	cd $(GADIR)/$(GANAME)/writer/ && ./compile_writer.sh
-	ln -sf $(GADIR)/$(GANAME)/writer/write_MuE_MCevents.exe write-root-events
+write-root-events:
+	ln -sf $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
 
 looptools: $(LTDIR)/lib64/libooptools.a
 $(LTDIR)/lib64/libooptools.a:
-	@echo " "
 	@echo "Building LoopTools"
 	@echo " "
 	cd $(LTDIR) && ./configure --prefix=. && make && make install
 
 collier: $(CLLDIR)/lib/libcollier.a
 $(CLLDIR)/lib/libcollier.a:
-	@echo " "
 	@echo "Building Collier"
 	@echo " "
 	mkdir -p $(CLLDIR)/build/
@@ -266,14 +270,12 @@ $(CLLDIR)/lib/libcollier.a:
 
 handyg: $(HANDYGDIR)/lib/libhandyg.a
 $(HANDYGDIR)/lib/libhandyg.a:
-	@echo " "
 	@echo "Building handyG"
 	@echo " "
 	cd $(HANDYGDIR)/ && ./configure --prefix=. && make && make install
 
 chaplin: $(CHAPLINDIR)/lib/libchaplin.a
 $(CHAPLINDIR)/lib/libchaplin.a:
-	@echo " "
 	@echo "Building Chaplin"
 	@echo " "
 	cd $(CHAPLINDIR)/chaplin-1.2/ && ./configure --prefix=`pwd`/../ --disable-shared && make && make install
@@ -287,16 +289,38 @@ $(CHAPLINDIR)/lib/libchaplin.a:
 #	cd root-interface && ./compile_writer.sh
 ##########
 
-# MESMER library
-libmesmer.a: $(OBJECTS)
-	@echo " "
+# MESMER tiny and full libraries
+libmesmertiny.a: $(OBJECTS) main.o
 	@echo "Creating MESMER library"
 	@echo " "
-	ar cr libmesmer.a $(OBJECTS)
+	@ar cr libmesmertiny.a $(OBJECTS)
+
+libmesmerfull.a: $(OBJECTS) $(LIBFILES)
+	@rm -f libmesmerfull.a libmesmerfull.so
+#	@echo "Creating MESMER static and shared libraries, including all external libraries"
+	@echo "Creating MESMER library, including all external libraries"
+	@echo " "
+	@mkdir -p arlibs/
+	@cp -a $(LIBFILES) arlibs/
+	@cd arlibs && ar x libooptools.a && ar x libcollier.a
+ifeq ($(SMH),-DSMH)
+	@cd arlibs && ar x libhandyg.a && ar x libchaplin.a
+endif
+	@ar cr libmesmerfull.a $(OBJECTS) arlibs/*.o
+#	@$(F77) -o libmesmerfull.so -shared arlibs/*.o
+	@rm -rf arlibs
+
+#########
 
 # MESMER executable
-$(EXE): $(LIBFILES) libmesmer.a
-	@echo " "
+$(EXE): $(LIBFILES) libmesmertiny.a libmesmerfull.a
 	@echo "Creating MESMER program"
 	@echo " "
-	$(F77) main.o -L. -lmesmer -L$(LTDIR)/lib64 $(LTSTRING) $(HANDYG) $(RCLLIB) $(CLLLIB) $(CHAPLIN) $(RCLEXTRA) $(GSLLIBS) -o $(EXE)
+	@$(F77) main.o -L. -lmesmertiny -L$(LTDIR)/lib64 $(LTSTRING) $(HANDYG) $(RCLLIB) $(CLLLIB) $(CHAPLIN) $(RCLEXTRA) $(GSLLIBS) -o $(EXE)
+	@echo "Done!"
+
+$(EXE)fulllib: $(LIBFILES) libmesmerfull.a
+	@echo "Creating MESMER program (with full library)"
+	@echo " "
+	@$(F77) main.o -L. -lmesmerfull  -o $(EXE)fullib
+	@echo "Done!"

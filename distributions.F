@@ -24,39 +24,6 @@
 
       call itoa(nbin,bw)
       bw = trim(bw)//'.txt'
-
-
-      in(1)  = 1
-      in(2)  = 2
-      in(3)  = 3
-      in(4)  = 4
-      in(5)  = 5
-      in(6)  = 6
-      in(7)  = 7
-      in(8)  = 8
-      in(9)  = 9
-      in(10) = 10
-      in(11) = 11
-      in(12) = 12
-      in(13) = 13
-      in(14) = 14
-      in(15) = 15
-      in(16) = 16
-      in(17) = 17
-      in(18) = 18
-      in(19) = 19
-      in(20) = 20
-      in(21) = 21
-      in(22) = 22
-      in(24) = 24
-      in(25) = 25
-      in(26) = 26
-      in(27) = 27
-      in(28) = 28
-      in(29) = 29
-      in(30) = 30
-      in(31) = 31
-      in(32) = 32
       
 ******************
       tmp(1)  = 'ethlab_'
@@ -94,9 +61,15 @@
       tmp(31) = 'en6lab_'
       tmp(32) = 'm56_'
 
+      tmp(33) = 'mubeam_th_'
+      tmp(34) = 'mubeam_E_'
+c      tmp(35) = 'xi3_'
+c      tmp(36) = 'xi4_'
+      
+c      tmp(32) = 'x24_'
+      
 c      tmp(33) = 'emuin'
 c      tmp(34) = 'thmuin'
-      
 
 c      tmp(35) = 'tripleprod_'
 c      tmp(36) = 'acoplGA_'
@@ -105,6 +78,8 @@ c      tmp(37) = 'acoplCM_'
 ******** 2d distributions
       if (i2d.gt.0) then
          tmp2(1) = '2d_thm_thin_'
+         tmp2(1) = 'xi1xi4_'
+         tmp2(2) = 'xi3xi4_'
 c         tmp2(2) = '2d_the_thm_nohad_'
 c         tmp2(3) = '2d_t13z_s4_'
 c         tmp2(4) = '2d_thm_aco_'
@@ -218,7 +193,6 @@ c         print*,trim(distrstring(1:i2+2))
       common/reducedtoborn/p1b(0:3),p2b(0:3),iref
       character*2 fs
       common/finalstate/fs
-      common/idebugging/idebug      
       common/ionlyfirsttime/ifirst,icount
       data ifirst,icount /1,0/ 
 
@@ -291,6 +265,12 @@ c         print*,trim(distrstring(1:i2+2))
 ****      
 
       common/elasticitiesdistr/dist,distf
+      
+*** from phasepace for pairs      
+      double precision csid(8)
+      common/csifordistr/csid
+***
+      common/nphot_mode/nphotmode
       
       if (ifirst.eq.1) then
 
@@ -449,7 +429,11 @@ c         bma(11) = sqrt(s)*0.5d0
          bma(28) =  pi * 1d3*0.5d0
          bmi(29) =  0.d0
          bma(29) =  bma(28)
-
+         if (nphotmode.eq.1010) then
+            bma(28) = 18.d0
+            bma(29) = 18.d0     
+         endif
+            
 c         bmi(1) = bmi(28)
 c         bma(1) = bma(28)
          
@@ -463,13 +447,22 @@ c         bma(1) = bma(28)
          bmi(20) = bmi(32)
          bma(20) = bma(32)
 
-c         bmi(32) = 0.d0
-c         bma(32) = 1.d0
+c         bmi(32) = 0.2d0
+c         bma(32) = 0.93d0
          
          
          bmi(23) = bmi(2)
          bma(23) = bma(2)
 
+         bmi(33) = 0.d0
+         bma(33) = 10.d0
+
+         bmi(34) = 80.d0
+         bma(34) = 190.d0
+         
+c         bmi(33:36) = 0.d0
+c         bma(33:36) = 1.d0
+         
 c         bmi(33) = 50.d0
 c         bma(33) = 180.d0
 c         bmi(34) = 0d0
@@ -501,10 +494,13 @@ c         bma(37) = -bmi(37)
 *****************************
 ****  2d distributions
          if (i2d.gt.0) then
-            bmi2(1,1) = bmi(5) 
-            bmi2(1,2) = bmi(7)
-            bma2(1,1) = bma(5)
-            bma2(1,2) = bma(7)
+            bmi2(1,1) = 0.d0
+            bmi2(1,2) = 0.d0
+            bma2(1,1) = 1.d0
+            bma2(1,2) = 1.d0
+            bmi2 = 0.d0
+            bma2 = 1.d0
+
             
             dis2d  = 0.d0         
             edis2d = 0.d0
@@ -587,6 +583,10 @@ c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
       
       fun(21) = acollinearity(p3,p4)
       fun(22) = -1d3
+
+      fun(33) = acos(truep1lab(3)/sqrt(tridot(truep1lab,truep1lab)))
+      fun(33) = fun(33)*1d3
+      fun(34) = truep1lab(0)
       
 **** photon and pairs variables
       fun(15:19) = bmi(15:19) - 10d0
@@ -625,19 +625,14 @@ c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
             fun(26) = acos(qb2(3)/qb2(0))*180.d0/pi
             fun(27) = qb2(0)
          endif
-
-c         fun(33) = truep1lab(0)
-c         fun(34) = acos(truep1lab(3)/sqrt(tridot(truep1lab,truep1lab)))
-c         fun(34) = fun(34)*1d3
-         
-
+                  
          fun(23) = pinside_e(0)
 ***********pairs
          fun(28:32) = bmi(28:32) -1d3
          fun(20) = bmi(20) - 1d3
          fun(6) = bmi(6) - 1d3
          fun(9) = bmi(9) - 1d3         
-         if (p6(0).gt.0.5d0*ame) then
+         if (p5(0).gt.0.5d0*ame) then
             fun(24) = acos(pinside_e(3)/
      .           sqrt(tridot(pinside_e,pinside_e)))*1d3
             fun(25) = dot(p2lab - pinside_e,p2lab - pinside_e)
@@ -648,6 +643,16 @@ c         fun(34) = fun(34)*1d3
             fun(29) = acos(p6lab(3)/sqrt(tridot(p6lab,p6lab)))*1d3
             fun(30) = p5lab(0)
             fun(31) = p6lab(0)
+
+            if (dot(p5,p5).lt.0.5d0*ame*ame) then ! 2 photons from pion decay
+               xxx = acos(p5lab(3)/sqrt(tridot(p5lab,p5lab)))*1d3
+               yyy = acos(p6lab(3)/sqrt(tridot(p6lab,p6lab)))*1d3
+               fun(28) = max(xxx,yyy)
+               fun(29) = min(xxx,yyy)
+               fun(30) = max(p5lab(0),p6lab(0))
+               fun(31) = min(p5lab(0),p6lab(0))
+            endif
+            
             fun(32) = sqrt(dot(p5+p6,p5+p6))
 
 cc            fun(32) = (p5(0)+p6(0))/sqrt(dot(p12lab,p12lab))
@@ -661,7 +666,12 @@ cc            fun(32) = (p5(0)+p6(0))/sqrt(dot(p12lab,p12lab))
 c            call acoplanaritiesGA(p3lab,pinside_e,
 c     .           fun(35),fun(36),fun(37))
             
-         endif         
+         endif
+
+ccc         fun(32) = xvar(t24)
+
+c         fun(33:36) = csid(1:4)
+         
 ***********************************************************************
          DO k = 1,ndistr
             d = (bma(k) - bmi(k))/nbin
@@ -682,8 +692,10 @@ c     .           fun(35),fun(36),fun(37))
 c            fun2(1,1) = fun(3)
 c            fun2(1,2) = acos(pinside_e(3)/
 c     .           sqrt(tridot(pinside_e,pinside_e)))*1d3
-            fun2(1,1) = fun(5)
-            fun2(1,2) = fun(7)
+            fun2(1,1) = csid(1)
+            fun2(1,2) = csid(4)
+            fun2(2,1) = csid(3)
+            fun2(2,2) = csid(4)
 *******************      
             DO k = 1,ndistr2
                dx = (bma2(k,1) - bmi2(k,1))/nbin2

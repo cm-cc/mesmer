@@ -1,10 +1,10 @@
 *** storage routines, storing to a simple ASCII file
-      subroutine initstorage(storfile,wnorm,sdifmax)
+      subroutine initstorage(storfile)
       implicit double precision (a-h,o-z)
       character*(*) storfile
       common/storageunit/istorunit,ilens
       common/ififocmn/ififo
-      common/tobewritten/wnormalization,sdmax
+      common/tobewrittenintheheader/wnormalization,sdmax
 
       integer g,mum,mup,em,ep
       common/LHAparticlesids/g,mum,mup,em,ep
@@ -12,6 +12,15 @@
       common/LHAparticlesidschar/cg,cmum,cmup,cem,cep
       data g,mum,mup,em,ep/22,13,-13,11,-11/
 
+      character*500 datacard
+      integer isstandalone
+      common/standalone/isstandalone,datacard ! set in main.F or init_mesmer() !!
+      if (isstandalone.eq.0) then
+         print*,'You are not running in standalone mode,'
+         print*,'so events are not stored because it is assumed'
+         print*,'you do it elsewhere.'
+         return                 ! no need to do anything if is not in standalone mode!
+      endif
       print*,'Initializing storage...'
       
       write(cg,'(i4)')g
@@ -25,17 +34,12 @@
       cem  = adjustl(trim(cem))
       cep  = adjustl(trim(cep))
       
-      wnormalization = wnorm
-      sdmax          = sdifmax
       
       istorunit = 61
 c      ififo = 3 ! just write to the fifo, waiting to be read
 c      ififo = 2 ! for gzipped file on the fly
 c      ififo = 1 ! for writing to a fifo, used with root interface      
 c     ififo = 0 ! ascii file
-
-c      print*,ififo
-c      stop
 
       ilens = lnblnk(storfile)-4
       
@@ -136,10 +140,13 @@ c     >     (istorunit,file=storfile(1:ilens)//".fifo",status='unknown')
 
       common/weiunwei/iweight
 
-      common/tobewritten/wnormalization,sdmax
+      common/tobewrittenintheheader/wnormalization,sdmax
       
       double precision p0(0:3)
       data p0 /0.d0,0.d0,0.d0,0.d0/
+
+      logical areweighted
+      common/weightedeventsornot/areweighted
       
 *     included only to access the common 'weights'      
 #include "invariants.h"
@@ -152,7 +159,7 @@ c     >     (istorunit,file=storfile(1:ilens)//".fifo",status='unknown')
          write(istorunit,'(A,I2,A,I2,A,I4,A,I2,A,I2,A,I2)')
      >    '   Started on ',values(3),'/',values(2),'/',
      >        values(1),' at ',values(5),':',values(6),':',values(7)
-         if (eventlimiter.eq.'w') then
+         if (areweighted) then
             write(istorunit,*)
      >  '  Storing ',int(anpoints),' weighted (non-zero weight) events'
             iweight = 1
@@ -290,6 +297,11 @@ c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
       double precision qphlab(40,0:3)
 * included only to access the common 'weights'      
 #include "invariants.h"
+      character*500 datacard
+      integer isstandalone
+      common/standalone/isstandalone,datacard ! set in main.F or init_mesmer() !!
+      if (isstandalone.eq.0) return ! no need to do anything if is not in standalone mode!
+
       if (istorver.eq.1) then
          call eventstorage_v1(w,nev,ie,p3,p4,p5,p6,qph)      
       elseif(istorver.eq.2) then
@@ -311,7 +323,13 @@ c p1lab already in common         call new_boost(pin2,pin1,p1lab,1)
       common/forfooter/xsw,exsw,xsunw,exsunw,
      .     xsbias,exsbias,xsbiasn,exsbiasn,truemax,sum,sum2,sumneg,
      .     sum2neg,foonhpm,foonh,nabove,nlt0
-      common/weightnormalization/wnorm      
+      common/weightnormalization/wnorm
+
+      character*500 datacard
+      integer isstandalone
+      common/standalone/isstandalone,datacard ! set in main.F or init_mesmer() !!
+      if (isstandalone.eq.0) return ! no need to do anything if is not in standalone mode!
+      
       ifoo = istorunit
       write(ifoo,*)'<footer>'
       write(ifoo,*)'(sub-)sample weighted XS (mub)'
@@ -340,7 +358,6 @@ c      write(ifoo,*)foonh
 ***************************
       close(istorunit)
       end
-*************************************************
 *********************************************************
       subroutine eventstorage_v2(w,nev,ie,p3,p4,p5,p6,qph)
 ! after agreeing new format with Giovanni (5/2/21)
@@ -392,7 +409,7 @@ c      write(ifoo,*)foonh
 
       common/iseedoninput/iseedext
       character*8 date
-      character*10time
+      character*10 time
       character*5 zone
       integer values(8)
       
@@ -409,7 +426,7 @@ c      write(ifoo,*)foonh
       
       common/weiunwei/iweight
 
-      common/tobewritten/wnormalization,sdmax
+      common/tobewrittenintheheader/wnormalization,sdmax
       
       double precision p0(0:3)
       data p0 /0.d0,0.d0,0.d0,0.d0/
@@ -419,11 +436,14 @@ c      write(ifoo,*)foonh
 
       common/runtag/ctag
 
-      double complex vpolc
-      external vpolc
-      
       character*300 compactreal
       external compactreal
+
+      integer i0
+      common/setzeroforunweighted/i0
+      
+      logical areweighted
+      common/weightedeventsornot/areweighted
       
 *     included only to access the common 'weights', QRmu QRe and coeffforreweighting
 #include "invariants.h"
@@ -445,7 +465,7 @@ c      write(ifoo,*)foonh
          write(istorunit,'(A,I2,A,I2,A,I4,A,I2,A,I2,A,I2)')
      >    '   Started on ',values(3),'/',values(2),'/',
      >        values(1),' at ',values(5),':',values(6),':',values(7)
-         if (eventlimiter.eq.'w') then
+         if (areweighted) then
             write(istorunit,*)
      >  '  Storing ',int(anpoints),' weighted (non-zero weight) events'
             iweight = 1
@@ -530,20 +550,25 @@ c      write(ifoo,*)foonh
      .        1-ihadoff
          write(istorunit,'(A,i3)')'    Internal hadronic VP flavor = ',
      .        ivpfl
-         write(istorunit,'(A,i3)')'    Number of warmup events = ',
+         write(istorunit,'(A,i12)')'    Number of warmup events = ',
      .        nsearch
          write(istorunit,'(A,i3)')'    Number of saved distributions'//
      .        ' at different orders = ',nw
          write(istorunit,'(A,i3)')'    Syncronization flag = ',isync
          write(istorunit,*)'</header>'
+
+         i0 = 1
+         if (.not.areweighted) i0 = 0
+
          ifirst = 1
       endif
-      
+
       nstored = nstored + 1
       nevts   = nevts + nev - kbefore
       ng = 0      ! number of photons in the record
       npairs = 0  ! number of pairs
-
+      npi0   = 0  ! number of pi0
+      
       write(cnstored,*)nstored
       cnstored = adjustl(trim(cnstored))
 
@@ -604,69 +629,57 @@ ccc   counting photons
             endif
          enddo
 ccc   counting pairs
-         if (p5(0).gt.0.d0) then            
-            npairs = npairs + 1
-            call new_boost(p12lab,p5,p5lab,-1)
-            call new_boost(p12lab,p6,p6lab,-1)
-
-            if ((abs(dot(p5,p5)-ammu**2)/ammu/ammu).lt.1d-4) then
-               id5 = mup
-               id6 = mum
-            endif
-
-            if (ismualongz.eq.0) then
-               call rot(-1,truep1lab,p5lab,p5lab)
-               call rot(-1,truep1lab,p6lab,p6lab)
+         if (p5(0).gt.0.d0.and.p6(0).gt.0.d0) then
+            if (dot(p5,p5).gt.0.5d0*ame*ame) then
+c     .           .and.dot(p6,p6).gt.0.5d0*ame*ame) then
+               npairs = npairs + 1
+               call new_boost(p12lab,p5,p5lab,-1)
+               call new_boost(p12lab,p6,p6lab,-1)
+               
+               if ((abs(dot(p5,p5)-ammu**2)/ammu/ammu).lt.1d-4) then
+                  id5 = -id1
+                  id6 =  id1
+               endif
+               
+               if (ismualongz.eq.0) then
+                  call rot(-1,truep1lab,p5lab,p5lab)
+                  call rot(-1,truep1lab,p6lab,p6lab)
+               endif
+            else ! it's a pion
+               npi0 = npi0 + 1
+               call new_boost(p12lab,p5,p5lab,-1)
+               call new_boost(p12lab,p6,p6lab,-1)
+               p6lab = 0.d0
+               
+c               id5 = 111
+               id5 = g
+               id6 = g
+               
+               if (ismualongz.eq.0) then
+                  call rot(-1,truep1lab,p5lab,p5lab)
+                  call rot(-1,truep1lab,p6lab,p6lab)
+               endif
             endif
          endif
-
+ccc   counting pions         
          write(istorunit,*)' '//ctag(1:len_trim(ctag)) ! GA RunNr ! readded by request         
          write(istorunit,*)' '//cnstored(1:len_trim(cnstored)) ! EventNr
 
-         npart = 2 + ng + 2*npairs
+         npart = 2 + ng + 2*npairs + 2*npi0
          write(cnp,*)npart
          cnp = adjustl(trim(cnp))
          write(istorunit,*)' '//cnp(1:len_trim(cnp))! number of final state particles
 
          ws = w
-         
+
          kbefore = nev
          write(istorunit,*)real(ws,ikind),
-     >        real(ws*extraweights(1),ikind),
-     >        real(ws*extraweights(2),ikind)
-         write(istorunit,*)ws*reweightLO,ws*reweightNLO  ! weight for LO and NLO
+     >        real(ws*extraweights(1)*i0,ikind),
+     >        real(ws*extraweights(2)*i0,ikind)
+         write(istorunit,*)ws*reweightLO*i0,ws*reweightNLO*i0  ! weight for LO and NLO
 c         write(istorunit,*)ws*cwvp  ! coefficients for VP reweight
          if (icwvp.eq.1)
-     >        write(istorunit,*)' '//trim(compactreal(11,ws*cwvp(0:10))) ! coefficients for VP reweight
-
-*************************         
-c         ptmp(0)   = ame - p4lab(0)
-c         ptmp(1:3) = -p4lab(1:3)
-c         vp24      = vpolc(dot(ptmp,ptmp))         
-c         vp24k1    = 0.d0
-c         vp24k2    = 0.d0
-c         vp24k1k2  = 0.d0
-c         if (ng.gt.0) then
-c            vp24k1=vpolc(dot(ptmp-qphlab(1,0:3),ptmp-qphlab(1,0:3)))
-c         endif
-c         if (ng.eq.2) then
-c            vp24k2   = vpolc(dot(ptmp-qphlab(2,0:3),ptmp-qphlab(2,0:3)))
-c            vp24k1k2 = vpolc(dot(ptmp-qphlab(1,0:3)-qphlab(2,0:3),ptmp
-c     >           -qphlab(1,0:3)-qphlab(2,0:3)))
-c         endif
-c         print*,ng,ws,(cwvp(0) ! OK!!
-c     >        + cwvp(1) *vp24**2
-c     >        + cwvp(2) *vp24*vp24k1
-c     >        + cwvp(3) *vp24*vp24k2
-c     >        + cwvp(4) *vp24*vp24k1k2
-c     >        + cwvp(5) *vp24k1**2
-c     >        + cwvp(6) *vp24k1*vp24k2 
-c     >        + cwvp(7) *vp24k1*vp24k1k2
-c     >        + cwvp(8) *vp24k2**2
-c     >        + cwvp(9) *vp24k2*vp24k1k2
-c     >        + cwvp(10) *vp24k1k2**2
-c     >   )
-****************************************************
+     >     write(istorunit,*)' '//trim(compactreal(11,i0*ws*cwvp(0:10))) ! coefficients for VP reweight
          
          write(ctmp,*)id3
          ctmp = trim(adjustl(ctmp))         
@@ -683,6 +696,17 @@ ccc
      >        real(p4lab(1:3),ikind)
          
          if (npairs.gt.0) then
+            write(ctmp,*)id5
+            ctmp = trim(adjustl(ctmp))                     
+            write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     >           real(p5lab(1:3),ikind)
+            write(ctmp,*)id6
+            ctmp = trim(adjustl(ctmp))                     
+            write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),
+     >           real(p6lab(1:3),ikind)
+         endif
+
+         if (npi0.gt.0) then
             write(ctmp,*)id5
             ctmp = trim(adjustl(ctmp))                     
             write(istorunit,*)' ',ctmp(1:len_trim(ctmp)),

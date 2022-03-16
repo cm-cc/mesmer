@@ -37,6 +37,8 @@
       external vpolc
       double precision muemuegg
       external muemuegg
+      double complex epsfun
+      external epsfun
 !     imtx is to say that the matrix el. has been calculated..
 ! summt2 is the squared ME summed over all all spins
       
@@ -162,7 +164,7 @@ c     nspinconf = 2**(4+ng)
       
       if (model.eq.'matched') then
 ****  EXACT REAL PAIRS
-         if (npairs.gt.0) then
+         if (npairs.gt.0) then            
 cphsp
 ctest phspace volume
 c            summt2 = 1000.d0
@@ -173,6 +175,30 @@ c            return
             q4 = p2
             q5 = p3
             q6 = p4
+            
+            if (npairs.eq.10) then
+***   pi0
+c               summt2 = 1.d0
+c               return
+               call ggpi0ff(dot(q1-q3,q1-q3),dot(q2-q4,q2-q4),ff,ffnorm) ! I use mine...
+
+c               write(*,'(A,F20.18,A)')'  t13 = ',dot(q1-q3,q1-q3),'D0'
+c               write(*,'(A,F20.18,A)')'  t24 = ',dot(q2-q4,q2-q4),'D0'
+c               write(*,'(A,F20.18,A)')'  FF  = ',ff,'d0'
+c               write(*,'(A,F20.18,A)')'  FFN = ',ffnorm,'d0'
+               
+c               call elmatpi0quad(q1,q2,q3,q4,q5+q6,ff,summt2q)
+               call elmatpi0(q1,q2,q3,q4,q5+q6,ff,summt2)
+
+c               r = summt2/summt2q
+c               if (abs(r-1.d0).gt.1d-4) then
+c                  print*,r
+c               endif
+c     call elmatczyz(q1,q2,q3,q4,q5,ff,czyz)         
+***
+               return
+            endif
+            
             if (Qmu.gt.0.d0) then
                if (npairs.eq.1) then
                   call realpairs(-q3,q2,-q1,q4,q5,q6,ame,ammu,summt2)                                    
@@ -255,7 +281,7 @@ c          print*,sum(cwvp)/extraweights(1)
        reweightNLO = 1.d0
        if (ng.eq.1) then
           q = qph(1,:)
-          summt2 = radmue(pbeam1,pbeam2,p1,p2,q)
+          summt2 = radmue(pbeam1,pbeam2,p1,p2,q)          
           imtx   = 1
 ******************************************
           if (ord.eq.'born'.or.ord.eq.'alpha') then
@@ -702,7 +728,6 @@ c         cyfsbox = 0.5d0*cyfsbox
 ccc END TEST YFS oal
       
       cyfs    = cyfse+cyfsmu+cyfsbox
-
       do hh = 0,7              ! only half, below the factor of 2!!
 c         do hh = 0, 15           ! only half, below the factor of 2!!            
 c         do hh = 8, 15 !15 ! only half, below the factor of 2!!
@@ -729,14 +754,11 @@ c            call getcurrent(s3l,s1l,cmu,cImu,c5mu)
             
 !! for the Z I need to use dotcmom(v*cmu+a*c5mu,v*ce+a*c5e)
 c         cmuceZ = dotcmom(gv*cmu+ga*c5mu,gv*ce+ga*c5e)
-
          amplborn = cmuce*im*ec2*tm1 
 !! for the Z
 c           amplborn = amplborn + im*cmuceZ/(t-mz2+im*mz*gz)
-
          bbar    = amplborn*conjg(amplborn)
          born    = born + bbar
-         
          if (ioneloop.eq.1) then
             call loadspinvariants(p1,p2,p3,p4,cmu,ce)
             call getQEDvertexes(vertamp)
@@ -753,8 +775,7 @@ ccc TEST YFS oal
 c            oneloop = bbar * (1.d0*cts + 1.d0*sff + 2.d0*(dal+dah))
 c     .           + 2.d0*dreal(amplborn*conjg(vertamp))
 c     .           + 2.d0*dreal(amplborn*conjg(amplborn*cyfsbox))
-ccc END TEST YFS oal
-            
+ccc END TEST YFS oal            
 *** for 2L **********************************************************
             if (is2L) then
                ctmp1 = amplve  + 0.5d0*ctse*amplborn
@@ -790,6 +811,7 @@ ccc END TEST YFS oal
 ****  Z LO always added!
       bornwz = 0.d0
       DZ     = 0.d0
+cc      goto 42
       do hh = 0, 15 ! notice, I must sum over all helicities because of CP violation
          h1  = mod(hh,16)/8 + 1
          h2  = mod(hh, 8)/4 + 1
@@ -808,11 +830,12 @@ ccc END TEST YFS oal
          amplowz = amplowz + im*cmuceZ/(t-mz2+im*mz*gz)
          bornwz  = bornwz + amplowz*conjg(amplowz)
       enddo
-      DZ = bornwz - 2.d0*born ! notice: DZ must haves a vpt factorized in front of 2*M^*_z*M_qed
+      DZ = bornwz - 2.d0*born ! notice: DZ should have a vpt factorized in front of 2*M^*_z*M_qed
 **** end Z LO
  42   continue
 
-      vpt2 = vpt*vpt      
+      
+      vpt2 = vpt*vpt
       
       ampm2      = 2.d0 * ampm2 * vpt2 ! because summing only on half of helicities
       born       = 2.d0 * born  * vpt2
@@ -826,7 +849,6 @@ ccc END TEST YFS oal
       blobsexact = 0.d0
 
       extrareweightLO = 1.d0
-
 ! [[ --- THE FOLLOWING WAS USED FOR NNLO PAIR PAPER
 c      IF (ionlybubbles.gt.0) THEN
 c         vp    = dot_product(vpvect,bubblemask)         
