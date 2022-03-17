@@ -4,18 +4,16 @@
       parameter (lux = 4,k1 = 0,k2 = 0) ! for RANLUX
       integer rnlxstatesize_c
       external rnlxstatesize_c
-
 c      do n = 1,100
 c         print*,'using old ranlux!!'
 c      enddo
 c      call rluxgo(lux,iseed,k1,k2) ! commenta
 c      return  ! commenta
-
       ilux = 2
       call drnlx_c_init(ilux,iseed) ! for C version of ranlux, double precision
 c      call srnlx_c_init(ilux,iseed) ! for C version of ranlux, single precision
 c      print*,rnlxstatesize_c()
-c      stop
+c     stop
       return
       end
 ************************************************
@@ -43,13 +41,14 @@ c      return
       subroutine syncrndseq
       implicit double precision (a-h,o-z)
       integer*8 iwriteout
-      integer isync,seed,nsearch,iverbose,nw,istorver,icwvp
+      integer isync,iseed,nsearch,iverbose,nw,istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
      .     istorver,icwvp,ivpfl
       parameter (nvec=1000)
       double precision r(nvec)
-      common/getrndwvcmn/r,last,ifirst
-*****      
+      common/getrndwvcmn/r
+      common/lastusedrnd/last,ifirst
+*****
       if (isync.eq.0) return ! does nothing in this case
 *****
       last = nvec      
@@ -59,15 +58,18 @@ c      return
       subroutine getrnd(xi,n)
       implicit double precision (a-h,o-z)
       integer*8 iwriteout
-      integer isync,seed,nsearch,iverbose,nw,istorver,icwvp
+      integer isync,iseed,nsearch,iverbose,nw,istorver,icwvp
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
      .     istorver,icwvp,ivpfl
       dimension xi(n)
       parameter (nvec=1000)
       parameter (nvecsync=30) ! must be <= nvec
       double precision r(nvec)
-      common/getrndwvcmn/r,last,ifirst
+      common/getrndwvcmn/r
+      common/lastusedrnd/last,ifirst
       data ifirst,last /0,nvec/
+c      call getrndroutine(xi,n)
+c      return      
       if (last.eq.nvec) then
          if (isync.eq.0) then
             call getrndroutine(r,nvec)
@@ -155,5 +157,38 @@ c         call random_number(csi4)
       return
       end
 **************************************************************************      
-
-      
+      subroutine init_rnd_sequence
+! I enclose it here so that can be used after warmup      
+      implicit none
+      integer iii,k
+      integer*8 iwriteout
+      integer isync,iseed,nsearch,iverbose,nw,istorver,icwvp
+      integer iseedext,ivpfl
+      common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
+     .     istorver,icwvp,ivpfl
+      common/iseedoninput/iseedext
+      double precision csi(2)
+      integer last,nvec, ifirst
+      parameter (nvec=1000)
+      common/lastusedrnd/last,ifirst
+      integer ifirstinit
+      common/initrndcmn/ifirstinit
+      data ifirstinit /0/
+! I call this routine in userinterface and at least once more (twice if warming up) in generete_event or main.
+      if (ifirstinit.eq.0) then
+         iseedext = iseed
+         call initrng(4323432)
+         do k = 1,iseedext
+            call getrndroutine(csi,2)
+         enddo
+         iii   = int(csi(1)*1d7)
+         iii   = iii + int(csi(2)*1d7)
+         iseed = iii
+         ifirstinit   = 1
+      endif
+****  RNG initialization      
+      call initrng(iseed)
+****  end RNG initialization
+      last = nvec ! to be sure that the random array is reloaded when init_rnd_sequence is called
+      return
+      end
