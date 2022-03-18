@@ -1,5 +1,5 @@
 RELEASE=yes
-## RELEASE=
+RELEASE=
 
 EXE = mesmer
 
@@ -132,7 +132,7 @@ pack: # use only to release MESMER
 	mkdir -p $(RELEASEDIR)/collier/ &&\
 	cp -ra LoopTools-$(LTVER)-clean/ $(RELEASEDIR)/LoopTools-$(LTVER) &&\
 	cp -ra collier/COLLIER-1.2.5-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.5 &&\
-        cp -ra Makefile README.md input-example\
+        cp -ra Makefile README.md STANDALONE.md EMBEDDED.md input-example\
         distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h AUTHORS.md\
         main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat muemue1g1Lud.F LICENSE.md\
         vacuumpolarization.F cuts.F sv.F routines.F sampling.f phasespacemue.F $(VPKNT).f recola_int.F\
@@ -142,7 +142,7 @@ pack: # use only to release MESMER
         twoloop_virtual.F dalhadslow17.f dalhadshigh17.f dalhadt17.f quadpack.F $(HPLOG).f pi0.F\
         f1_light_heavy.f f2_light_heavy.f f1_light_heavy_quad.f f2_light_heavy_quad.f wrappers.F\
         light-heavy-2LFF.F constgpl_defs.f vargpl_defs.f gsl_random.c Rhad-scan.dat elasticity.F\
-        beamprofile-example.txt.gz\
+        beamprofile-example.txt.gz c_driver.c\
         $(RELEASEDIR) &&\
 	cp oneloop/*.f $(RELEASEDIR)/oneloop/ &&\
 	cp c_ranlux/*.* $(RELEASEDIR)/c_ranlux/ && $(STRINGSMH) \
@@ -242,18 +242,19 @@ ranlux_common.o: c_ranlux/ranlux_common.c Makefile
 extlibs: looptools collier handyg chaplin rootwriter
 # rootinterface # not needed anymore
 
-rootwriter: $(GADIR)/$(GANAME)/ $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
-$(GADIR)/$(GANAME)/:
-	@echo "Cloning MuE software (by G. Abbiendi)"
-	@echo " "
-	mkdir -p $(GADIR) && cd $(GADIR) && git clone $(GAREPO)
-$(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe:
-	@echo "Pulling MuE software and building .root writer"
-	@echo " "
-	cd $(GADIR)/$(GANAME)/ && git pull $(GAREPO)
-	cd $(GADIR)/$(GANAME)/writer/ && ./compile_writer.sh
-write-root-events:
-	ln -sf $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
+## disabled at the moment
+# rootwriter: $(GADIR)/$(GANAME)/ $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
+# $(GADIR)/$(GANAME)/:
+# 	@echo "Cloning MuE software (by G. Abbiendi)"
+# 	@echo " "
+# 	mkdir -p $(GADIR) && cd $(GADIR) && git clone $(GAREPO)
+# $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe:
+# 	@echo "Pulling MuE software and building .root writer"
+# 	@echo " "
+# 	cd $(GADIR)/$(GANAME)/ && git pull $(GAREPO)
+# 	cd $(GADIR)/$(GANAME)/writer/ && ./compile_writer.sh
+# write-root-events:
+# 	ln -sf $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
 
 looptools: $(LTDIR)/lib64/libooptools.a
 $(LTDIR)/lib64/libooptools.a:
