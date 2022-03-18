@@ -33,7 +33,7 @@ A `Makefile` is provided. The executable `mesmer` and the library `libmesmerfull
 ## Warning
 **When running at NNLO, please understand that a subset of the purely virtual NNLO photonic corrections are approximate as described in 2. of the list of references, i.e. the subset of virtual corrections where at least two photons connect the muon and the electron fermionic lines.** 
 
-## Running the code
+## Using the code
 
 Once compiled, **`MESMER`** can be run in [**standalone mode**](STANDALONE.md) or [**embedded mode**](EMBEDDED.md) (i.e. inside a `C/C++` program). In the former case, parameters can be set at the command prompt
 or by piping the provided [input data card (`input-example`)](input-example) as `./mesmer < input-example`. In the latter case, the parameters are read from an input data card, the name of which is passed by reference to a `C/C++` function.

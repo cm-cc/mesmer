@@ -1,5 +1,5 @@
 RELEASE=yes
-RELEASE=
+## RELEASE=
 
 EXE = mesmer
 
