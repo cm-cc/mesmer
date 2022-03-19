@@ -33,8 +33,7 @@
       cmup = adjustl(trim(cmup))
       cem  = adjustl(trim(cem))
       cep  = adjustl(trim(cep))
-      
-      
+
       istorunit = 61
 c      ififo = 3 ! just write to the fifo, waiting to be read
 c      ififo = 2 ! for gzipped file on the fly
@@ -444,6 +443,11 @@ c      write(ifoo,*)foonh
       
       logical areweighted
       common/weightedeventsornot/areweighted
+
+      double precision eps
+      common/epssoft/eps
+      double precision phmass
+      common/photonmasslambda/phmass
       
 *     included only to access the common 'weights', QRmu QRe and coeffforreweighting
 #include "invariants.h"
@@ -523,7 +527,9 @@ c      write(ifoo,*)foonh
          write(istorunit,*)' ',ame
          write(istorunit,*)'  1/alpha(0)'
          write(istorunit,*)' ',1.d0/alpha
-         write(istorunit,*)'  CoM photon k_0 (GeV)',egmin
+c         write(istorunit,*)'  CoM photon k_0 (GeV)',egmin
+         write(istorunit,*)'  IR separator',eps
+         write(istorunit,*)'  Photon IR mass (GeV)',phmass
          write(istorunit,*)'  ------------------------------'
          write(istorunit,*)'  MC generation cuts:'
          write(istorunit,*)'   Eemin   = ',eemin
