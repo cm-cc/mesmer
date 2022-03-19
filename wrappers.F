@@ -234,7 +234,7 @@ c      endif
      .     nwarmupout,
      .     ndistrwout,
      .     isyncout,
-     .     k0out,
+     .     epsout,
      .     phmassout)
      .     bind(C,name="mesmer_setup")
       use iso_c_binding
@@ -269,7 +269,7 @@ c      character :: mesmerversion(40)
       double precision ththrout
       double precision acoplout
       double precision elaout
-      double precision k0out
+      double precision epsout
       double precision phmassout
       integer iacoplout
       integer ihadonout
@@ -339,6 +339,10 @@ c      character :: mesmerversion(40)
       common/photoncutoff/egmin,egmin2
       common/realinput/anpoints,sdifmax
 
+      double precision eps
+      common/epssoft/eps
+
+      
       common/nphot_mode/nphotmode
       
       common/weiunwei/iweight
@@ -434,7 +438,8 @@ c      character :: mesmerversion(40)
       elmassout = ame
       invalphaout = 1.d0/alpha
 
-      k0out = egmin
+c      k0out = egmin
+      epsout = eps
       phmassout = phmass
       
       wnormout = wnorm
