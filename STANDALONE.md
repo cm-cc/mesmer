@@ -2,6 +2,9 @@ In **standalone mode**, the code is run by issuing in the working directory the 
 where parameters for the run can be set. Alternatively, an [input data card (`input-example`)](input-example) is provided and it can be fed as input
 by piping `./mesmer < input-example`.  
 
+The order in which the input parameters and values are inserted in the data card or at the prompt is indifferent.
+If a parameter/value is missing, defaults are used. The only mandatory rule is that the last input must be `run`.
+
 The **`MESMER`** prompt	 looks like:
 
 ```
@@ -54,7 +57,7 @@ The **`MESMER`** prompt	 looks like:
  Insert "parameter value" or "run" or "quit": 
 ```
 
-By typing `help` at the prompt, a short description of the parameters that can be set is displayed (more details [here](#running-parameters-description)):
+By typing `help` at the prompt, a short description of the parameters that can be set is displayed (more details [here](README.md#running-parameters-description)):
 
 ```
  Principal parameters:

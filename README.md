@@ -35,11 +35,7 @@ A `Makefile` is provided. The executable `mesmer` and the library `libmesmerfull
 
 ## Using the code
 
-Once compiled, **`MESMER`** can be run in [**standalone mode**](STANDALONE.md) or [**embedded mode**](EMBEDDED.md) (i.e. inside a `C/C++` program). In the former case, parameters can be set at the command prompt
-or by piping the provided [input data card (`input-example`)](input-example) as `./mesmer < input-example`. In the latter case, the parameters are read from an input data card, the name of which is passed by reference to a `C/C++` function.
-
-The order in which the input parameters and values are inserted in the data card or at the prompt is indifferent.
-If a parameter/value is missing, defaults are used. The only mandatory rule is that the last input must be `run`.
+Once compiled, **`MESMER`** can be run in [**standalone mode**](STANDALONE.md) or [**embedded mode**](EMBEDDED.md) (i.e. inside a `C/C++` program).
 
 ## Running parameters description
 
@@ -47,11 +43,14 @@ In general, the routine `cuts(...)` in the file `cuts.F` can be modified accordi
 
 The parameters that can be set are split into *principal* and *internal* parameters and they are set by typing at the prompt `parameter value(s)` (case sensitive).
 
+The order in which the input parameters and values are inserted in the data card or at the prompt is indifferent.
+If a parameter/value is missing, defaults are used. The only mandatory rule is that the last input must be `run`.
+
 ### Principal parameters
 
 * `Qmu [default 1]`: charge of the incoming muon in e+ units `[1 / -1]`
 * `Ebeam [150]`: nominal incoming muon energy in GeV
-* `extmubeam [no]`: feed generic muon beam externally (beam profile, see [here if running in standalone mode](STANDALONE.md#beam-profile) or [here if running in embedded mode](EMBEDDED.md#beam-profile)) `[yes/no]`.  
+* `extmubeam [no]`: feed generic muon beam externally (beam profile, see [here if running in standalone mode](STANDALONE.md#beam-profile) or [here if running in embedded mode](EMBEDDED.md)) `[yes/no]`.  
 **Notice:** when the muom beam is not along the positive z-axis, all the angles described below, used as generator level cuts, must be intended as relative to the muon beam direction
 * `bspr [0]`: Gaussian beam energy spread, in % of `Ebeam`. Active only if `extmubeam no`
 * `Eemin [1]`: minimum outgoing electron energy in GeV
