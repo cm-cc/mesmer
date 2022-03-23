@@ -158,15 +158,15 @@ c      endif
       endif
       
       foonhpm = int(hitpmiss,kind=8)      
+
       foonh   = int(hit,kind=8)
+      if (areweighted) foonh = foonhpm
+
       xsw     = xsec
       exsw    = var
       xsunw   = hmxsect
       exsunw  = hmerr
-c      if (.not.areweighted) then
-c         xsw      = hmxsect
-c         exsw     = hmerr
-c      endif
+
       nabove   = int(nover,kind=8)
       nlt0     = int(nneg,kind=8)
       xsbias   = sezover
