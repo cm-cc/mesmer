@@ -77,7 +77,8 @@ int main(int argc, char* argv[])
   /* in-out for finalize_mesmer*/
   double xsw;
   double exsw;
-  long int foohom;
+  long int foohpm;
+  long int fooh;
   double truemax;
   long int nabove;
   long int nlt0;
@@ -140,7 +141,7 @@ int main(int argc, char* argv[])
      double* eps,
      double* phmass
      );
-  extern void finalize_mesmer(double *xsw, double *exsw,long int *foohom,double *truemax,long int *nabove,
+  extern void finalize_mesmer(double *xsw, double *exsw,long int *foohpm, long int *fooh, double *truemax,long int *nabove,
 			       long int *nlt0, double *xsbias, double *exsbias, double *xsbiasn,
 			       double *exsbiasn, double *sumow, double *sum2ow2,
 			       double *sumnow, double *sum2now2);
@@ -189,7 +190,7 @@ int main(int argc, char* argv[])
   
   printf("%.16f %.16f\n",avg,error); 
 
-  finalize_mesmer(&xsw, &exsw, &foohom, &truemax, &nabove, &nlt0, &xsbias, &exsbias, &xsbiasn,
+  finalize_mesmer(&xsw, &exsw, &foohpm, &fooh, &truemax, &nabove, &nlt0, &xsbias, &exsbias, &xsbiasn,
 		  &exsbiasn, &sumow, &sum2ow2, &sumnow, &sum2now2);
 
   printf("%.16f %.16f\n",xsw,exsw);

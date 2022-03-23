@@ -78,14 +78,14 @@
       return
       end
 ************************************************
-      subroutine finalize_mesmer(xsw,exsw,foohom,truemax,nabove,nlt0,
-     .     xsbias,exsbias,xsbiasn,
+      subroutine finalize_mesmer(xsw,exsw,foonhpm,foonh,truemax,nabove,
+     .     nlt0,xsbias,exsbias,xsbiasn,
      .     exsbiasn,sumow,sum2ow2,sumnow,sum2now2)
      .     bind(C,name="finalize_mesmer")
       use iso_c_binding
       implicit double precision (a-h,o-z)
-      integer*8 foohom,foonh,nabove,nlt0
-      call get_footer(xsw,exsw,foohom,truemax,nabove,nlt0,xsbias,
+      integer*8 foonhpm,foonh,nabove,nlt0
+      call get_footer(xsw,exsw,foonhpm,foonh,truemax,nabove,nlt0,xsbias,
      .     exsbias,xsbiasn,
      .     exsbiasn,sumow,sum2ow2,sumnow,sum2now2)
       call exitlooplibraries
@@ -93,11 +93,11 @@
       return
       end
 *************************************************
-      subroutine get_footer(xsw,exsw,foonhopm,truemax,nabove,nlt0,
+      subroutine get_footer(xsw,exsw,foonhpm,foonh,truemax,nabove,nlt0,
      .     xsbias,exsbias,xsbiasn,
      .     exsbiasn,sumow,sum2ow2,sumnow,sum2now2)
       implicit double precision (a-h,o-z)
-      integer*8 foonhopm, nabove,nlt0
+      integer*8 nabove,nlt0
       real starttime,endtime,truestarttime,tmptime
       parameter (mph=40,maxnw=3)
       dimension sump(0:mph-1),sum2p(0:mph-1)
@@ -109,7 +109,7 @@
       integer ucs4
       parameter (ucs4  = selected_char_KIND ('ISO_10646'))
       character(len=1,kind=ucs4) greekmu
-      integer foonhpm,foonh
+      integer*8 foonhpm,foonh
       integer*8 foonhpma,foonha
       double precision ntomicro
       integer rlxstate(104)
@@ -157,12 +157,12 @@ c      endif
          errsezneg = sqrt(abs(errsezneg))
       endif
       
-      foonhopm = int(hitpmiss,kind=8)      
-      foonh    = int(hit,kind=8)
-      xsw      = xsec
-      exsw     = var
-      xsunw    = hmxsect
-      exsunw   = hmerr
+      foonhpm = int(hitpmiss,kind=8)      
+      foonh   = int(hit,kind=8)
+      xsw     = xsec
+      exsw    = var
+      xsunw   = hmxsect
+      exsunw  = hmerr
 c      if (.not.areweighted) then
 c         xsw      = hmxsect
 c         exsw     = hmerr
@@ -341,7 +341,6 @@ c      character :: mesmerversion(40)
 
       double precision eps
       common/epssoft/eps
-
       
       common/nphot_mode/nphotmode
       
