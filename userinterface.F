@@ -392,7 +392,7 @@ c      ififo = 3 ! just write on the fifo
          ctmp2 = 'yes'
          if (ismualongz.eq.1) ctmp2 = 'no'
          write(stringa,*)' [ '//setkey(41)//' ] Feed generic'//
-     .    '  muon beam externally (beam profile): ',trim(ctmp2)
+     .    ' muon beam externally (beam profile): ',trim(ctmp2)
          print*,trim(stringa)
          write(stringa,*)' [ '//setkey(3)//' ] Minimum electron'//
      .       ' LAB energy = ',trim(r8tostr(eemin)),' GeV'
@@ -1063,6 +1063,9 @@ c     .     ' (active only for v2)'
      .     ntomicro,k,npoints,naccepted,kt,itime,rlxstate,nphmax,nover, 
      .     in_conf_spin
 
+      common/printoutcommonblock/kwritelast
+      data kwritelast /0/
+      
       open(42,file=trim(path)//'iwriteout',status='unknown')
       read(42,*)iwriteout
       close(42)
