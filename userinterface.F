@@ -820,9 +820,13 @@ c useing always events.dat (widthout "order" info...)
       if (chadoff.eq.'no')  ihadoff = 0
 
 **** number of distributions in one shot
-      if (ord.eq.'born')  nw = 1
-      if (ord.eq.'alpha') nw = min(2,nw)
-      nw = min(nw,3)
+      if (nw.gt.0) then
+         if (ord.eq.'born')  nw = 1
+         if (ord.eq.'alpha') nw = min(2,nw)
+         nw = min(nw,3)
+      else
+         print*,' Not writing distribution files!'
+      endif
 *****
 
 *** switch off any NNLO VP RC if iarun = 0  or ord = born
@@ -967,7 +971,8 @@ c     .     ' (active only for v2)'
      .     ' generation is started [int]. Plays with ',
      .     trim(setkey(37)),'.'
       print*,setkey(28)  ,' ---> if writing distributions also at'//
-     .     ' different orders [1/2/3]'
+     .     ' different orders [0/1/2/3]'//
+     .     ' (0 disables writing distributions)'
       print*,setkey(19)  ,' ---> maximum integrand for unweightening'
       print*,setkey(37)  ,' ---> typical integrated cross section'//
      .     ' within applied cuts, used for storage in ROOT format'

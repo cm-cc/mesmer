@@ -7,8 +7,9 @@
       dimension p1(0:3),p2(0:3),qph(40,0:3),q(0:3),ptmp(0:3)
       dimension p3(0:3),p4(0:3)
 
-      dimension p3lab(0:3),p4lab(0:3),p5lab(0:3),p6lab(0:3)
-      common/fslabmomenta/p3lab,p4lab,p5lab,p6lab
+      double precision qphlab(40,0:3)
+      double precision p3lab(0:3),p4lab(0:3),p5lab(0:3),p6lab(0:3)
+      common/fslabmomenta/p3lab,p4lab,p5lab,p6lab,qphlab
       
       common/momentainitial/pin1(0:3),pin2(0:3)
       common/parameters/ame,ammu,convfac,alpha,pi
@@ -106,7 +107,6 @@ c      return
       if (npairs.eq.10) then
 ! no cuts!
          icut = 0
-         call new_boost(p12lab,p2,p4lab,-1)
          if (p4lab(0).lt.eemin) icut = 1
 
 !bkg to 2 -> 3         
@@ -119,15 +119,15 @@ c         if (p4lab(0).lt.1.d0.or.p4lab(0).gt.25d0) icut = 1
       
 ***
 * I put in p[3456]lab the final state lepton (or photons if there're from a pi0) momenta...      
-      call new_boost(p12lab,p1,p3lab,-1) 
-      call new_boost(p12lab,p2,p4lab,-1)
-      if (p3(0).gt.0.d0) then
-         call new_boost(p12lab,p3,p5lab,-1)
-         call new_boost(p12lab,p4,p6lab,-1)
-      else
-         p5lab = 0.d0
-         p6lab = 0.d0
-      endif
+c      call new_boost(p12lab,p1,p3lab,-1) 
+c      call new_boost(p12lab,p2,p4lab,-1)
+c      if (p3(0).gt.0.d0) then
+c         call new_boost(p12lab,p3,p5lab,-1)
+c         call new_boost(p12lab,p4,p6lab,-1)
+c      else
+c         p5lab = 0.d0
+c         p6lab = 0.d0
+c      endif
 
       pmatlab(:,1) = p3lab
       pmatlab(:,2) = p4lab
@@ -167,7 +167,8 @@ c            if (j.ne.i.and.itriggers(i)*itriggers(j).gt.0) then
             endif
          enddo
       enddo
-      
+
+      pinside_e = p4lab
       if (ncoppie.eq.1) then
          if (itriggers(2).eq.1) pinside_e = pmatlab(:,2)
          if (itriggers(3).eq.1) pinside_e = pmatlab(:,3)

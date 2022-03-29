@@ -104,7 +104,7 @@ By typing `help` at the prompt, a short description of the parameters that can b
              └> [ 1010 ] pi0 production (and decay in to two photons)
  nwrite    ---> files are dumped every nwrite generated events [int] (negative integer means files written every -nwrite seconds)
  nwarmup   ---> after nwarmup events, also unweighted generation is started [int]. Plays with wnorm.
- ndistr    ---> if writing distributions also at different orders [1/2/3]
+ ndistr    ---> if writing distributions also at different orders [0/1/2/3]  (0 disables writing distributions)
  sdmax     ---> maximum integrand for unweightening
  wnorm     ---> typical integrated cross section within applied cuts, used for storage in ROOT format
  sync      ---> syncronization mode for random numbers (see README) [0/1]

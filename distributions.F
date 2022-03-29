@@ -186,7 +186,12 @@ c         print*,trim(distrstring(1:i2+2))
 ! nw is the number of weights, sd has dimension nw
 #include "distributions_inc.F"
       dimension pin1(0:3),pin2(0:3),csi(1),p5(0:3),p6(0:3)
-      double precision p5lab(0:3),p6lab(0:3),kone(0:3)
+      double precision kone(0:3)
+
+      double precision qphlab(40,0:3)
+      double precision p3lab(0:3),p4lab(0:3),p5lab(0:3),p6lab(0:3)
+      common/fslabmomenta/p3lab,p4lab,p5lab,p6lab,qphlab
+
       double precision sd(nw)
       dimension p4test1(0:3),p3test(0:3),p4test2(0:3)
       common/momentainitial/pin1,pin2
@@ -218,7 +223,6 @@ c         print*,trim(distrstring(1:i2+2))
       double precision qa(0:3),qb(0:3),qa2(0:3),qb2(0:3)
       double precision pluto(0:3)
 
-      double precision p3lab(0:3),p4lab(0:3)
       double precision p3lo(0:3),p4lo(0:3)
       double precision ptmp(0:3), ptmp2(0:3)
 
@@ -271,6 +275,10 @@ c         print*,trim(distrstring(1:i2+2))
       common/csifordistr/csid
 ***
       common/nphot_mode/nphotmode
+
+****************      
+      if (nw.eq.0) return
+****************      
       
       if (ifirst.eq.1) then
 
@@ -520,24 +528,10 @@ c         bma(37) = -bmi(37)
 **********************************         
          ifirst = 0
       endif
-
-c      if (.not.(abs(sd(1)).lt.1d50).or.isnan(sd(1))) then
-c         print*,'print in distributions'
-c         print*,sd
-c         print*,p3
-c         print*,p4
-c         print*,p5
-c         print*,p6
-c         print*,qph
-c         print*,'end print in distributions'
-c      endif
       
-cc this doesnt work if not boosting where pin2 is at rest (p2lab is not at rest in general)
-c      call new_boost(pin2,p3,p3lab,1)
-c      call new_boost(pin2,p4,p4lab,1)
 cc this is more general
-      call new_boost(p12lab,p3,p3lab,-1)
-      call new_boost(p12lab,p4,p4lab,-1)
+c      call new_boost(p12lab,p3,p3lab,-1)
+c      call new_boost(p12lab,p4,p4lab,-1)
 ** the two coincide anyway if p2lab is at rest
       
       p3mcm = sqrt(tridot(p3,p3))
@@ -593,7 +587,6 @@ c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
       fun(24) = fun(1)
       fun(25:27) = bmi(25:27) - 10d0
 
-      
       qa  = 0.d0                 ! in the lab
       qa2 = 0.d0
       if (qph(1,0).ge.qph(2,0)) then
@@ -603,8 +596,7 @@ c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
       else
          qb2 = qph(1,:)
          qb  = qph(2,:)
-      endif
-      
+      endif      
       if (qb(0).gt.0.d0)  call new_boost(pin2,qb,qa,1)
       if (qb2(0).gt.0.d0) call new_boost(pin2,qb2,qa2,1)
       
@@ -637,8 +629,8 @@ c      call acoplanaritiesGA(p3lab,p4lab,fun(35),fun(36),fun(37))
      .           sqrt(tridot(pinside_e,pinside_e)))*1d3
             fun(25) = dot(p2lab - pinside_e,p2lab - pinside_e)
             
-            call new_boost(p12lab,p5,p5lab,-1)
-            call new_boost(p12lab,p6,p6lab,-1)
+c            call new_boost(p12lab,p5,p5lab,-1)
+c            call new_boost(p12lab,p6,p6lab,-1)
             fun(28) = acos(p5lab(3)/sqrt(tridot(p5lab,p5lab)))*1d3
             fun(29) = acos(p6lab(3)/sqrt(tridot(p6lab,p6lab)))*1d3
             fun(30) = p5lab(0)
@@ -741,6 +733,9 @@ c            endif
       character*6 ord
       common/qedORDER/ord
 
+****************
+      if (nw.eq.0) return
+****************
 
       if (ifirst.eq.1) return
       

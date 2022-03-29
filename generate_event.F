@@ -307,6 +307,7 @@ c DEFAULT
 *****************************************
          if (ie.ge.1) ie = 1
          if (ie.lt.1) then 
+            call momentatolab(p1,p2,p3,p4,ng,qph)
             call cuts(p1,p2,p3,p4,qph,ng,npairs,icut)
          else
             icut = 1

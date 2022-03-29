@@ -1,3 +1,47 @@
+      subroutine momentatolab(p3,p4,p5,p6,ng,qph)
+      implicit double precision (a-h,o-z)
+      double precision p3(0:3),p4(0:3),p5(0:3),p6(0:3)
+      integer ng
+      parameter (mph=40)
+      double precision qph(mph,0:3)
+      double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
+      double precision truep1lab(0:3)
+      common/labmomenta/p1lab,p2lab,truep1lab,p12lab
+
+      double precision qphlab(40,0:3)
+      double precision p3lab(0:3),p4lab(0:3),p5lab(0:3),p6lab(0:3)
+      common/fslabmomenta/p3lab,p4lab,p5lab,p6lab,qphlab
+
+      common/bootstolabcmn/ifirst
+      data ifirst /0/
+      if (ifirst.eq.0) then
+         p3lab  = 0.d0
+         p4lab  = 0.d0
+         p5lab  = 0.d0
+         p6lab  = 0.d0
+         qphlab = 0.d0
+         ifirst = 1
+      endif
+      call new_boost(p12lab,p3,p3lab,-1)
+      call new_boost(p12lab,p4,p4lab,-1)
+      if (ng.ge.1) then
+         do k = 1,ng
+            call new_boost(p12lab,qph(k,0:3),qphlab(k,0:3),-1)
+         enddo
+      endif
+      if (p5(0).gt.1d-8) then
+         call new_boost(p12lab,p5,p5lab,-1)
+      else
+         p5lab = 0.d0
+      endif
+      if (p6(0).gt.1d-8) then
+         call new_boost(p12lab,p6,p6lab,-1)
+      else
+         p6lab = 0.d0
+      endif
+      return
+      end      
+***********************************************************
       function xvar(t)
       implicit double precision (a-h,m,o-z)
       common/parameters/ame,ammu,convfac,alpha,pi
@@ -36,8 +80,8 @@
       common/momentainitial/pin1,pin2
       common/radpattern/nph(4)
 
-      integer isvec(25)
-      common/rlxstatus/isvec
+      integer isvec(25),irngstate(104)
+      common/rlxstatus/isvec,irngstate
 
       character*20 statusfile,procid,machine
       
@@ -50,11 +94,8 @@
       open(543,file=statusfile,status='unknown',access='append')
       
       icount = icount + 1
-      nfot = nph(1)+nph(2)+nph(3)+nph(4)
-      nfot = ng
-      amfs = 0.d0
-      if (fs.eq.'ee') amfs = ame
-      if (fs.eq.'mm') amfs = ammu
+      nfot   = nph(1)+nph(2)+nph(3)+nph(4)
+      nfot   = ng
       write(543,*)'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
       write(543,*)'printing point & event n.: ',icode,', ',kl
       write(543,'(1x,A,f16.8,A,f16.8)')'cross section: ',xs,' +-',var
@@ -134,8 +175,8 @@
             write(543,'(1x,i2,A,f16.8)')k,' p4q',dot(p2,q)
          enddo
       endif
-      write(543,*)'Ranlux status:'
-      write(543,*)isvec
+      write(543,*)'RNG status:'
+      write(543,*)irngstate
       write(543,*)'>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>'
       close(543)
       return
