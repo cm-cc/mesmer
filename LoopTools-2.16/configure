@@ -1,7 +1,7 @@
 #! /bin/bash
 # configure script for LoopTools
 # note: has nothing to do with GNU autoconf
-# last modified 21 Sep 21 th
+# last modified 22 Dec 21 th
 
 
 exec 2> ${LOGFILE:-/dev/null} 3>&1
@@ -146,7 +146,7 @@ setflags() {
   eval "CONF_$1=\"\${rhs//\\\\,/,}\""
 }
 
-set -- `eval $CONF_FC --version -c | sed '/^$/d;s/(.*)//;q' 2>&1`
+set -- `eval "$CONF_FC --version -c" | sed '/^$/d;s/(.*)//;q' 2>&1`
 case "$1,$2,$3" in
 GNU,Fortran,[123].*)
   eval setflags FFLAGS "\
@@ -177,8 +177,8 @@ ${CONF_STATIC:+-Bstatic} ${CONF_STATIC_EXT:+-Bstatic_pgi}"
 ifort*)
   CONF_QUADSIZE=16
   eval setflags FFLAGS "\
-${FFLAGS-${CONF_DEBUG:--O3}} \
-$CONF_ARCH $CONF_BITS -debug -extend_source -warn truncated_source -warn nouncalled -assume bscc \
+${FFLAGS-${CONF_DEBUG:--O3}} ${CONF_DEBUG:+-debug} \
+$CONF_ARCH $CONF_BITS -extend_source -warn truncated_source -warn nouncalled -assume bscc \
 ${CONF_QUAD:+-r16 -DDBLE=QEXT -DDIMAG=QIMAG -DDCONJG=QCONJG -DDCMPLX=QCMPLX} \
 $CONF_STATIC ${CONF_STATIC_EXT:+-static-intel}"
   ;;
@@ -379,16 +379,18 @@ int main(int argc, char **argv) {
 _EOF_
 
   CONF_MCC="${MCC:-mcc}"
-  eval setflags MCFLAGS "-st ${CONF_BITS/m/b} -D__int64='long long int'"
+#  eval setflags MCFLAGS "-st ${CONF_BITS/m/b} -n"
+  eval setflags MCFLAGS "-n"
+  eval setflags MCDEFS "-D__int64='long long int'"
 
   # this is a workaround for a bug in mcc 11.0:
   ln -s "$CONF_DIR" =.
 
   for CONF_STDCPP in "" " -stdlib=libstdc++" ; do
-    CC="$CONF_DIR/src/tools/fcc.in" REALCC="$CONF_CC$CONF_CFLAGS" \
-    CXX="$CONF_DIR/src/tools/f++.in" REALCXX="$CONF_CXX$CONF_CXXFLAGS$CONF_STDCPP" \
+    CC="$CONF_DIR/src/tools/fcc.in" REALCC="$CONF_CC$CONF_CFLAGS$CONF_MCDEFS" \
+    CXX="$CONF_DIR/src/tools/f++.in" REALCXX="$CONF_CXX$CONF_CXXFLAGS$CONF_MCDEFS$CONF_STDCPP" \
     PATH="$PATH:$CONF_DIR/src/tools" \
-      eval $CONF_MCC$CONF_MCFLAGS -o $test$CONF_EXE $test.tm$CONF_MCLIBS 1>&2 && break
+      eval "$CONF_MCC$CONF_MCFLAGS -o $test$CONF_EXE $test.tm$CONF_MCLIBS" 1>&2 && break
   done
 
   test -x $test$CONF_EXE && {
@@ -435,13 +437,14 @@ CDEFS = -DQUAD=\$(QUAD) -DQUADSIZE=\$(QUADSIZE) \\
   -DBIGENDIAN=$CONF_BIGENDIAN
 
 CC = $CONF_CC
-CFLAGS =$CONF_CFLAGS \$(CDEFS)
+CFLAGS =$CONF_CFLAGS
 
 CXX = $CONF_CXX
-CXXFLAGS =$CONF_CXXFLAGS$CONF_STDCPP \$(CDEFS)
+CXXFLAGS =$CONF_CXXFLAGS$CONF_STDCPP
 
 ML = $CONF_ML
 MCC = $CONF_MCC
+MCDEFS =$CONF_MCDEFS
 MCFLAGS =$CONF_MCFLAGS
 MCLIBS =$CONF_MCLIBS
 

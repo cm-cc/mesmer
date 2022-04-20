@@ -53,18 +53,12 @@ c      w  = (s3max - s3min) * w
          
       else
          call getrnd(csi1,1)
-
          aa = anom2*3.d0*csi1(1)+1.d0/(s-s3min)**3
-
          s3 = s - 1.d0/aa**(1.d0/3.d0)
-         
       endif
       
-
       w = (1.d0/(s3)**3 + 1.d0/(s-s3)**4)/(anom1+anom2)
-
       w = 1.d0/w
-      
       return
       
 ***   as p1/(s3-m32)  + p2/(s3 + s - m42) = p1/(s3-m32)  + p2/(s3 -(m42 - s))
@@ -483,7 +477,6 @@ c      w = an * (1.d0+c)**2
 c      return
 c      endif
 
-      
       A  = 2.d0*s / (-2.d0*pm*pm)
       CF = 1.d0 ! coefficient for FLAT, 0 or 1
 
@@ -492,8 +485,12 @@ c      endif
          CF = 50.d0 ! it seems that raising this is better
       endif
       
-      B = s*s + m12*m12 +m22*m22 -2.d0*m12*s-2.d0*m22*s + 2.d0*m12*m22
-      B = 2.d0 * B / 4.d0 /pm**4
+!      B = s*s + m12*m12 +m22*m22 -2.d0*m12*s-2.d0*m22*s + 2.d0*m12*m22
+!or      
+      B = (s-m12-m22)**2
+
+!      B   = 2.d0 * B / 4.d0 /pm**4
+      B   = 0.5d0 * B / pm**4
       an1 = CF * (cmax - cmin)
       an2 = A * log((1.d0+cmax)/(1.d0+cmin))
       an3 = B * ( 1.d0/(1.d0+cmin) - 1.d0/(1.d0+cmax) )
@@ -511,7 +508,6 @@ c      endif
       p1  = an1/an1234
       p23 = p1 + an23/an1234
       p4 = p1 + p23 + an4/an1234
-
       
       call getrnd(csi,1)
       if (csi(1).lt.p1) then
@@ -709,33 +705,27 @@ c      print*,p1,p23,p4
       implicit double precision (a-h,o-z)
       double precision csi(2)
       common/gauspreadfun/tpi,x1,x2,ifirst,icalc
-      common/gsptest/sum,sum2,ic
       data ifirst /0/
       if (ifirst.eq.0) then
-         tpi = 8.d0 * atan(1.d0)
+         tpi    = 8.d0 * atan(1.d0)
+         icalc  = 1
          ifirst = 1
-         icalc = 1
-         ic = 0
-         sum  = 0.d0
-         sum2 = 0.d0
       endif
 ***   using Box-Mueller algorithm to generate 2 normal numbers
       x = 0.d0
       if (icalc.eq.1) then
-         call getrnd(csi,2)
-         cs1 = csi(1)
-         cs2 = csi(2)
-         r   = sqrt(-2.d0*log(cs1)) 
-         sf  = sin(tpi*cs2) 
-         cf  = cos(tpi*cs2) 
-         x1 = r*sf
-         x2 = r*cf
-
-         x     = x1
+        call getrnd(csi,2)
+c         call anotherrng(csi,2)         
+         r  = sqrt(-2.d0*log(csi(1))) 
+         x1 = r*sin(tpi*csi(2)) 
+         x2 = r*cos(tpi*csi(2)) 
+         x  = x1
 c     * since it's used also for "detector smearing", where s is not always
-c     * constant, I always recalculate it at price of throwing one away...         
-ccc   icalc = 0
-         ical = 1
+c     * constant, I always recalculate it at price of throwing one away...
+cc NOT REALLY: here x1 and x2 are distributed as Gaussian with mean 0 and sigma = 1.
+cc the translation to true sigma and mean is done in the last line...
+         icalc = 0
+cc         ical = 1
       else
          x     = x2
          icalc = 1
@@ -743,7 +733,7 @@ ccc   icalc = 0
       gau_spread = e + s*x
       return
       end
-*****
+*************************************************************************
       subroutine get_pattern(ncharged,n,ep)
       integer n,ep(n),ncharged
       double precision csi(1)
@@ -754,7 +744,7 @@ ccc   icalc = 0
       enddo
       return
       end 
-*****
+*************************************************************************
       subroutine get_patternNEW(ncharged,n,ep,w)
       implicit double precision (a-h,o-z)
       integer n,ep(n),ncharged
@@ -762,7 +752,6 @@ ccc   icalc = 0
       double precision pc(0:4)
       common/emispattern/pis,pfs,pc,ifirst
       data ifirst /0/
-
       if (ifirst.eq.0) then
          pis = 0.5d0 ! 0.96d0
          pfs = 1.d0 - pis
@@ -776,7 +765,6 @@ c         enddo
          pc(4) = pc(3) + pfs*0.5d0
          ifirst = 1
       endif
-      
       w    = 1.d0
       do k = 1,n
          call getrnd(csi,1)
@@ -787,7 +775,6 @@ c         enddo
          ep(k) = i
          w = w * 1.d0/(pc(i)-pc(i-1))
       enddo
-
       return
       end 
 *-----------------------------------------------------
@@ -802,12 +789,6 @@ c         enddo
       
       Emin = 0.1d0
       Emax = 5.5d0
-
-c      Emin = (amjpsi - 10.d0*gtjpsi)*.5d0
-c      Emax = (amjpsi + 100.d0*gtjpsi)*.5d0
-c      Emin = 0.d0
-c      Emax = 4.43*.5d0
-c      Emin = -Emax
 
       Emin = (amjpsi - 50.d0*gtjpsi)*.5d0
       Emax = (amjpsi + 50.d0*gtjpsi)*.5d0
@@ -936,6 +917,7 @@ c         c = 2.d0  * c
          if (nphotmode.lt.-999) ialsopairs = 1
          if (ialsopairs.eq.1) then
             ppairs = 0.05d0
+            ppairs = 0.1d0
             if (thmumin.gt.1d-5) then
                ppairs = 0.001d0
             endif
@@ -945,8 +927,7 @@ c         c = 2.d0  * c
          ifirst =1
       endif
 ***
-      np = 0 ! regulates pair production
-
+      np = 0  ! regulates pair production: np=0 no pairs, =1 electron pairs, =2 muon pairs, =10 pi0
 *** dealing with nphotmode >= 0 cases
       if (nphotmode.gt.999) then
          w  = 1.d0
@@ -959,6 +940,14 @@ c         c = 2.d0  * c
             np = 2              ! muon pairs
             return
          endif
+
+!! pion_0         
+         if (nphotmode.eq.1010) then
+            np = 10 !pion_0
+            return
+         endif
+****
+         
 ! here if nphomode = 1000         
          pelp = 0.999d0
          pmup = 1.d0 - pelp

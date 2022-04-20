@@ -2,7 +2,7 @@
 	clooptools.h
 		the C/C++ header file with all definitions for LoopTools
 		this file is part of LoopTools
-		last modified 22 Sep 21 th
+		last modified 24 Mar 22 th
 */
 
 
@@ -252,9 +252,11 @@ extern "C" {
 
 #define EPSINDEX(i) i+FORTRAN(ltvars).epsi
 
+enum { ltvars_ncache = 10 };
+
 extern struct {		/* MUST match common block ltvars in lt.h! */
-  COMPLEX cache[10][2];
-  INTEGER8 savedptr[10];
+  COMPLEX cache[ltvars_ncache][2];
+  INTEGER8 savedptr[ltvars_ncache][2];
   REAL maxdev;
   INTEGER epsi, warndigits, errdigits;
   INTEGER serial, versionkey;

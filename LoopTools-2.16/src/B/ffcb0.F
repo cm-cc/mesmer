@@ -542,8 +542,8 @@
 		    if ( initn1 .eq. 0 ) then
 			initn1 = 1
 			do i = 1,30
-  			    xpnn1(i)=Re(i)/Re((i+1)*(i+2))
-                        enddo
+			    xpnn1(i)=Re(i)/Re((i+1)*(i+2))
+	                enddo
 		    endif
 *		    determine the boundaries for 1,5,10,15 terms
 		    if ( xprcn1 .ne. precc ) then

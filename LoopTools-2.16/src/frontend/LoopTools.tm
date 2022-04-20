@@ -51,7 +51,8 @@
 
 :Evaluate:
 	SetLambda::usage = "SetLambda[l^2] sets the infrared regulator mass squared.";
-	GetLambda::usage = "GetLambda[] returns the current value for the infrared regulator mass squared."
+	GetLambda::usage = "GetLambda[] returns the current value for the infrared regulator mass squared.";
+	GetEpsi::usage = "GetEpsi[] returns the integer governing selection of coefficients of 1/eps in the X0i functions."
 
 :Evaluate:
 	SetMinMass::usage = "SetMinMass[m^2] sets the collinear cutoff mass squared.";
@@ -771,7 +772,7 @@
 	LoopTools.tm
 		provides the LoopTools functions in Mathematica
 		this file is part of LoopTools
-		last modified 3 May 21 th
+		last modified 24 Mar 22 th
 */
 
 
@@ -877,7 +878,6 @@ static inline void mlNextPacket(MLINK mlp) {
 static inline void mlPutStdout(MLINK mlp) {
   long len;
   extern void FORTRAN(fortranflush)();
-char buf[1024];
 
   FORTRAN(fortranflush)();
   fflush(stdout);

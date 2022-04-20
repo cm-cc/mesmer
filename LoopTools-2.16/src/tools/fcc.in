@@ -1,8 +1,9 @@
 #! /bin/bash
 # script to compile C programs that are linked 
 # against Fortran libraries
-# last modified 16 Dec 19 th
+# last modified 12 Oct 21 th
 
+exec 3>&2
 exec 2> /tmp/fcc.log.$$
 set -x
 
@@ -11,12 +12,15 @@ compileonly=
 objs=
 ldflags=
 fldflags=
+cdefs=
 
 cc="${REALCC:-cc}"
+cc+=" $cdefs"
 cxx="${REALCXX:-c++}"
+cxx+=" $cdefs"
 [[ "${0%.in}" =~ f++$ ]] && cc="$cxx"
 
-while test $# -gt 0 ; do
+while test $# -gt 0; do
   printf -v arg "%q" "$1"
   case "$1" in
   -st | -b32 | -b64)
@@ -69,9 +73,9 @@ while test $# -gt 0 ; do
   shift
 done
 
-test -n "$DEBUG" && for tm in $tmc ; do
-  eval "$cc $tmargs -E -P -o ${tm//.c}.i $tm"
+test -n "$DEBUG" && for tm in $tmc; do
+  eval "$cc $tmargs -E -P -o ${tm//.c}.i $tm 2>&3"
 done
 
-eval "set -x ; exec $cc $args ${compileonly:-$objs $ldflags $fldflags}"
+eval "set -x; exec $cc $args ${compileonly:-$objs $ldflags $fldflags} 2>&3"
 
