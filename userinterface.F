@@ -193,7 +193,7 @@ c      ismualongz = 0
       
 #ifndef RELEASE
       print*,'iid iper and noper'
-      read(inu,'(I1,I1,I1)')iid,iper,noper
+      read(inu,'(I2,I2,I2)')iid,iper,noper
 **********************      
 *******************************
 c      print*,'Input ionlybubbles'
@@ -202,11 +202,11 @@ c      read*,ionlybubbles
 !     0 -- no nnlo exact bubbles
 !     1 -- only VP NLO blob
 !     2 -- add also non factorizable corrections via DR relations
-      read(inu,'(I1)')iexnnlobubbles
+      read(inu,'(I2)')iexnnlobubbles
       print*,'only bubbles on verter and/or boxes'
-      read(inu,'(I1,I1)')ibubbleonv,ibubbleonboxsub
+      read(inu,'(I2,I2)')ibubbleonv,ibubbleonboxsub
       print*,'bubble mask?'
-      read(inu,'(I1,I1,I1,I1,I1)')bubblemask
+      read(inu,'(I2,I2,I2,I2,I2)')bubblemask
       print*,bubblemask
 c      stop
 #endif

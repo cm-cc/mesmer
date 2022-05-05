@@ -95,7 +95,7 @@ if (Fortran_COMPILER_NAME MATCHES "gfortran.*" OR Fortran_COMPILER_NAME MATCHES 
 #  gfortran Flags  #
 #==================#
 #-
-  set (basic "-ffixed-line-length-132  -fno-default-integer-8")
+  set (basic "-ffixed-line-length-132  -fno-default-integer-8 -fPIC")
   set (opt_RELEASE "-O3 -funroll-loops -ffast-math -Wtabs")
   set (opt_DEBUG "-O0 -frange-check -g -fcheck=bounds,do,mem,pointer,recursion")
   set (opt_DEBUG "${opt_DEBUG} -Wall -Wtabs -Wextra -Wno-unused")

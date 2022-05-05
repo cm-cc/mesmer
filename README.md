@@ -74,7 +74,7 @@ If a parameter/value is missing, defaults are used. The only mandatory rule is t
 * `nev [10000000.]`: number of events to be generated
 * `store [no yes]`: if events have to be stored `[yes/no]` and <!-- which storage version is to be used (`[old]` for v1, `[new]` for v2),-->
 if the coefficients for the VP reweighting have to be written in the event record `[yes/no]`.  
-*This parameter is actually used only in standalone mode*, because in embedded mode it's assumed that event storage is mamaged by the calling program.  
+*This parameter is actually used only in standalone mode*, because in embedded mode it's assumed that event storage is managed by the calling program.  
 See [here](STANDALONE.md#description-of-event-format) for a description of the event formats
 * `storemode [0]`: if `store yes`, which mode to use to store events `[0/1/2/3]`
   * `0`: plain ASCII text file
@@ -114,7 +114,12 @@ Possible values are
   * `1002`: simulates *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>&mu;<sup>+</sup>&mu;<sup>-</sup>*
   * `-1000`: all possible final states, *i.e.* maximum number of photons plus extra leptonic pairs
   * `1010`: simulates *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>&pi;<sup>0</sup>* with *&pi;<sup>0</sup>&rarr;&gamma;&gamma;*
-* `ndistr [1]`: number of distributions at different orders. For example, if running at NNLO (`ord alpha2`), the distribution files saved in `path` can be produced also at NLO and LO with the same run. The defaults `ndistr 1` produces distributions only at the selected order. If `ord alpha` and `ndistr >=2`, distributions are produced at NLO and LO. If `ord alpha2`,  if `ndistr 2` they are produced at NNLO and NLO, if `ndistr 3`, distributions at NNLO, NLO and LO are saved. If `ndistr 0`, no distribution files are saved.
+* `ndistr [1]`: number of distributions at different orders.  
+For example, if running at NNLO (`ord alpha2`), the distribution files saved in `path` can be produced also at NLO and LO with the same run.  
+The defaults `ndistr 1` produces distributions only at the selected order.  
+If `ord alpha` and `ndistr >=2`, distributions are produced at NLO and LO.  
+If `ord alpha2`,  if `ndistr 2` they are produced at NNLO and NLO, if `ndistr 3`, distributions at NNLO, NLO and LO are saved.  
+If `ndistr 0`, no distribution files are saved.
 
 ##### Footnotes
 KNT: Available upon request from the authors
