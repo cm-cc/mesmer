@@ -12,7 +12,7 @@ We'd be grateful if you could cite (at least a subset of) the following papers w
 1. [Alacevich *et al.*, Muon-electron scattering at NLO, JHEP 02 (2019) 155](https://inspirehep.net/literature/1703989)
 2. [Carloni Calame *et al.*, Towards muon-electron scattering at NNLO, JHEP 11 (2020) 028](https://inspirehep.net/literature/1805205)  
 3. [E. Budassi *et al.*, NNLO virtual and real leptonic corrections to muon-electron scattering, JHEP 11 (2021) 098](https://inspirehep.net/literature/1933852)
-4. [E. Budassi *et al.*, Single *&pi;<sup>0</sup>* production in *&mu;e* scattering at MUonE, PLB 829 (2022) 137138 [hep-ph]](https://inspirehep.net/literature/2044898)
+4. [E. Budassi *et al.*, Single *&pi;<sup>0</sup>* production in *&mu;e* scattering at MUonE, PLB 829 (2022) 137138](https://inspirehep.net/literature/2044898)
 
 
 ## Prerequisites & Compilation
