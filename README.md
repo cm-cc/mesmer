@@ -3,6 +3,8 @@
 **`MESMER`** (**M**uon **E**lectron **S**cattering with **M**ultiple **E**lectromagnetic **R**adiation) is a Monte Carlo event generator for
 high-precision simulation of muon-electron scattering at low enegies, developed for the MUonE experiment (see [here](https://web.infn.it/MUonE/) and/or [here](https://twiki.cern.ch/twiki/bin/view/MUonE/WebHome)).
 
+Test LaTeX $\sqrt{-1} = i$
+
 ### Authors
 **`MESMER`** is developed at INFN, Sezione di Pavia, and Department of Physics, Università di Pavia (Italy).  
 Authors are listed in the [`AUTHORS`](AUTHORS.md) file.
