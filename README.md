@@ -5,14 +5,14 @@ high-precision simulation of muon-electron scattering at low enegies, developed 
 
 ### Authors
 **`MESMER`** is developed at INFN, Sezione di Pavia, and Department of Physics, Università di Pavia (Italy).  
-Authors are listed in the [`AUTHORS`](AUTHORS.md) file.
+Authors are listed in the [`AUTHORS`](AUTHORS.md) file. $\sqrt{-1} = i$
 
 ### Citing the code
 We'd be grateful if you could cite (at least a subset of) the following papers when using the **`MESMER`** generator:  
 1. [Alacevich *et al.*, Muon-electron scattering at NLO, JHEP 02 (2019) 155](https://inspirehep.net/literature/1703989)
 2. [Carloni Calame *et al.*, Towards muon-electron scattering at NNLO, JHEP 11 (2020) 028](https://inspirehep.net/literature/1805205)  
 3. [E. Budassi *et al.*, NNLO virtual and real leptonic corrections to muon-electron scattering, JHEP 11 (2021) 098](https://inspirehep.net/literature/1933852)
-4. [E. Budassi *et al.*, Single *&pi;<sup>0</sup>* production in *&mu;e* scattering at MUonE, PLB 829 (2022) 137138](https://inspirehep.net/literature/2044898)
+4. [E. Budassi *et al.*, Single $\pi^0$ production in $\mu e$ scattering at MUonE, PLB 829 (2022) 137138](https://inspirehep.net/literature/2044898)
 
 
 ## Prerequisites & Compilation
@@ -58,7 +58,7 @@ If a parameter/value is missing, defaults are used. The only mandatory rule is t
 * `thmumin [0]`: minimum outgoing muon angle in mrad
 * `thmumax [100]`: maximum outgoing muon angle in mrad
 * `acoplcut [no 3.5]`: if the acoplanarity cut has to be applied or not `[yes/no mrad]`
-* `elastcut [no 0.2]`: if the cut on the geometric distance from the elesticity curve in the [&theta;<sub>&mu;</sub>,&theta;<sub>e</sub>] plane has to be applied or not `[yes/no mrad]`
+* `elastcut [no 0.2]`: if the cut on the geometric distance from the elesticity curve in the $[\theta_\mu,\theta_e]$ plane has to be applied or not `[yes/no mrad]`
 * `Ethr [0.2]`: minimum energy above which a lepton possibly triggers the detector (GeV)
 * `ththr [100]`: lab. angle above which the detector is blind (mrad).  
   (*i.e.* a lepton with energy > `Ethr` and angle < `ththr` counts as a possible track, otherwise it is considered undetectable. The code requires that events passing the selection criteria have strictly two visible tracks.)
@@ -105,15 +105,11 @@ For unweightening, the maximum weight `sdmax` can be alternatively set by hand (
 Possible values are
   * `< 0 and > -1000`: up to one extra photon in the final state for `ord alpha`, *i.e.* NLO, and up to two photons for `ord alpha2`, *i.e.* NNLO. No extra photons for `ord born`, *i.e.* LO
   * `0 or 1 or 2`: exactly this number of extra photons in the final state
-  * `1000`: simulates
-  *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>e<sup>+</sup>e<sup>-</sup>*
-  and
-  *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>&mu;<sup>+</sup>&mu;<sup>-</sup>*
-  together
-  * `1001`: simulates *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>e<sup>+</sup>e<sup>-</sup>*
-  * `1002`: simulates *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>&mu;<sup>+</sup>&mu;<sup>-</sup>*
+  * `1000`: simulates $\mu^\pm e^-\to\mu^\pm e^-\;e^+e^-$ and $\mu^\pm e^-\to\mu^\pm e^-\;\mu^+\mu^-$ together
+  * `1001`: simulates $\mu^\pm e^-\to\mu^\pm e^-\;e^+e^-$
+  * `1002`: simulates $\mu^\pm e^-\to\mu^\pm e^-\;\mu^+\mu^-$
   * `-1000`: all possible final states, *i.e.* maximum number of photons plus extra leptonic pairs
-  * `1010`: simulates *&mu;<sup>&plusmn;</sup>e<sup>-</sup>&rarr;&mu;<sup>&plusmn;</sup>e<sup>-</sup>&pi;<sup>0</sup>* with *&pi;<sup>0</sup>&rarr;&gamma;&gamma;*
+  * `1010`: simulates $\mu^\pm e^-\to\mu^\pm e^-\;\pi^0$ with $\pi^0\to\gamma\gamma$
 * `ndistr [1]`: number of distributions at different orders.  
 For example, if running at NNLO (`ord alpha2`), the distribution files saved in `path` can be produced also at NLO and LO with the same run.  
 The defaults `ndistr 1` produces distributions only at the selected order.  
