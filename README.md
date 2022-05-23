@@ -9,9 +9,13 @@ Authors are listed in the [`AUTHORS`](AUTHORS.md) file.
 
 ### Citing the code
 We'd be grateful if you could cite (at least a subset of) the following papers when using the **`MESMER`** generator:  
+
 1. Alacevich *et al.*, Muon-electron scattering at NLO, [JHEP 02 (2019) 155](https://inspirehep.net/literature/1703989)
+
 2. Carloni Calame *et al.*, Towards muon-electron scattering at NNLO, [JHEP 11 (2020) 028](https://inspirehep.net/literature/1805205)  
+
 3. E. Budassi *et al.*, NNLO virtual and real leptonic corrections to muon-electron scattering, [JHEP 11 (2021) 098](https://inspirehep.net/literature/1933852)
+
 4. E. Budassi *et al.*, Single $\pi^0$ production in $\mu e$ scattering at MUonE, [PLB 829 (2022) 137138](https://inspirehep.net/literature/2044898)
 
 
@@ -103,13 +107,21 @@ For unweightening, the maximum weight `sdmax` can be alternatively set by hand (
 * `phmass [1e-10]`: photon mass to regularize infra-red divergecies in GeV. Physical observables do not depend on `phmass`
 * `nphot [-1]`: it's a code driving which final states are included and the multiplicity of particles in the final state.
 Possible values are
+
   * `< 0 and > -1000`: up to one extra photon in the final state for `ord alpha`, *i.e.* NLO, and up to two photons for `ord alpha2`, *i.e.* NNLO. No extra photons for `ord born`, *i.e.* LO
+  
   * `0 or 1 or 2`: exactly this number of extra photons in the final state
+  
   * `1000`: simulates $\mu^\pm e^-\to\mu^\pm e^-e^+e^-$ and $\mu^\pm e^-\to\mu^\pm e^-\mu^+\mu^-$ together
+  
   * `1001`: simulates $\mu^\pm e^-\to\mu^\pm e^-e^+e^-$
+  
   * `1002`: simulates $\mu^\pm e^-\to\mu^\pm e^-\mu^+\mu^-$
+  
   * `-1000`: all possible final states, *i.e.* maximum number of photons plus extra leptonic pairs
+  
   * `1010`: simulates $\mu^\pm e^-\to\mu^\pm e^-\pi^0$ with $\pi^0\to\gamma\gamma$
+  
 * `ndistr [1]`: number of distributions at different orders.  
 For example, if running at NNLO (`ord alpha2`), the distribution files saved in `path` can be produced also at NLO and LO with the same run.  
 The defaults `ndistr 1` produces distributions only at the selected order.  
