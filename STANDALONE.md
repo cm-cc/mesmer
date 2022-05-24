@@ -113,7 +113,7 @@ By typing `help` at the prompt, a short description of the parameters that can b
 The meaning of the parameters is described in the [README](README.md#running-parameters-description)
 
 ### Beam profile
-In standalone mode, if the code is run with `extmubeam yes`, it expects to read muon beam 3-momenta for each event from the named pipe `'path'/beamprofile.fifo`. As an example, a sample of 10<sup>5</sup> incoming muon momenta is provided in the file `beamprofile-example.txt.gz` (thanks to Mateusz Goncerz). To test it, run `mesmer` with `extmubeam yes` (and `nev` < 10<sup>5</sup>), which creates the pipe and waits to read muon beam 3-momenta, and issue in another shell `zcat beamprofile-example.txt.gz > 'path'/beamprofile.fifo`. Any provider of muon beam momenta must write on the same pipe, using the format *p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>* (in GeV). If events must be stored, the momenta of the particles will account for the generic direction of the incoming muon.
+In standalone mode, if the code is run with `extmubeam yes`, it expects to read muon beam 3-momenta for each event from the named pipe `'path'/beamprofile.fifo`. As an example, a sample of $10^5$ incoming muon momenta is provided in the file `beamprofile-example.txt.gz` (thanks to Mateusz Goncerz). To test it, run `mesmer` with `extmubeam yes` (and `nev` $< 10^5$), which creates the pipe and waits to read muon beam 3-momenta, and issue in another shell `zcat beamprofile-example.txt.gz > 'path'/beamprofile.fifo`. Any provider of muon beam momenta must write on the same pipe, using the format $p_x\ p_y\ p_z$ (in GeV). If events must be stored, the momenta of the particles will account for the generic direction of the incoming muon.
 
 ## Description of event format
 The event format has been developed together with Giovanni Abbiendi. The code uses by default Version 2 described in the following. The version flag is hard-wired, but can be easily modified if needed (see [below](#version-1-old-superseded)).
@@ -144,12 +144,12 @@ A typical *event record* looks like
   22   1.8503756722462530E-002   1.1683363649512295E-003   1.8883473092725849     
  </event>
 ```
-After the `<event>` tag, the first line is the `seed` of the sample, the second line is the event number and the third is the number (`nfs`) of final state particles (in this case a &mu;, an *e* and two &gamma;s).  
+After the `<event>` tag, the first line is the `seed` of the sample, the second line is the event number and the third is the number (`nfs`) of final state particles (in this case a $\mu$, an $e$ and two $\gamma$'s).  
 In the fourth line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
-The fifth line represents the weights *w<sub>LO</sub>* and *w<sub>NLO</sub>* which can be used to get LO distributions from a NLO sample and LO and NLO distributions from a NNLO sample (in this case they are `0` because it's a 4-body final state).  
+The fifth line represents the weights $w_{LO}$ and $w_{NLO}$ which can be used to get LO distributions from a NLO sample and LO and NLO distributions from a NNLO sample (in this case they are `0` because it's a 4-body final state).  
 The sixth line (present only if `store yes yes` is selected, i.e. if the option to store coefficients for VP reweighting is chosen) represents 11 coefficients needed by the analysis tool to reweight the event when changing VP functions.  
-The seventh  line is the incoming &mu;, in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*, where *id* is the [PDG Monte Carlo code](https://pdg.lbl.gov/2021/web/viewer.html?file=%2F2021/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle and *p<sub>x</sub>*, *p<sub>y</sub>* and *p<sub>z</sub>* (in GeV) are the three-momentum components of the incoming muon. Its energy can be calculated with the muon mass which is stored in the header section.    
-Finally, the last `nfs` lines represent the *id* and three-momenta (in GeV) of the final state &mu;, *e* and two &gamma;s respectively, again in the format *id p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*.  
+The seventh  line is the incoming $\mu$, in the format $id\ p_x\ p_y\ p_z$, where $id$ is the [PDG Monte Carlo code](https://pdg.lbl.gov/2021/web/viewer.html?file=%2F2021/reviews/rpp2020-rev-monte-carlo-numbering.pdf) for the particle and $p_x$, $p_y$ and $p_z$ (in GeV) are the three-momentum components of the incoming muon. Its energy can be calculated with the muon mass which is stored in the header section.    
+Finally, the last `nfs` lines represent the $id$ and three-momenta (in GeV) of the final state $\mu$, $e$ and two $\gamma$'s respectively, again in the format $id\ p_x\ p_y\ p_z$.  
 The tag `</event>` closes the *event record*.
 
 The `ROOT` file writer reads through a named pipe this event format and writes all the information into a `.root` file.
@@ -181,9 +181,9 @@ A typical *event record* looks like
    2.3504077876745284       -2.7323096646499977E-002   2.4782061109743032E-002   2.3501183089789106     
  </event>
 ```
-After the `<event>` tag, the first line is the `seed` of the sample, the second one is the event number and the third is the number of final state particles (in this case a &mu;, an *e* and a &gamma;).  
+After the `<event>` tag, the first line is the `seed` of the sample, the second one is the event number and the third is the number of final state particles (in this case a $\mu$, an $e$ and a $\gamma$).  
 In the fourth line, three weights *w* are listed: the weight with full VP effect, the one with VP switched off and the one with only leptonic VP effects (without hadronic VP): in this way, with a single run VP effects can be studied.  
-The fifth line represents the weight *w<sub>LO</sub>* which can be used to get LO distributions from a NLO sample (in this case it is `0` because it's a 3-body final state).  
-The sixth line is the incoming &mu; energy in GeV.  
-Finally, the last three lines represent the momenta (in GeV) of the final state &mu;, *e* and &gamma; respectively, in the format *E p<sub>x</sub> p<sub>y</sub> p<sub>z</sub>*.  
+The fifth line represents the weight $w_{LO}$ which can be used to get LO distributions from a NLO sample (in this case it is `0` because it's a 3-body final state).  
+The sixth line is the incoming $\mu$ energy in GeV.  
+Finally, the last three lines represent the momenta (in GeV) of the final state $\mu$, $e$ and $\gamma$ respectively, in the format $E\ p_x\ p_y\ p_z$.  
 The tag `</event>` closes the *event record*.

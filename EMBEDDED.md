@@ -7,9 +7,9 @@ The embedded mode has been tested and developed in parallel with the [fast simul
 
 The calling program must call the following functions:
 
-* `void init_mesmer(char* input_data_card)`  
+* `int init_mesmer(char* input_data_card)`  
 Must be called only once, mandatory.  
-It reads the input parameters from a data card and initializes **`MESMER`**
+It reads the input parameters from a data card and initializes **`MESMER`**. It returns `0` if initialization is successful, `1` otherwise
 
 * `void mesmer_setup
     (int* sampletag,
@@ -60,7 +60,7 @@ It reads the input parameters from a data card and initializes **`MESMER`**
 * `void IncomingMuonMomentum_mesmer(double* pmu)`  
 Must be called once for each event, in the do/for loop over events, mandatory.  
 It returns the generic incoming muon 4-momentum.  
-It can be replaced by any function returning the incoming muon 4-momentum as `double pmu[4]`, with `p[0]` = E, `p[1]` = p<sub>x</sub>, `p[2]` = p<sub>y</sub>,  `p[3]` = p<sub>z</sub>
+It can be replaced by any function returning the incoming muon 4-momentum as `double pmu[4]`, with `p[0]` $= E$, `p[1]` $= p_x$, `p[2]` $= p_y$,  `p[3]` $= p_z$
 
 * `void generate_event_mesmer(double *pmu, int *nfs, int *mcids, double (*pmat)[4], double *weight,
 				    int *itag, long int *ievtnr, double *wnovp, double *wnohad, double *wLO,
