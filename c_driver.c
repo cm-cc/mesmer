@@ -145,11 +145,16 @@ int main(int argc, char* argv[])
 			       long int *nlt0, double *xsbias, double *exsbias, double *xsbiasn,
 			       double *exsbiasn, double *sumow, double *sum2ow2,
 			       double *sumnow, double *sum2now2);
-  extern void init_mesmer(char* indatacard);
+  extern int init_mesmer(char* indatacard);
 
   extern void IncomingMuonMomentum_mesmer(double* pmu);
   
-  init_mesmer(argv[1]);
+  int errinit = init_mesmer(argv[1]);
+
+  if (errinit == 1) {
+    printf("Something wrong in initialization! Stopping!\n");
+    return 1;
+  };
   
   mesmer_setup
     (&sampletag,mesmerversion,hostname,datetime,&idproc,&nev,&areweighted,RCorder,

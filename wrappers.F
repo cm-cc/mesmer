@@ -1,7 +1,8 @@
-      subroutine init_mesmer(indatacard) bind(C,name="init_mesmer")
+      function init_mesmer(indatacard) bind(C,name="init_mesmer")
       use iso_c_binding
       character(kind=c_char) :: indatacard(500)
       character*500 datacard
+      integer init_mesmer
       integer isstandalone      
       common/standalone/isstandalone,datacard ! set in main.F or init_mesmer() !!
       integer k
@@ -19,6 +20,8 @@
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer ismualongz,itmp
       common/ISmuondirection/ismualongz
+      integer initerr
+      common/init_error_code/initerr ! filled in user interface
 
       isstandalone = 0
       do k = 1,500
@@ -31,18 +34,24 @@
       enddo
       datacard = trim(datacard)
       call userinterface
-      
+
+      if (initerr.eq.0) then      
 !     I do here the warmup
-      if (needswarmup) then
-         itmp = ismualongz
-         ismualongz  = 1 ! for the warming up, the mu is always alongz, and gauss-spread
-         imwarmingup = .true.      
-         call generate_event(pmubeam,nfspart,mcids,pmat,wout,itag,
-     .        ievtnr,wnovp,wnohad,wLO,wNLO,cwvpout,ierr)
-         ismualongz = itmp
+         if (needswarmup) then
+            itmp = ismualongz
+            ismualongz  = 1 ! for the warming up, the mu is always alongz, and gauss-spread
+            imwarmingup = .true.      
+            call generate_event(pmubeam,nfspart,mcids,pmat,wout,itag,
+     .           ievtnr,wnovp,wnohad,wLO,wNLO,cwvpout,ierr)
+            ismualongz = itmp
       endif
       imwarmingup = .false.      
-!!!!!!!!!!      
+!!!!!!!!!!
+      else
+         print*,'Something wrong in the initialization.'
+         print*,'Exiting with an error.'
+      endif
+      init_mesmer = initerr
       return
       end
 *************************************************

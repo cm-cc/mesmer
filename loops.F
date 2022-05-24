@@ -434,7 +434,7 @@ c     .     cparc(10),rank)
       double precision Z1_(0:3),Z2_(0:3),Z3_(0:3),Z4_(0:3),Z5_(0:3)
       double precision Z14_(0:3),Z15_(0:3),Z16_(0:3)
       double precision Z10_,Z11_,Z12_,Z13_
-      double precision coverm2,csi(1)
+      double precision coverm2,csi(1),subm
       double precision sqm,pr1,pr2,w,soft
       double complex ct(0:3),c5t(0:3),cIt
       double complex cmum(0:3,2,2)
@@ -453,6 +453,11 @@ c     .     cparc(10),rank)
       external radmuesumsoft,radmuesumonlye,radmuesumonlyeSD
       data ifirst /0/
       integer kkk
+
+** used for soft...      
+      integer iper,noper,iid
+      common/identicalandperipheral/iper,noper,iid
+***
       
       if (ifirst.eq.0) then
          cover   = ec2*ec*im
@@ -460,11 +465,21 @@ c     .     cparc(10),rank)
          ifirst  = 1
       endif
 
-c      soft = radmuesums(p1,p2,p3,p4,k,0,1)
+c xi0,xi,xi2      
+c      soft = radmuesums(p1,p2,p3,p4,k,1.d0*iid,1.d0*iper,1.d0*noper)
 
       radmue = radmuesum(p1,p2,p3,p4,k)
-
-c      radmue = soft      
+*******
+c      call sqm_sub(p1,p2,p3,p4,k,subm)
+c      print*,'>>>>>>>>>>>>>>>',radmue,subm,radmue/subm
+c      print*,dot(p1,k),dot(p2,k),dot(p3,k),dot(p4,k),k(0)
+*************      
+c     radmue = soft
+     
+***   weiszacker williams
+c      call sqm_WW(p1,p2,p3,p4,k,w)
+c      radmue = w
+      
       return
 *********************************************************
 c     goto 666
@@ -1222,539 +1237,6 @@ c     cwvpl(10) ! *vp24k1k2**2
       return
       end
 ***************************************************
-******************************************************
-      double precision function radmuesums(p1,p2,p3,p4,k,ns,ns2)
-** summed over spin/elicities. it's much faster (~0.35)      
-*      implicit none !double precision (a-h,o-z)
-      implicit double precision (Z)
-#include "invariants.h"
-      double precision t13m1,t24m1,dp1km1,dp2km1,dp3km1,dp4km1
-      double precision dp1km2,dp2km2,dp3km2,dp4km2
-      double precision p1km1,p2km1,p3km1,p4km1,muemueg1L
-      double precision k(0:3),t13m2,t24m2
-      double complex cover
-      double precision vpleps13(1:4)
-      double precision vpleps24(1:4)
-      double precision coverm2,pi
-      double precision t13m1v(0:2),t24m1v(0:2)
-      double precision t13m2v(0:2),t24m2v(0:2)
-      double precision p1p22,p1p32,p1p42,p2p32,p2p42,p3p42
-      common/ifirstradsumsoft/cover,coverm2,ifirst
-      double complex vpolc
-      external vpolc
-      integer ifirst,ns,ns2
-      data ifirst /0/
-      double precision radmue_mu,radmue_e,radmue_int
-*** for 1g1L
-      double precision dalp24,dalp13,radmuefermionloop
-      common/dalphasfor1g1Lcfrrecola/dalp24,dalp13,radmuefermionloop
-***
-      double precision colch2(5)
-      integer bubblemask(5)
-      common/colorandch2factors/colch2,bubblemask
-
-      
-      if (ifirst.eq.0) then
-         cover   = ec2*ec*im
-         coverm2 = cover*conjg(cover)
-         ifirst = 1
-         radmuefermionloop = 0.d0
-         dalp24 = 0.d0
-         dalp13 = 0.d0
-      endif
-
-      reweightLO = 0.d0
-
-      call loadinvariants1g(p1,p2,p3,p4,k)
-      
-      t13m1v(0) = 1.d0/t13
-      t24m1v(0) = 1.d0/t24
-      
-      if (ifixedorder.eq.0) then
-         call getVP1loop(1.d0/t13m1v(0),dal,dah)
-         dah13   = dah
-
-         dalep13 = dot_product(vpvect,bubblemask)
-         t13m1v(1) = t13m1v(0) * 1.d0/(1.d0 - dal - dah)
-         t13m1v(2) = t13m1v(0) * 1.d0/(1.d0 - dal)
-
-         call getVP1loop(1.d0/t24m1v(0),dal,dah)
-         dah24   = dah
-         dalep24 = dot_product(vpvect,bubblemask)
-         t24m1v(1) = t24m1v(0) * 1.d0/(1.d0 - dal - dah)
-         t24m1v(2) = t24m1v(0) * 1.d0/(1.d0 - dal)
-      else
-         t13m1v(1:2) = t13m1v(0)
-         t24m1v(1:2) = t24m1v(0)
-      endif
-
-*** putting here the charges!      
-      t24m1v = t24m1v * QRmu
-      t13m1v = t13m1v * QRe
-****      
-      t13m2v = t13m1v*t13m1v
-      t24m2v = t24m1v*t24m1v
-      
-      
-      dp1km1 = 0.5d0/p1k
-      dp2km1 = 0.5d0/p2k
-      dp3km1 = 0.5d0/p3k
-      dp4km1 = 0.5d0/p4k
-
-      dp1km2 = dp1km1*dp1km1
-      dp2km2 = dp2km1*dp2km1
-      dp3km2 = dp3km1*dp3km1
-      dp4km2 = dp4km1*dp4km1
-      
-      p1p22 = p1p2*p1p2
-      p1p32 = p1p3*p1p3
-      p1p42 = p1p4*p1p4
-      p2p32 = p2p3*p2p3
-      p2p42 = p2p4*p2p4
-      p3p42 = p3p4*p3p4
-      
-      if (Qmu.lt.0.d0) then     
-
-      Z1_=p1p4*p2p3
-      Z2_=p1p2*p3p4
-      Z3_=Z1_ + Z2_
-      Z4_=p1p3*me2
-      Z5_=Z4_ - Z3_
-      Z5_=mm2*Z5_
-      Z6_=2*me2
-      Z7_=Z6_ - p2p4
-      Z8_=Z7_*mm4
-      Z5_=Z5_ - Z8_
-      Z8_=dp3km2 + dp1km2
-      Z5_=Z5_*Z8_
-      Z7_=Z7_*mm2
-      Z8_=Z7_ + Z3_
-      Z8_=p1p3*Z8_
-      Z9_= - p1p32*me2
-      Z8_=Z8_ + Z9_
-      Z9_=2*dp1km1
-      Z8_=dp3km1*Z8_*Z9_
-      Z5_=Z8_ + Z5_
-      Z5_=128*Z5_
-      Z8_= - Z3_*me2
-      Z10_= - 2*mm2 + p1p3
-      Z10_=me4*Z10_
-      Z8_=Z10_ + Z8_
-      Z10_=dp4km2 + dp2km2
-      Z8_=Z10_*Z8_
-      Z10_=dp2km2*me2
-      Z11_=dp4km2*me2
-      Z12_=Z10_ + Z11_
-      Z12_=mm2*p2p4*Z12_
-      Z13_=Z4_ - Z1_
-      Z14_=Z2_ - Z13_
-      Z14_=p2p4*Z14_
-      Z15_=p2p4*Z6_
-      Z15_= - p2p42 + Z15_
-      Z15_=mm2*Z15_
-      Z14_=Z15_ + Z14_
-      Z15_=2*dp4km1
-      Z14_=dp2km1*Z14_*Z15_
-      Z8_=Z14_ + Z12_ + Z8_
-      Z8_=128*Z8_
-      Z4_= - Z7_ + Z4_ - Z2_
-      Z12_= - p1p4*Z4_
-      Z14_=p2p3*p1p42
-      Z12_=Z14_ + Z12_
-      Z12_=dp4km1*Z12_
-      Z7_=Z13_ - Z7_
-      Z13_=p1p2*Z7_
-      Z14_= - p1p22*p3p4
-      Z13_=Z14_ + Z13_
-      Z13_=dp2km1*Z13_
-      Z12_=Z12_ + Z13_
-      Z12_=dp1km1*Z12_
-      Z4_= - p2p3*Z4_
-      Z13_=p2p32*p1p4
-      Z4_=Z13_ + Z4_
-      Z4_=dp2km1*Z4_
-      Z7_=p3p4*Z7_
-      Z13_= - p1p2*p3p42
-      Z7_=Z13_ + Z7_
-      Z7_=dp4km1*Z7_
-      Z4_=Z7_ + Z4_
-      Z4_=dp3km1*Z4_
-      Z4_=Z12_ + Z4_
-      Z4_=256*Z4_
-      Z7_=p3p4*p2k
-      Z12_=p2p3*p4k
-      Z13_=Z7_ + Z12_
-      Z14_=p3k*me2
-      Z16_=Z13_ - Z14_
-      Z17_=dp1km1*Z16_
-      Z18_=p1p4*p2k
-      Z19_=p1p2*p4k
-      Z20_=Z18_ + Z19_
-      Z21_=p1k*me2
-      Z22_=Z20_ - Z21_
-      Z23_=mm2*p2k
-      Z24_=dp1km1*p4k*Z23_
-      Z24_= - 4*Z24_ + Z22_
-      Z24_=dp3km1*Z24_
-      Z17_=Z17_ + Z24_
-      Z17_=64*Z17_
-      Z24_=p3k*p1p2
-      Z25_=p1k*p2p3
-      Z23_= - Z23_ + Z24_ + Z25_
-      Z23_=dp4km1*Z23_
-      Z26_=dp4km1*Z14_
-      Z26_= - 4*Z26_ + p3p4
-      Z26_=p1k*Z26_
-      Z27_=p1p4*p3k
-      Z28_= - mm2*p4k
-      Z26_=Z28_ + Z27_ + Z26_
-      Z26_=dp2km1*Z26_
-      Z23_=Z23_ + Z26_
-      Z23_=64*Z23_
-      Z21_=Z21_ + Z14_
-      Z26_=dp2km1 + dp4km1
-      Z21_=Z21_*Z26_
-      Z26_=dp3km1 + dp1km1
-      Z28_=p2k + p4k
-      Z26_=mm2*Z28_*Z26_
-      Z28_=p2p3 + p3p4
-      Z29_=p1p4 + p1p2
-      Z21_= - Z29_ - Z28_ + Z26_ + Z21_
-      Z21_=64*Z21_
-      Z13_=Z20_ - Z13_
-      Z9_=p1p3*Z13_*Z9_
-      Z13_=mm2*me2
-      Z6_=Z6_*p1p3
-      Z6_=Z13_ + Z6_
-      Z13_=p2p3*p3p4
-      Z3_=Z9_ + 2*Z13_ + Z3_ - Z6_
-      Z3_=dp3km1*Z3_
-      Z9_= - dp3km2*Z22_
-      Z16_=dp1km2*Z16_
-      Z9_=Z9_ + Z16_
-      Z9_=mm2*Z9_
-      Z16_= - p2p3 - 2*p1p2
-      Z16_=p1p4*Z16_
-      Z6_= - Z2_ + Z16_ + Z6_
-      Z6_=dp1km1*Z6_
-      Z3_=Z3_ + 2*Z9_ + Z6_
-      Z3_=64*Z3_
-      Z6_=p3p4*me2
-      Z9_=dp2km2*Z6_
-      Z16_= - p2p3*Z11_
-      Z9_=Z9_ + Z16_
-      Z9_=p1k*Z9_
-      Z10_= - p4k*Z10_
-      Z11_=p2k*Z11_
-      Z10_=Z10_ + Z11_
-      Z10_=mm2*Z10_
-      Z11_=dp2km2*p1p4*Z14_
-      Z14_=Z14_*p1p2
-      Z16_= - dp4km2*Z14_
-      Z9_=Z10_ + Z9_ + Z11_ + Z16_
-      Z10_= - p3p4 + p2p3
-      Z10_=p1k*Z10_
-      Z10_=Z10_ + Z24_ - Z27_
-      Z10_=Z15_*p2p4*Z10_
-      Z11_=me2 + 2*p2p4
-      Z11_=Z11_*mm2
-      Z16_= - p3p4 - 2*p2p3
-      Z16_=p1p2*Z16_
-      Z10_=Z10_ + Z11_ + Z16_ - Z1_
-      Z10_=dp2km1*Z10_
-      Z16_=2*p3p4 + p2p3
-      Z16_=p1p4*Z16_
-      Z11_= - Z11_ + Z2_ + Z16_
-      Z11_=dp4km1*Z11_
-      Z9_=Z10_ + 2*Z9_ + Z11_
-      Z9_=64*Z9_
-      Z10_=Z19_*p2p3
-      Z11_=p1p2*Z27_
-      Z16_= - mm2*Z19_
-      Z11_=Z16_ + Z11_ + Z10_ - Z14_
-      Z14_=2*dp2km1
-      Z11_=Z11_*Z14_
-      Z16_=Z28_ - Z29_
-      Z16_=Z16_*mm2
-      Z1_=Z1_ - Z2_
-      Z2_=me2 + p1p2
-      Z2_=p3k*Z2_
-      Z2_= - Z7_ + Z2_
-      Z2_=p1p4*Z2_
-      Z18_= - mm2*Z18_
-      Z2_=Z2_ + Z18_
-      Z2_=Z2_*Z15_
-      Z18_= - p1p3*Z29_
-      Z2_=Z11_ + Z2_ + Z18_ - Z16_ - Z1_
-      Z2_=dp1km1*Z2_
-      Z11_=mm2 - p1p4
-      Z7_=Z7_*Z11_
-      Z11_=Z6_ - Z13_
-      Z11_=p1k*Z11_
-      Z7_=Z11_ + Z7_
-      Z7_=Z7_*Z15_
-      Z11_= - me2 - p3p4
-      Z11_=Z11_*Z25_
-      Z12_=mm2*Z12_
-      Z10_=Z12_ + Z10_ + Z11_
-      Z10_=Z10_*Z14_
-      Z11_=p1p3*Z28_
-      Z1_=Z10_ + Z7_ + Z11_ - Z16_ + Z1_
-      Z1_=dp3km1*Z1_
-      Z7_=p2p4 - me2
-      Z10_=p3p4*Z7_
-      Z11_=p2p3*me2
-      Z12_=me2 - p3p4
-      Z12_=p1p2*Z12_
-      Z13_=p2p3 + Z7_
-      Z13_=p1p4*Z13_
-      Z10_=Z13_ + Z12_ + Z10_ + Z11_
-      Z10_=dp4km1*Z10_
-      Z11_= - p2p3*Z7_
-      Z7_=p3p4 - Z7_
-      Z7_=p1p2*Z7_
-      Z12_= - me2 - p2p3
-      Z12_=p1p4*Z12_
-      Z6_=Z12_ + Z7_ - Z6_ + Z11_
-      Z6_=dp2km1*Z6_
-      Z1_=Z1_ + Z2_ + Z10_ + Z6_
-      Z1_=64*Z1_
-
-      radmuesums=t24m2v(1)*Z5_ + t13m2v(1)*Z8_
-     & + t13m1v(1)*t24m1v(1)*Z4_ + NS2*t24m2v(1)*
-     &     Z17_ + NS2*t13m2v(1)*Z23_ + NS2*t13m1v(1)*t24m1v(1)*Z21_
-     & + NS*t24m2v(1)*Z3_ + NS
-     & *t13m2v(1)*Z9_ + NS*t13m1v(1)*t24m1v(1)*Z1_
-         
-      extraweights(1:2) = 1.d0
-      
-      else  ! if Qmu > 0
-
-      Z1_=p3p4*p1p2
-      Z2_=p2p3*p1p4
-      Z3_=Z1_ + Z2_
-      Z4_=Z3_*mm2
-      Z5_=2*me2
-      Z6_= - Z5_ + p2p4
-      Z6_=mm4*Z6_
-      Z7_=mm2*me2
-      Z8_=Z7_*p1p3
-      Z4_= - Z4_ + Z8_ + Z6_
-      Z6_=dp1km2 + dp3km2
-      Z4_=Z4_*Z6_
-      Z6_=2*Z7_
-      Z8_=p2p4*mm2
-      Z8_=Z6_ - Z8_
-      Z9_=Z8_ + Z3_
-      Z9_=p1p3*Z9_
-      Z10_= - p1p32*me2
-      Z9_=Z10_ + Z9_
-      Z10_=2*dp1km1
-      Z9_=dp3km1*Z9_*Z10_
-      Z4_=Z9_ + Z4_
-      Z4_=128*Z4_
-      Z3_=Z3_*me2
-      Z9_=2*mm2
-      Z11_=Z9_ - p1p3
-      Z11_=Z11_*me4
-      Z12_=Z7_*p2p4
-      Z3_=Z11_ + Z3_ - Z12_
-      Z11_= - dp2km2 - dp4km2
-      Z3_=Z3_*Z11_
-      Z11_=p1p3*me2
-      Z12_=Z11_ - Z1_
-      Z6_= - Z12_ + Z6_ + Z2_
-      Z6_=p2p4*Z6_
-      Z13_= - mm2*p2p42
-      Z6_=Z13_ + Z6_
-      Z13_=2*dp4km1
-      Z6_=dp2km1*Z6_*Z13_
-      Z3_=Z6_ + Z3_
-      Z3_=128*Z3_
-      Z6_=Z12_ - Z8_
-      Z12_=p1p4*Z6_
-      Z14_= - p2p3*p1p42
-      Z12_=Z14_ + Z12_
-      Z12_=dp4km1*Z12_
-      Z8_= - Z11_ + Z8_ + Z2_
-      Z11_=p1p2*Z8_
-      Z14_=p3p4*p1p22
-      Z11_=Z14_ + Z11_
-      Z11_=dp2km1*Z11_
-      Z11_=Z12_ + Z11_
-      Z11_=dp1km1*Z11_
-      Z8_=p3p4*Z8_
-      Z12_=p3p42*p1p2
-      Z8_=Z12_ + Z8_
-      Z8_=dp4km1*Z8_
-      Z6_=p2p3*Z6_
-      Z12_= - p2p32*p1p4
-      Z6_=Z12_ + Z6_
-      Z6_=dp2km1*Z6_
-      Z6_=Z8_ + Z6_
-      Z6_=dp3km1*Z6_
-      Z6_=Z11_ + Z6_
-      Z6_=256*Z6_
-      Z8_=p2k*p1p4
-      Z11_=me2*p1k
-      Z12_=Z8_ - Z11_
-      Z14_=p1p2*p4k
-      Z15_=p4k*mm2
-      Z16_=dp1km1*p2k*Z15_
-      Z16_= - 4*Z16_ + Z14_ + Z12_
-      Z16_=dp3km1*Z16_
-      Z17_=p4k*p2p3
-      Z18_=p3p4*p2k
-      Z17_=Z17_ + Z18_
-      Z18_=p3k*me2
-      Z19_= - Z18_ + Z17_
-      Z19_=dp1km1*Z19_
-      Z16_=Z19_ + Z16_
-      Z16_=64*Z16_
-      Z19_=p3p4*p1k
-      Z20_=dp4km1*Z11_
-      Z20_= - 4*Z20_ + p1p4
-      Z20_=p3k*Z20_
-      Z20_= - Z15_ + Z19_ + Z20_
-      Z20_=dp2km1*Z20_
-      Z21_=p2p3*p1k
-      Z22_=mm2*p2k
-      Z23_=Z21_ - Z22_
-      Z24_=p3k*p1p2
-      Z25_=Z24_ + Z23_
-      Z25_=dp4km1*Z25_
-      Z20_=Z25_ + Z20_
-      Z20_=64*Z20_
-      Z25_=Z18_ + Z11_
-      Z26_= - dp2km1 - dp4km1
-      Z25_=Z25_*Z26_
-      Z26_=Z22_ + Z15_
-      Z27_= - dp3km1 - dp1km1
-      Z26_=Z26_*Z27_
-      Z27_=p1p2 + p1p4
-      Z28_=p3p4 + p2p3
-      Z25_=Z28_ + Z27_ + Z26_ + Z25_
-      Z25_=64*Z25_
-      Z26_=p2p3*Z15_
-      Z29_=p3p4*Z22_
-      Z30_= - p3k*Z7_
-      Z26_=Z30_ + Z26_ + Z29_
-      Z26_=dp1km2*Z26_
-      Z29_= - mm2*Z12_
-      Z30_= - p1p2*Z15_
-      Z29_=Z29_ + Z30_
-      Z29_=dp3km2*Z29_
-      Z26_=Z26_ + Z29_
-      Z29_=Z2_ - Z7_
-      Z5_=Z5_*p1p3
-      Z5_=Z5_ - Z29_
-      Z30_=p1p2*p1p4
-      Z31_= - Z1_ - 2*Z30_ + Z5_
-      Z31_=dp1km1*Z31_
-      Z17_=Z14_ + Z8_ - Z17_
-      Z10_=p1p3*Z17_*Z10_
-      Z17_=2*p2p3
-      Z32_=Z17_ + p1p2
-      Z32_=p3p4*Z32_
-      Z5_=Z10_ + Z32_ - Z5_
-      Z5_=dp3km1*Z5_
-      Z5_=Z5_ + 2*Z26_ + Z31_
-      Z5_=64*Z5_
-      Z10_= - p2p3*Z11_
-      Z26_=p2k*Z7_
-      Z31_= - p1p2*Z18_
-      Z10_=Z31_ + Z10_ + Z26_
-      Z10_=dp4km2*Z10_
-      Z7_= - p4k*Z7_
-      Z26_=p3p4*Z11_
-      Z18_=p1p4*Z18_
-      Z7_=Z18_ + Z7_ + Z26_
-      Z7_=dp2km2*Z7_
-      Z7_=Z10_ + Z7_
-      Z10_= - p1p4 + p1p2
-      Z10_=p3k*Z10_
-      Z10_=Z10_ + Z21_ - Z19_
-      Z10_=Z13_*p2p4*Z10_
-      Z9_=Z9_*p2p4
-      Z9_=Z9_ - Z29_
-      Z17_= - p1p2*Z17_
-      Z1_=Z10_ - Z1_ + Z17_ + Z9_
-      Z1_=dp2km1*Z1_
-      Z10_=2*p1p4 + p1p2
-      Z10_=p3p4*Z10_
-      Z9_=Z10_ - Z9_
-      Z9_=dp4km1*Z9_
-      Z1_=Z1_ + Z9_ + 2*Z7_
-      Z1_=64*Z1_
-      Z7_=me2*p1p4
-      Z9_= - Z7_ - Z30_
-      Z9_=p3k*Z9_
-      Z10_=p1p4*Z22_
-      Z8_=p3p4*Z8_
-      Z8_=Z9_ + Z10_ + Z8_
-      Z8_=Z8_*Z13_
-      Z9_= - p2p3 + mm2
-      Z9_=Z9_*Z14_
-      Z10_=me2 - p1p4
-      Z17_=Z10_*Z24_
-      Z9_=Z9_ + Z17_
-      Z17_=2*dp2km1
-      Z9_=Z9_*Z17_
-      Z18_=p2p3 - Z27_
-      Z18_=Z18_*mm2
-      Z19_=mm2 - p1p2
-      Z19_=p3p4*Z19_
-      Z22_=p1p3*Z27_
-      Z8_=Z9_ + Z8_ + Z22_ + Z19_ + Z2_ + Z18_
-      Z8_=dp1km1*Z8_
-      Z9_= - p1p4 - me2
-      Z9_=p2p3*Z9_
-      Z19_= - p2p4*p1p4
-      Z22_= - p1p2*me2
-      Z24_=p2p4 - me2
-      Z26_=p1p2 - Z24_
-      Z26_=p3p4*Z26_
-      Z9_=Z26_ + Z22_ + Z19_ + Z7_ + Z9_
-      Z9_=dp4km1*Z9_
-      Z12_=Z12_ + Z23_
-      Z12_=Z12_*Z13_
-      Z12_=Z12_ + mm2 + p1p2
-      Z12_=p3p4*Z12_
-      Z11_= - Z14_ + Z11_ - Z15_
-      Z11_=p2p3*Z11_
-      Z13_=p3p4*Z21_
-      Z11_=Z13_ + Z11_
-      Z11_=Z11_*Z17_
-      Z13_= - p1p3*Z28_
-      Z2_=Z11_ + Z13_ - Z2_ + Z12_ + Z18_
-      Z2_=dp3km1*Z2_
-      Z10_=p2p4 - Z10_
-      Z10_=p2p3*Z10_
-      Z11_=p1p2*Z24_
-      Z12_=me2 - p1p2
-      Z12_=p3p4*Z12_
-      Z7_=Z12_ + Z11_ + Z7_ + Z10_
-      Z7_=dp2km1*Z7_
-      Z2_=Z2_ + Z8_ + Z9_ + Z7_
-      Z2_=64*Z2_
-      radmuesums=t24m2v(1)*Z4_ + t13m2v(1)*Z3_ +
-     & t13m1v(1)*t24m1v(1)*Z6_ + NS2*t24m2v(1)*
-     &     Z16_ + NS2*t13m2v(1)*Z20_ + NS2*t13m1v(1)*t24m1v(1)*Z25_
-     & + NS*t24m2v(1)*Z5_ + NS
-     & *t13m2v(1)*Z1_ + NS*t13m1v(1)*t24m1v(1)*Z2_
-
-      extraweights(1:2) = 1.d0
-      
-      endif
-
-      extraweights(0) = 1.d0
-      
-      radmuesums = coverm2*radmuesums
-      
-      return
-      end
-      
-****************************************************
       double precision function apvertex(x)
       implicit double precision (a-h,m,o-z)
       apvertex = (1.d0+x*x)/(1.d0-x)
@@ -3870,7 +3352,10 @@ c      vertexes = amplvertexes * tm1 * cover
 *********************************************************
       real*16 function qdot(p1,p2)
       double precision p1(0:3),p2(0:3)
-      qdot = p1(0)*p2(0)-p1(1)*p2(1)-p1(2)*p2(2)-p1(3)*p2(3)      
+c      qdot = 1q0*p1(0)*p2(0)
+c     .     -1q0*p1(1)*p2(1)-1q0*p1(2)*p2(2)-1q0*p1(3)*p2(3)      
+      qdot = 1q0*p1(0)*p2(0)
+     .     -1q0*p1(1)*p2(1)-1q0*p1(2)*p2(2)-1q0*p1(3)*p2(3)      
       return
       end
 ********************************************************      
@@ -4736,7 +4221,26 @@ cc            p0 = p ! for cross-checks
       return
       end
 ***************************************************
-      
+*** Levi-Civita tensor contracted with 4 real momenta
+      double complex function epsfun(q1,q2,q3,q4)
+      implicit none
+      double precision q1(0:3),q2(0:3),q3(0:3),q4(0:3)
+      double precision e
+      e = q1(1) * (q2(2)*(q3(3)*q4(0) - q3(0)*q4(3))  +
+     .             q2(3)*(q3(0)*q4(2) - q3(2)*q4(0))  +
+     .             q2(0)*(q3(2)*q4(3) - q3(3)*q4(2))) +
+     .    q1(2) * (q2(1)*(q3(0)*q4(3) - q3(3)*q4(0))  +
+     .             q2(3)*(q3(1)*q4(0) - q3(0)*q4(1))  +
+     .             q2(0)*(q3(3)*q4(1) - q3(1)*q4(3))) +
+     .    q1(3) * (q2(1)*(q3(2)*q4(0) - q3(0)*q4(2))  +
+     .             q2(2)*(q3(0)*q4(1) - q3(1)*q4(0))  +
+     .             q2(0)*(q3(1)*q4(2) - q3(2)*q4(1))) +
+     .    q1(0) * (q2(1)*(q3(3)*q4(2) - q3(2)*q4(3))  +
+     .             q2(2)*(q3(1)*q4(3) - q3(3)*q4(1))  +
+     .             q2(3)*(q3(2)*q4(1) - q3(1)*q4(2)))
+      epsfun = -(0.d0,1.d0) * e!! e chittemmuorto!!!
+      return
+      end      
 *** Levi-Civita tensor contracted with 4 COMPLEX momenta
       double complex function epsfuncmom(q1,q2,q3,q4)
       implicit none
@@ -6559,3 +6063,7 @@ c      call loadQEDfuns1g1L ! loads all needed LT functions
       return
       end
 ****************************************************
+#ifndef RELEASE
+** #include "pack.F"
+** #include "ww.F"
+#endif

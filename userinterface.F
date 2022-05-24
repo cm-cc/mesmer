@@ -83,6 +83,11 @@ c for Novosibirsk VP routine
       integer inskvp
       common/nskvp/inskvp
 
+cc
+      integer initerr
+      common/init_error_code/initerr
+      data initerr /0/
+      
       data setkey/
      +     'Ebeam  ', !  1
      +     'bspr   ', !  2
@@ -166,8 +171,10 @@ ccc set in init_mesmer in wrapper.F
          open(inu,file=datacard,status='old',iostat=ioperr)
          if (ioperr.gt.0) then
             print*,' The file ',trim(datacard),' does not exists.'
-            print*,' Stopping MESMER execution.'
-            stop
+            initerr = 1
+            return
+c            print*,' Stopping MESMER execution.'
+c            stop
          endif
       endif
 *******************************************
@@ -288,7 +295,7 @@ c      stop
       ame  = 0.510998928d-3     ! electron mass
       ammu = 105.6583715d-3 ! muon mass
 
-cc      ammu  = ame
+c      ammu  = ame
       
       taumass = 1.77682D0
       topmass = 175.6D0
@@ -753,8 +760,13 @@ c useing always events.dat (widthout "order" info...)
             if (wnorm.le.0.d0) then
                if (nsearch.lt.1) then
                   print*,'You should set wnorm > 0 or nwarmup > 0.'
-                  print*,'Stopping.'
-                  stop
+                  if (isstandalone.eq.1) then
+                     print*,'Stopping.'
+                     stop
+                  else
+                     initerr = 1
+                     return
+                  endif
                else
                   print*,'Number of events for warming-up:',nsearch
                   print*,'Will be used to calculate wnorm'
@@ -768,8 +780,13 @@ c useing always events.dat (widthout "order" info...)
             print*,'You are requesting constant weight events.'
             if (nsearch.lt.1.and.sdifmax.lt.0.0001d0) then
                print*,'You should set sdmax > 0 or nwarmup > 0.'
-               print*,'Stopping.'
-               stop
+               if (isstandalone.eq.1) then
+                  print*,'Stopping.'
+                  stop
+               else
+                  initerr = 1
+                  return
+               endif
             else
                if (sdifmax.lt.0.0001d0) then
                   print*,'Number of events for warming-up:',nsearch
@@ -801,19 +818,34 @@ c useing always events.dat (widthout "order" info...)
       Eemin  = max(Eemin,ame)
       if (abs(iqmu).ne.1) then
          print*,'Wrong charge selected! stopping...'
-         stop
+         if (isstandalone.eq.1) then
+            stop
+         else
+            initerr = 1
+            return
+         endif
       endif
       Qmu = iqmu * 1.d0
 
       if (QRe.lt.0.or.QRe.gt.1) then
          print*,'Wrong electron "radiative" charge.'
          print*,'Must be 0 or 1. Stopping'
-         stop
+         if (isstandalone.eq.1) then
+            stop
+         else
+            initerr = 1
+            return
+         endif
       endif
       if (QRmu.lt.0.or.QRmu.gt.1) then
          print*,'Wrong muon "radiative" charge.'
          print*,'Must be 0 or 1. Stopping'
-         stop
+         if (isstandalone.eq.1) then
+            stop
+         else
+            initerr = 1
+            return
+         endif
       endif
 
       if (chadoff.eq.'yes') ihadoff = 1
@@ -842,7 +874,12 @@ c     .     .or.(nphotmode.gt.999.or.nphotmode.lt.-999)) then
          print*,'You want to run with not-yet-released features.'
          print*,'Please, contact Carlo... stopping execution!'
          print*,' '
-         stop
+         if (isstandalone.eq.1) then
+            stop
+         else
+            initerr = 1
+            return
+         endif
       endif
 #endif
 **************************************************
