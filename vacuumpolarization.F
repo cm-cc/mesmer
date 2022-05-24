@@ -321,7 +321,8 @@ c     old            call d_alpha(dabs(qin),das,ddas,dat,ddat)
       FUNCTION VPOLCnsk(Q2) 
       implicit double precision (A-H,L,O-Z)
 c      parameter (np=7186)
-      parameter (np=6883)
+c      parameter (np=6883) ! v2
+      parameter (np=6963) ! v2.7
       dimension s(0:np-1)
       dimension pres(0:np-1),pre(0:np-1),pim(0:np-1)
       dimension epres(0:np-1),epre(0:np-1),epim(0:np-1),cv(0:np-1)
@@ -333,7 +334,8 @@ c      parameter (np=7186)
 ***      
       if (ifirst.eq.0) then
          im = (0.d0,1.d0)
-         open(45,file='vpol_novosibirsk_v2.dat',status='old')
+!         open(45,file='vpol_novosibirsk_v2.dat',status='old')
+         open(45,file='vpol_novosibirsk_v2.7.dat',status='old')
          do k = 0,np-1
             read(45,*)s(k),pres(k),pre(k),pim(k),epres(k),epre(k),
      .           epim(k),cv(k)

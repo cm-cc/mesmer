@@ -134,7 +134,8 @@ pack: # use only to release MESMER
 	cp -ra collier/COLLIER-1.2.5-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.5 &&\
         cp -ra Makefile README.md STANDALONE.md EMBEDDED.md input-example mesmerversion.f\
         distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h AUTHORS.md\
-        main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat muemue1g1Lud.F LICENSE.md\
+        main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat vpol_novosibirsk_v2.7.dat\
+        muemue1g1Lud.F LICENSE.md\
         vacuumpolarization.F cuts.F sv.F routines.F sampling.f phasespacemue.F $(VPKNT).f recola_int.F\
         rngs.F hadr5n12.f hadr5n17.f hadr5x19.f hadr5n.f ranlux.f userinterface.F generate_event.F\
         loops.F storage.F muemuegg-minus.f muemuegg-plus.f muemuegg.F muemue1g1Lnoupdown.f realpairs.F\
