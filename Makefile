@@ -132,7 +132,7 @@ pack: # use only to release MESMER
 	mkdir -p $(RELEASEDIR)/collier/ &&\
 	cp -ra LoopTools-$(LTVER)-clean/ $(RELEASEDIR)/LoopTools-$(LTVER) &&\
 	cp -ra collier/COLLIER-1.2.5-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.5 &&\
-        cp -ra Makefile README.md STANDALONE.md EMBEDDED.md input-example\
+        cp -ra Makefile README.md STANDALONE.md EMBEDDED.md input-example mesmerversion.f\
         distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h AUTHORS.md\
         main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat muemue1g1Lud.F LICENSE.md\
         vacuumpolarization.F cuts.F sv.F routines.F sampling.f phasespacemue.F $(VPKNT).f recola_int.F\
@@ -184,7 +184,7 @@ muemue1g1Lud.o: muemue1g1Lud.F invariants.h funsdeccmn1g1L.h muemue1g1Lupdown.f 
 	$(F77) $(QUAD) -c muemue1g1Lud.F
 muemue1g1Lnoud.o: muemue1g1Lnoud.F  invariants.h funsdeccmn1g1L.h muemue1g1Lnoupdown.f
 	$(F77) $(QUAD) -c muemue1g1Lnoud.F
-userinterface.o: userinterface.F Makefile
+userinterface.o: userinterface.F Makefile mesmerversion.f
 	$(F77) $(QUAD) $(DEFINERELEASE)  -fbackslash -c userinterface.F
 realpairs.o: realpairs.F realpairs_ampl2.f 
 	$(F77) -c realpairs.F
