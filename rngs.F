@@ -160,14 +160,19 @@ c         call random_number(csi4)
       subroutine init_rnd_sequence
 ! I enclose it here so that can be used after warmup      
       implicit none
-      integer iii,k
-      integer*8 iwriteout
+      character*20 a
+      integer iii,k,icantor,djb_hash,n,idim
+      parameter(idim = 1000)
+      integer vec(idim),fl(1)
+      double precision xis(idim)
+      integer*8 iwriteout,ii,i8
       integer isync,iseed,nsearch,iverbose,nw,istorver,icwvp
       integer iseedext,ivpfl
       common/intinput/iwriteout,iseed,nsearch,iverbose,nw,isync,
      .     istorver,icwvp,ivpfl
       common/iseedoninput/iseedext
-      double precision csi(2)
+      double precision csi(2),ri
+      real*4 csis(2)
       integer last,nvec, ifirst
       parameter (nvec=1000)
       common/lastusedrnd/last,ifirst
@@ -176,19 +181,150 @@ c         call random_number(csi4)
       data ifirstinit /0/
 ! I call this routine in userinterface and at least once more (twice if warming up) in generete_event or main.
       if (ifirstinit.eq.0) then
+c this was the first
          iseedext = iseed
-         call initrng(4323432)
-         do k = 1,iseedext
-            call getrndroutine(csi,2)
-         enddo
-         iii   = int(csi(1)*1d7)
-         iii   = iii + int(csi(2)*1d7)
-         iseed = iii
-         ifirstinit   = 1
+         call getanotherseed(iseedext,iseed)
+c         print*,iseed
+c         stop
+c         call initrng(4323432)
+c         do k = 1,iseedext
+c            call getrndroutine(csi,2)
+c         enddo
+c         iii   = int(csi(1)*1d7)
+c         iii   = iii + int(csi(2)*1d7)
+c         iseed = iii
+         ifirstinit = 1
       endif
 ****  RNG initialization      
       call initrng(iseed)
 ****  end RNG initialization
       last = nvec ! to be sure that the random array is reloaded when init_rnd_sequence is called
+      return
+      end
+****************************************************
+      function djb_hash(str) result(hash)
+      implicit none
+      character(len=*),intent(in) :: str
+      integer :: hash
+      integer :: i
+      hash = 5381
+      do i=1,len(str)
+         hash = (ishft(hash,5) + hash) + ichar(str(i:i))
+      end do
+      end function djb_hash
+****************************************************
+      subroutine converttobinary(i)
+      implicit double precision (a-h,o-z)
+      integer bin(31),shuffled(31)
+      double precision xi(1)
+      
+      ic = 0
+      j  = i
+      bin = 0
+      shuffled = 0
+      if (j.eq.0) then
+         ic = 1
+         bin(1) = 0
+      else
+         do while(j.ne.0)
+            ic = ic + 1
+            if (mod(j,2).eq.0) then
+               bin(ic) = 0
+            else
+               bin(ic) = 1
+            endif
+            j = j/2
+         enddo
+      endif
+
+      print*,i,ic
+      print*,'direct  ',bin(1:ic)
+
+      j = 0
+      do k = 1,ic
+         j = j + bin(k)*2**(k-1)
+      enddo
+      print*,j
+* shuffling bits
+*      https://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle
+      shuffled = bin
+      do k = 1,ic-1
+         call getrndroutine(xi,1)
+         j = k + (ic-k)*xi(1) + 1
+         itmp = shuffled(k)
+         shuffled(k) = shuffled(j)
+         shuffled(j) = itmp         
+      enddo
+
+      print*,'shuffled',shuffled(1:ic)
+      j = 0
+      do k = 1,ic
+         j = j + shuffled(k)*2**(k-1)
+      enddo
+      print*,j
+
+      call initrng(i)
+
+      do k = 1,31
+         call getrndroutine(xi,1)
+         if (xi(1).lt.0.5d0) then
+            shuffled(k) = 1
+         else
+            shuffled(k) = 0
+         endif         
+      enddo
+      
+      j = 0
+      do k = 1,31
+         j = j + shuffled(k)*2**(k-1)
+      enddo
+      print*,j      
+      return
+      end
+****************************************************
+      subroutine getanotherseed(i,j)
+      implicit double precision (a-h,o-z)
+      integer rndbit(31)
+      integer bin(31)
+      double precision xi(1)
+c      goto 123
+****
+c      call initrng(i)
+****
+c      do k = 1,31
+c         call getrndroutine(xi,1)
+c         if (xi(1).ge.0.5d0) then
+c            rndbit(k) = 1
+c         else
+c            rndbit(k) = 0
+c         endif         
+c      enddo
+c      j = 0
+c      do k = 1,31
+c         j = j + rndbit(k)*2**(k-1)
+c      enddo
+c 123  continue ! just flipping the bits
+      ic = 0
+      j  = i
+      bin = 0
+      if (j.eq.0) then
+         ic = 1
+         bin(1) = 0
+      else
+         do while(j.ne.0)
+            ic = ic + 1
+            if (mod(j,2).eq.0) then
+               bin(ic) = 0
+            else
+               bin(ic) = 1
+            endif
+            j = j/2
+         enddo
+      endif
+      j = 0
+      do k = 1,31
+         bin(k) = 1-bin(k)
+         j = j + bin(k)*2**(k-1)
+      enddo
       return
       end

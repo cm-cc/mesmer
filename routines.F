@@ -38,7 +38,7 @@
          call new_boost(p12lab,p6,p6lab,-1)
       else
          p6lab = 0.d0
-      endif
+      endif      
       return
       end      
 ***********************************************************
@@ -182,16 +182,17 @@
       return
       end
 *********************************************************************
-      subroutine itoa(int,a)
-** look also at https://gcc.gnu.org/onlinedocs/gfortran/ICHAR.html      
+      subroutine itoa(inta,a)
+** look also at https://gcc.gnu.org/onlinedocs/gfortran/ICHAR.html
       implicit integer (h-n)
       implicit character (a-g)
       character*(*) a
+      integer*8 idiv ! necessary if inta is huge()!!
       parameter (nbase=10)
       call resetname(a)
       ichar0 = ichar('0')
       idiv   = nbase
-      i      = int
+      i      = inta
       ncifre = 1
       do while((i/idiv).gt.0)
          idiv = idiv * nbase
@@ -204,7 +205,7 @@
          a(k:k) = char(ia)
          i = i - icifra*idiv
          idiv = idiv/nbase
-      enddo      
+      enddo
       return
       end
 *********************************************************************
@@ -1311,15 +1312,15 @@ c      pp(3) = pin(3)
       return
       end
 *******************************************************************
-      integer function djb_hash(str)! result(hash)
-      implicit none
-      character(len=*),intent(in) :: str
-      integer :: hash
-      integer :: i
-      hash = 5381
-      do i=1,len(str)
-         hash = (ishft(hash,5) + hash) + ichar(str(i:i))
-      enddo
-      djb_hash = hash
-      return
-      end
+c      integer function djb_hash(str)! result(hash)
+c      implicit none
+c      character(len=*),intent(in) :: str
+c      integer :: hash
+c      integer :: i
+c      hash = 5381
+c      do i=1,len(str)
+c         hash = (ishft(hash,5) + hash) + ichar(str(i:i))
+c      enddo
+c      djb_hash = hash
+c      return
+c      end

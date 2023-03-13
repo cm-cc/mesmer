@@ -2878,6 +2878,26 @@ contains
 
   end function CalcGram
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !  function DiLog_cll(z,eps)
+  !
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  function DiLog_cll(z,eps) result (DiLog)
+
+    double complex, intent(in) :: z
+    double precision, optional, intent(in) :: eps
+    double complex :: DiLog,cspenc_coli
+
+    if(present(eps)) then
+      DiLog = cspenc_coli(z,eps)
+    else
+      DiLog = cspenc_coli(z,0d0)
+    endif
+   
+    
+  end function DiLog_cll
+
 
 end module collier_aux
 

@@ -40,7 +40,7 @@
 
       common/tmintmax/tmin,tmax
       common/tmintmaxfordistributions/tmind,tmaxd
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
@@ -102,7 +102,7 @@
 
 **** for the header of the events      
       common/tobewrittenintheheader/wnormalization,sdmax
-****      
+****
       isstandalone = 1
 ****************************************
       call userinterface
@@ -219,7 +219,9 @@
       
 * [[[[[ LOOP OVER EVENTS ]]]]]      
       iregenerate = 1
+      
       do while(kt.lt.npoints.or.imwarmingup.or.iregenerate.eq.1)
+         
 ** [[begin initialization]]
          if (iverbose.eq.1) call getrndstatus(irngstate)
 ************************
@@ -396,7 +398,6 @@ c            call svfactor(model,ng,ecms,p1,p2,eps,sv,deltasv)
          endif
          varbefore = var
 
-
 **** https://diego.assencio.com/?index=c34d06f4f4de2375658ed41f70177d59
          xsec  = xsec  + 1.d0/dble(k)*(sdif - xsec)
          xsec2 = xsec2 + 1.d0/dble(k)*(sdif*sdif - xsec2) ! media dei quadrati
@@ -415,7 +416,7 @@ c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0., but und
             if (nsearch.gt.0) sdifmax = abssdif ! changing only if nsearch > 0
             nwhenmax = ng
          endif
-         
+
 !!     unweightening for unweighted events...
          if (k.ge.nsearch.and.imwarmingup) then
             print*,'Warming-up completed.'
@@ -443,6 +444,7 @@ c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0., but und
                uno = nint(sdif/abssdif) ! added with +-1
                hit = hit +  uno
                nh = hit
+               iregenerate = 0
 !     !---- storing in case of unweighted generation ----
                if (store.eq.'yes') then
                   if (.not.areweighted) then
@@ -477,7 +479,7 @@ c         var     = sqrt(xsec2v2/k/k) ! this seems better when var ~ 0., but und
                                    ! = 1 if hit, = 0 if miss for unweighted generation
 ****************************************************************
          if (ie.eq.0.and..not.imwarmingup) kt = kt + 1
-                  
+
          tollerate = 1.8d0 ! 1.3d0
          if (var.gt.tollerate*varbefore
      .        .and.varbefore.gt.0.d0.and.ie.eq.0) then            

@@ -882,7 +882,7 @@ c      if (ires.eq.0) open(33,file='vpolres0',status='unknown')
       common/photonmasslambda/phmass
 
 *** cuts and inputs            
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 ********
       

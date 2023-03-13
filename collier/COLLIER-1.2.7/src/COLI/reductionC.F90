@@ -61,7 +61,7 @@ module globalC
   double complex :: Zinvshift(2,2),Zadjsshift(2),detZmZadjfshift
   double complex :: mxshift(0:2,0:2), mxinvshift(0:2,0:2)
   double precision ::  maxZadjshift
-  
+  double precision :: detZerr,detXerr,detZshifterr,detXshifterr  !  added 13.09.2022  
   double complex, parameter :: undefined_C=1d50
   
 end module globalC
@@ -344,6 +344,7 @@ contains
     double complex :: C0_coli
 !    double complex :: detX,chdet
     double complex :: chdet
+    double complex :: Zshiftinv(2,2)
 
     double complex :: elimminf2_coli
     integer :: r,rid,n0,n1,n2,g,gy,gp,gr,gpf,i,rdef,iexp
@@ -368,7 +369,7 @@ contains
     double precision :: x_gpf,y_gpf,v_gpf,v1_gpf,b_gpf,err_gpf_B(0:rmax),err_gpf_exp
     double precision :: err_B,err_C0,err_C(0:rmax),err_inf,err_req_Cr(0:rmax),acc_req_Cr(0:rmax),acc_C(0:rmax)
     double precision :: checkest,norm,Cscale
-    double precision :: deterr
+!    double precision :: deterr
     logical :: lerr_C0,errorwriteflag
 
     character(len=*),parameter :: fmt1 = "(A7,'dcmplx(',d25.18,' , ',d25.18,' )')"
@@ -510,13 +511,14 @@ contains
 
 ! changed 21.06.2018
 ! deterr added 17.01.2019
-    call chinve(2,Z,Zinv,detZ,deterr)
+    call chinve(2,Z,Zinv,detZ,detZerr)
 !    detZ = chdet(2,Z)
 
-!    write(*,*) 'reductionC detZ = ',detZ,dprec_cll/deterr
+!     write(*,*) 'reductionC detZ = ',detZ,dprec_cll/detZerr,log(detZerr)/log(10d0)
+!     write(*,*) 'reductionC Z = ',Z
 
 ! added 17.01.2019
-    if (deterr.lt.dprec_cll) detZ = 0d0
+    if (detZerr.lt.dprec_cll) detZ = 0d0
 
 #ifdef OBSOLETE
 ! added 16.08.2018
@@ -584,13 +586,13 @@ contains
 
 ! changed 21.06.2018
 ! deterr added 17.01.2019
-    call chinve(3,mx,mxinv,detX,deterr)
+    call chinve(3,mx,mxinv,detX,detXerr)
 !    detX = chdet(3,mx)
 
-!    write(*,*) 'reductionC detX = ',detX,dprec_cll/deterr
+!    write(*,*) 'reductionC detX = ',detX,dprec_cll/detXerr
 
 ! added 17.01.2019
-    if (deterr.lt.dprec_cll) detX = 0d0
+    if (detXerr.lt.dprec_cll) detX = 0d0
 
 #ifdef OBSOLETE
 ! added 16.08.2018
@@ -1626,14 +1628,21 @@ contains
 
       maxZshift = maxval(abs(Zshift))
 
-      detZshift = chdet(2,Zshift)
+! detZshifterr added 15.09.2022
+      call chinve(2,Zshift,Zshiftinv,detZshift,detZshifterr)
+!      detZshift = chdet(2,Zshift)
+
+!      write(*,*) 'detZshift = ',detZshift,detZshifterr
+!      write(*,*) 'Zshiftmax = ',Zshift
+
+
 ! added 16.08.2018
-    if (abs(detZshift).lt.dprec_cll*maxval(abs(Zshift(1,:)))*maxval(abs(Zshift(2,:)))) then
+      if (abs(detZshift).lt.dprec_cll*maxval(abs(Zshift(1,:)))*maxval(abs(Zshift(2,:)))) then
 #ifdef Credtest
-    write(*,*) 'detZshift set to 0  ',abs(detZshift),dprec_cll*maxval(abs(Zshift(1,:)))*maxval(abs(Zshift(2,:)))
+        write(*,*) 'detZshift set to 0  ',abs(detZshift),dprec_cll*maxval(abs(Zshift(1,:)))*maxval(abs(Zshift(2,:)))
 #endif
-      detZshift = 0d0
-    end if
+        detZshift = 0d0
+      end if
 
 !      if (detZshift.ne.0d0) then
 !        call chinv(2,Zshift,Zinvshift)
@@ -1676,13 +1685,13 @@ contains
 
 ! changed 21.06.2018
 ! deterr added 17.01.2019
-      call chinve(3,mxshift,mxinvshift,detXshift,deterr)
+      call chinve(3,mxshift,mxinvshift,detXshift,detXshifterr)
 !      detXshift = chdet(3,mxshift)
 
-!    write(*,*) 'reductionC detXshift = ',detXshift,dprec_cll/deterr
+!    write(*,*) 'reductionC detXshift = ',detXshift,dprec_cll/detXshifterr
 
 ! added 17.01.2019
-    if (deterr.lt.dprec_cll) detXshift = 0d0
+    if (detXshifterr.lt.dprec_cll) detXshift = 0d0
 
 #ifdef OBSOLETE
 ! added 16.08.2018
@@ -2895,6 +2904,16 @@ contains
       ! determine error from symmetry for n0=0 and n1>=1, n2>=1 
       Cerr(r)=Cerr(r-1)
       Cerr2(r)=Cerr2(r-1)
+
+      ! use error on detZ for r=1 (enters r>1 implicitly)
+      ! added 13.09.2022
+      if (r==1) then
+        Cerr(r) = max( Cerr(r), &
+            max(abs(C(0,1,0)),abs(C(0,0,1)))*dprec_cll/detZerr)
+        Cerr2(r) = max( Cerr2(r), &
+            max(abs(C(0,1,0)),abs(C(0,0,1)))*dprec_cll/detZerr)
+      endif
+
       n0=0
         do n1=1,r-2*n0-1
           n2 = r-2*n0-n1
@@ -3822,6 +3841,16 @@ contains
 
         if(n1.eq.0) then
           C(0,0,r) = C_alt(0,0,r)          
+
+! use error on detX for r=1 (enters r>1 implicitly)
+! added 13.09.2022
+        if (r==1) then
+          Cerr(r) = max( Cerr(r), &
+              max(abs(C(0,1,0)),abs(C(0,0,1)))*dprec_cll/detXerr)
+          Cerr2(r) = max( Cerr2(r), &
+              max(abs(C(0,1,0)),abs(C(0,0,1)))*dprec_cll/detXerr)
+        endif
+
         else
           Cerr(r)=max(Cerr(r),abs(C(0,n1,n2+1)-C_alt(0,n1,n2+1)))
           Cerr2(r)=max(Cerr2(r),abs(C(0,n1,n2+1)-C_alt(0,n1,n2+1)))
@@ -4165,6 +4194,16 @@ contains
       ! determine error from symmetry for n0=0 and n1>=1, n2>=1 
       Cerr(r)=Cerr(r-1)
       Cerr2(r)=Cerr2(r-1)
+
+      ! use error on detZshift for r=1 (enters r>1 implicitly)
+      ! added 13.09.2022
+      if (r==1) then
+        Cerr(r) = max( Cerr(r), &
+            max(abs(Cshift(0,1,0)),abs(Cshift(0,0,1)))*dprec_cll/detZshifterr)
+        Cerr2(r) = max( Cerr2(r), &
+            max(abs(Cshift(0,1,0)),abs(Cshift(0,0,1)))*dprec_cll/detZshifterr)
+      endif
+
       n0=0
         do n1=1,r-2*n0-1
           n2 = r-2*n0-n1

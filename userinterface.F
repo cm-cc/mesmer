@@ -61,7 +61,7 @@
       common/radiationcharges/QRe,QRmu
 ***
       double precision cutela
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       double precision phmass
@@ -112,7 +112,7 @@ cc
      +     'arun   ', ! 21
      +     'thmumin', ! 22
      +     'thmumax', ! 23
-     +     'themax ', ! 24
+     +     'Eemax ', ! 24
      +     'hadoff ', ! 25
      +     'phmass ', ! 26
      +     'storemode', ! 27
@@ -267,8 +267,8 @@ c      stop
          print*,trim(welcome(k))
       enddo
 **
-      convfac = 0.3893793656D6
-      pi = 3.1415926535897932384626433832795029D0
+      convfac = 0.3893793656d6
+      pi      = 3.1415926535897932384626433832795029d0
 **
       do i = 1,10
          model(i:i) = ' '
@@ -296,7 +296,7 @@ c      stop
       ame  = 0.510998928d-3     ! electron mass
       ammu = 105.6583715d-3 ! muon mass
 
-c      ammu  = ame
+cc      ammu  = ame
       
       taumass = 1.77682D0
       topmass = 175.6D0
@@ -331,9 +331,10 @@ c      stop
       thmumin = 0.d0
       themin  = 0.d0
       thmumax = 100d0
-      themax  = 100d0
+      themax  = pi*0.5d0*1000d0
       Ethr    = 0.2d0
       ththr   = 100.d0
+      eemax   = emulab
       
       ecms = ame*ame + ammu*ammu + 2.d0*emulab*ame
       ecms = sqrt(ecms) 
@@ -410,8 +411,11 @@ c      ififo = 3 ! just write on the fifo
      .       ' LAB angle = ',trim(r8tostr(themin)),' mrad'
          print*,trim(stringa)
          
+c         write(stringa,*)' [ '//setkey(24)//' ] Maximum electron'//
+c     .       ' LAB angle = ',trim(r8tostr(themax)),' mrad'
+c         print*,trim(stringa)
          write(stringa,*)' [ '//setkey(24)//' ] Maximum electron'//
-     .       ' LAB angle = ',trim(r8tostr(themax)),' mrad'
+     .       ' LAB energy = ',trim(r8tostr(eemax)),' GeV'
          print*,trim(stringa)
          
          write(stringa,*)' [ '//setkey(22)//' ] Minimum muon'//
@@ -652,7 +656,8 @@ c               if (ctmp3.eq.'old') istorver = 1
             if (c.eq.'thmumin') thmumin = x
             if (c.eq.'thmumax') thmumax = x
             if (c.eq.'themin')  themin = x
-            if (c.eq.'themax')  themax = x
+c            if (c.eq.'themax')  themax = x
+            if (c.eq.'Eemax')   eemax = x
             if (c.eq.'Ethr')    Ethr = x
             if (c.eq.'ththr')   ththr = x
          endif
@@ -1061,7 +1066,7 @@ c     .     ' (active only for v2)'
 
       common/tmintmax/tmin,tmax
       common/tmintmaxfordistributions/tmind,tmaxd
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)

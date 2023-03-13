@@ -1,5 +1,5 @@
 RELEASE=yes
-## RELEASE=
+# RELEASE=
 
 EXE = mesmer
 
@@ -79,7 +79,7 @@ ifeq ($(SMH),-DSMH)
 endif
 
 ifeq ($(COLLIER),-DCOLLIER)
-  CLLDIR = collier/COLLIER-1.2.5/
+  CLLDIR = collier/COLLIER-1.2.7/
   CLLMOD = -I$(CLLDIR)include/
   CLLLIB = -L$(CLLDIR)lib -lcollier
 endif
@@ -131,7 +131,7 @@ pack: # use only to release MESMER
 	mkdir -p $(RELEASEDIR)/c_ranlux &&\
 	mkdir -p $(RELEASEDIR)/collier/ &&\
 	cp -ra LoopTools-$(LTVER)-clean/ $(RELEASEDIR)/LoopTools-$(LTVER) &&\
-	cp -ra collier/COLLIER-1.2.5-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.5 &&\
+	cp -ra collier/COLLIER-1.2.7-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.7 &&\
         cp -ra Makefile README.md STANDALONE.md EMBEDDED.md input-example mesmerversion.f\
         distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h AUTHORS.md\
         main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat vpol_novosibirsk_v2.7.dat\
@@ -244,18 +244,18 @@ extlibs: looptools collier handyg chaplin rootwriter
 # rootinterface # not needed anymore
 
 ## disabled at the moment
-# rootwriter: $(GADIR)/$(GANAME)/ $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
-# $(GADIR)/$(GANAME)/:
-# 	@echo "Cloning MuE software (by G. Abbiendi)"
-# 	@echo " "
-# 	mkdir -p $(GADIR) && cd $(GADIR) && git clone $(GAREPO)
-# $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe:
-# 	@echo "Pulling MuE software and building .root writer"
-# 	@echo " "
-# 	cd $(GADIR)/$(GANAME)/ && git pull $(GAREPO)
-# 	cd $(GADIR)/$(GANAME)/writer/ && ./compile_writer.sh
-# write-root-events:
-# 	ln -sf $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
+#rootwriter: $(GADIR)/$(GANAME)/ $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
+#$(GADIR)/$(GANAME)/:
+#	@echo "Cloning MuE software (by G. Abbiendi)"
+#	@echo " "
+#	mkdir -p $(GADIR) && cd $(GADIR) && git clone $(GAREPO)
+#$(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe:
+#	@echo "Pulling MuE software and building .root writer"
+#	@echo " "
+#	cd $(GADIR)/$(GANAME)/ && git pull $(GAREPO)
+#	cd $(GADIR)/$(GANAME)/writer/ && ./test_mesmer_writer.sh
+#write-root-events:
+#	ln -sf $(GADIR)/$(GANAME)/writer/write_MuE_MCevents_v2.exe write-root-events
 
 looptools: $(LTDIR)/lib64/libooptools.a
 $(LTDIR)/lib64/libooptools.a:

@@ -13,10 +13,10 @@
       double precision pmubeam(0:3)
       double precision pmat(0:3,20),cwvpout(0:10)
       double precision wout,wnovp,wnohad,wLO,wNLO
-      double precision emulab,eemin,semu,thmumin,themin,themax,
+      double precision emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela
       integer ina7,iela      
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer ismualongz,itmp
       common/ISmuondirection/ismualongz
@@ -62,7 +62,7 @@
       double precision pmu(0:3)
 ***
       double precision truep1lab(0:3)
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela      
       call beamprofile(emulab,semu,emuspr,truep1lab)
       pmu = truep1lab
@@ -228,7 +228,7 @@ c      endif
      .     wmaxout,
      .     eeminout,
      .     theminout,
-     .     themaxout,
+     .     eemaxout,
      .     thmuminout,
      .     thmumaxout,
      .     ethrout,
@@ -271,7 +271,7 @@ c      character :: mesmerversion(40)
       double precision wmaxout
       double precision eeminout
       double precision theminout
-      double precision themaxout
+      double precision eemaxout
       double precision thmuminout
       double precision thmumaxout
       double precision ethrout
@@ -301,7 +301,7 @@ c      character :: mesmerversion(40)
       character(len=:),allocatable,target :: cstring
       
       common/parameters/ame,ammu,convfac,alpha,pi
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer*8 iwriteout
       integer istorver,icwvp
@@ -455,7 +455,7 @@ c      k0out = egmin
 
       eeminout   = eemin
       theminout  = themin
-      themaxout  = themax
+      eemaxout   = eemax
       thmuminout = thmumin
       thmumaxout = thmumax
       ethrout    = ethr

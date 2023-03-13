@@ -20,7 +20,7 @@
       common/photoncutoff/egmin,egmin2
       common/tmintmax/tmincut,tmaxcut
 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       double precision Qmu

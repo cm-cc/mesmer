@@ -25,7 +25,7 @@ The **`MESMER`** prompt	 looks like:
    [ extmubeam ] Feed generic muon beam externally (beam profile): no
    [ Eemin     ] Minimum electron LAB energy = 1. GeV
    [ themin    ] Minimum electron LAB angle = 0. mrad
-   [ themax    ] Maximum electron LAB angle = 100. mrad
+   [ Eemax    ] Maximum electron LAB angle = 150. GeV
    [ thmumin   ] Minimum muon LAB angle = 0. mrad
    [ thmumax   ] Maximum muon LAB angle = 100. mrad
    [ acoplcut  ] Apply acoplanarity cut (and value) = no (3.5 mrad)
@@ -68,7 +68,7 @@ By typing `help` at the prompt, a short description of the parameters that can b
                 If 'yes', the beam 3-momentum must be fed into the pipe 'path'/beamprofile.fifo
  Eemin     ---> minimum electron energy in the LAB (GeV)
  themin    ---> minimum electron angle in the LAB (mrad)
- themax    ---> maximum electron angle in the LAB (mrad)
+ Eemax    ---> maximum electron energy in the LAB (GeV)
  thmumin   ---> minimum muon angle in the LAB (mrad)
  thmumax   ---> maximum muon angle in the LAB (mrad)
  acoplcut  ---> if applying acoplanarity cut and to which value [yes/no mrad]

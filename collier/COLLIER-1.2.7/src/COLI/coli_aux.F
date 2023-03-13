@@ -22,6 +22,7 @@ c#define WIB
 *     errorflags    22.05.13  Ansgar Denner                            *
 *                   04.06.13  chdet, chinv moved here                  *
 *                   30.03.15  irratterms included                      *
+*                   24.01.19  error included in chinv(e)               *
 *                                                                      *
 ************************************************************************
 * subroutines:                                                         *
@@ -34,7 +35,7 @@ c#define WIB
 * setirratterms_coli, unsetirratterms_coli                             *
 * setprecpars_coli                                                     *
 * setinfo_coli, unsetinfo_coli                                         *
-* chinv                                                                *
+* chinv,chinve                                                         *
 * functions:                                                           *
 * cln_coli, cspenc_coli, cspenh_coli, cspcon_coli, cspcos_coli         *
 * csp2con_coli, csp2cos_coli, csp3con_coli, csp4con_coli               *
@@ -198,6 +199,27 @@ c     sym = 0
       end
 
 ************************************************************************
+      function cln_fast_coli(z)
+************************************************************************
+*     complex logarithm of z                                           *
+*----------------------------------------------------------------------*
+*     02.06.20 Alexander Voigt                                         *
+************************************************************************
+      implicit   none
+      real*8     norm2,arg,re,im
+      complex*16 cln_fast_coli,z
+
+      re = real(z)
+      im = aimag(z)
+
+      norm2 = re*re + im*im
+      arg = datan2(im, re)
+
+      cln_fast_coli = dcmplx(0.5d0*log(norm2), arg)
+
+      end
+
+************************************************************************
       function cln_coli(cz,eps)
 ************************************************************************
 *     complex logarithm of cz + i*eps                                  *
@@ -209,7 +231,7 @@ c     sym = 0
 #endif
       implicit   none
       real*8     eps
-      complex*16 cln_coli,cz
+      complex*16 cln_coli,cz,cln_fast_coli
       logical    errorwriteflag
 
 #include "params_coli.h"
@@ -236,11 +258,11 @@ c     sym = 0
 
       if(abs(aimag(cz)).gt.impacc*abs(real(cz)).or.real(cz).gt.0d0)
      &    then
-        cln_coli=log(cz)
+        cln_coli=cln_fast_coli(cz)
       elseif(eps.ne.0) then
-        cln_coli=log(-cz)+dcmplx(0d0,pi)*sign(1d0,eps)
+        cln_coli=cln_fast_coli(-cz)+dcmplx(0d0,pi)*sign(1d0,eps)
       elseif(aimag(cz).ne.0d0) then
-        cln_coli=log(cz)
+        cln_coli=cln_fast_coli(cz)
         call setErrFlag_coli(-1)
         call ErrOut_coli('cln_coli', 'argument effectively on cut',
      &          errorwriteflag)
@@ -251,7 +273,7 @@ c     sym = 0
           write(nerrout_coli,*) 'cln_coli:  cz  = ',cz
         endif
       else
-        cln_coli=log(-cz)+dcmplx(0d0,pi)
+        cln_coli=cln_fast_coli(-cz)+dcmplx(0d0,pi)
         call setErrFlag_coli(-4)
         call ErrOut_coli('cln_coli', 'argument on cut',
      &          errorwriteflag)
@@ -1310,32 +1332,38 @@ c calculation of matrix Q
 
 c determination of matrix R
 
-      do 1300 i=1,n
-      do 1300 k=1,n
+      do i=1,n
+      do k=1,n
         cr(i,k) = 0d0
- 1300 continue
-      do 1400 i=1,n
+      end do
+      end do
+      do i=1,n
         cr(i,i) = cd(i)
-      do 1400 k=i+1,n
+      do k=i+1,n
         cr(i,k) = ca(i,k)
- 1400 continue
+      end do
+      end do
 
 c check of unitarity of Q
 
-      do 1500 i=1,n
-      do 1500 k=1,n
+      do i=1,n
+      do k=1,n
         catest(i,k) = 0d0
-      do 1500 j=1,n
+      do j=1,n
         catest(i,k) = catest(i,k) + cq(i,j)*conjg(cq(k,j))
- 1500 continue
+      end do
+      end do
+      end do
 
 c check of decomposition
-      do 1600 i=1,n
-      do 1600 k=1,n
+      do i=1,n
+      do k=1,n
         catest(i,k) = 0d0
-      do 1600 j=1,k
+      do j=1,k
         catest(i,k) = catest(i,k) + cq(i,j)*cr(j,k)
- 1600 continue
+      end do
+      end do
+      end do
 
       end
 
@@ -1515,77 +1543,91 @@ c check of decomposition
 
 ! determination of matrix R
 
-      do 1300 i=1,n
-      do 1300 k=1,n
+      do i=1,n
+      do k=1,n
         cr(i,k) = 0d0
- 1300 continue
-      do 1400 i=1,n
+      end do
+      end do
+      do i=1,n
         cr(i,i) = cd(i)
-      do 1400 k=i+1,n
+      do k=i+1,n
         cr(i,k) = ca(i,k)
- 1400 continue
+      end do
+      end do
 
 ! determination of inverse of R
 
-      do 2000 i=1,n
-      do 2000 k=1,n
+      do i=1,n
+      do k=1,n
         crinv(i,k) = 0d0
- 2000 continue
-      do 2100 k=1,n
+      end do
+      end do
+      do k=1,n
         crinv(k,k) = 1d0/cr(k,k)
-      do 2100 i=1,k-1
+      do i=1,k-1
       do 2200 j=i,k-1
         crinv(i,k) = crinv(i,k) - crinv(i,j)* cr(j,k)/cr(k,k)
  2200 continue
- 2100 continue
+      end do
+      end do
 
 ! determination of inverse of A
 
-      do 2300 i=1,n
-      do 2300 k=1,n
+      do i=1,n
+      do k=1,n
         cainv(i,k) = 0d0
-      do 2300 j=1,n
+      do j=1,n
         cainv(i,k) = cainv(i,k) + crinv(i,j)*conjg(cq(k,j))
- 2300 continue
+      end do
+      end do
+      end do
 
       return
 
 ! check of unitarity of Q
 
-      do 1500 i=1,n
-      do 1500 k=1,n
+      do i=1,n
+      do k=1,n
         catest(i,k) = 0d0
-      do 1500 j=1,n
+      do j=1,n
         catest(i,k) = catest(i,k) + cq(i,j)*conjg(cq(k,j))
- 1500 continue
+      end do
+      end do
+      end do
 
 
 ! check of decomposition
 
-      do 1600 i=1,n
-      do 1600 k=1,n
+      do i=1,n
+      do k=1,n
         catest(i,k) = 0d0
-      do 1600 j=1,k
+      do j=1,k
         catest(i,k) = catest(i,k) + cq(i,j)*cr(j,k)
- 1600 continue
+      end do
+      end do
+      end do
 
 
 ! check of inverse of Q
-      do 2400 i=1,n
-      do 2400 k=1,n
+      do i=1,n
+      do k=1,n
         crtest(i,k) = 0d0
-      do 2400 j=1,n
+      do j=1,n
         crtest(i,k) = crtest(i,k) + cr(i,j)*crinv(j,k)
- 2400 continue
+      end do
+      end do
+      end do
 
 ! check of inverse of A
 
-      do 2500 i=1,n
-      do 2500 k=1,n
+      do i=1,n
+      do k=1,n
         catest(i,k) = 0d0
-      do 2500 j=1,n
+      do j=1,n
         catest(i,k) = catest(i,k) + cai(i,j)*cainv(j,k)
- 2500 continue
+      end do
+      end do
+      end do
 
       end
 
@@ -1712,77 +1754,90 @@ c calculation of matrix Q
 
 c determination of matrix R
 
-      do 1300 i=1,n
-      do 1300 k=1,n
+      do i=1,n
+      do k=1,n
         cr(i,k) = 0d0
- 1300 continue
-      do 1400 i=1,n
+      end do
+      end do
+      do i=1,n
         cr(i,i) = cd(i)
-      do 1400 k=i+1,n
+      do k=i+1,n
         cr(i,k) = ca(i,k)
- 1400 continue
+      end do
+      end do
 
 c determination of inverse of R
 
-      do 2000 i=1,n
-      do 2000 k=1,n
+      do i=1,n
+      do k=1,n
         crinv(i,k) = 0d0
- 2000 continue
-      do 2100 k=1,n
+      end do
+      end do
+      do k=1,n
         crinv(k,k) = 1d0/cr(k,k)
-      do 2100 i=1,k-1
+      do i=1,k-1
       do 2200 j=i,k-1
         crinv(i,k) = crinv(i,k) - crinv(i,j)* cr(j,k)/cr(k,k)
  2200 continue
- 2100 continue
+      end do
+      end do
 
 c determination of inverse of A
 
-      do 2300 i=1,n
-      do 2300 k=1,n
+      do i=1,n
+      do k=1,n
         cainv(i,k) = 0d0
-      do 2300 j=1,n
+      do j=1,n
         cainv(i,k) = cainv(i,k) + crinv(i,j)*conjg(cq(k,j))
- 2300 continue
+      end do
+      end do
+      end do
 
       return
 
 c check of unitarity of Q
 
-      do 1500 i=1,n
-      do 1500 k=1,n
+      do i=1,n
+      do k=1,n
         catest(i,k) = 0d0
-      do 1500 j=1,n
+      do j=1,n
         catest(i,k) = catest(i,k) + cq(i,j)*conjg(cq(k,j))
- 1500 continue
+      end do
+      end do
+      end do
 
 
 c check of decomposition
 
-      do 1600 i=1,n
-      do 1600 k=1,n
+      do i=1,n
+      do k=1,n
         catest(i,k) = 0d0
-      do 1600 j=1,k
+      do j=1,k
         catest(i,k) = catest(i,k) + cq(i,j)*cr(j,k)
- 1600 continue
-
+      end do
+      end do
+      end do
 
 c check of inverse of Q
-      do 2400 i=1,n
-      do 2400 k=1,n
+      do i=1,n
+      do k=1,n
         crtest(i,k) = 0d0
-      do 2400 j=1,n
+      do j=1,n
         crtest(i,k) = crtest(i,k) + cr(i,j)*crinv(j,k)
- 2400 continue
+      end do
+      end do
+      end do
 
 c check of inverse of A
 
-      do 2500 i=1,n
-      do 2500 k=1,n
+      do i=1,n
+      do k=1,n
         catest(i,k) = 0d0
-      do 2500 j=1,n
+      do j=1,n
         catest(i,k) = catest(i,k) + cai(i,j)*cainv(j,k)
- 2500 continue
+      end do
+      end do
+      end do
 
       end
 

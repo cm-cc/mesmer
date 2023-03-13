@@ -61,6 +61,7 @@ module globalD
   double precision :: fac_gpf,x_gpf,y_gpf,v_gpf
 !  double precision :: pweight(3)
   double precision :: wmaxZadj,wmaxZadjf,wmaxXadj
+  double precision :: detZerr,detXerr  !  added 13.09.2022
   double complex, parameter :: undefined_D=1d50
   
 end module globalD
@@ -386,7 +387,7 @@ contains
     double precision :: x_gr,y_gr,y1_gr,a_gr,err_gr_C,err_gr_Cr,err_gr_exp
     double precision :: err_C0,Cerr_i(0:rmax_C,0:3),err_C(0:rmax_C),err_D0,acc_D,errfac(0:3),err_req_D,err_inf,Cerr2_i(0:rmax_C,0:3)
     double precision :: checkest,norm,Dscale2
-    double precision :: deterr
+!    double precision :: deterr
     logical :: lerr_D0,errorwriteflag
 
     character(len=*),parameter :: fmt1 = "(A7,'dcmplx(',d25.18,' , ',d25.18,' )')"
@@ -580,11 +581,14 @@ contains
 
 ! changed 21.06.2018
 ! deterr added 17.01.2019
-    call chinve(3,Z,Zinv,detZ,deterr)
+    call chinve(3,Z,Zinv,detZ,detZerr)
 !    detZ = chdet(3,Z)
 
+!  write(*,*) 'detZ = ',detZ/maxZ**3,detZerr,dprec_cll,log(detZerr)/log(10d0)
+
+
 ! added 17.01.2019
-    if (deterr.lt.dprec_cll) detZ = 0d0
+    if (detZerr.lt.dprec_cll) detZ = 0d0
 
 #ifdef OBSOLETE
 ! added 16.08.2018
@@ -678,16 +682,16 @@ contains
 
 ! changed 21.06.2018
 ! deterr added 17.01.2019
-    call chinve(4,mx,mxinv,detX,deterr)
+    call chinve(4,mx,mxinv,detX,detXerr)
 !    detX = chdet(4,mx)
 
 #ifdef Dredtest
     write(*,*) 'reductionD detX = ',((p20-m22-m02)*(p31-m32-m12))**2
-    write(*,*) 'reductionD detX = ',detX,deterr,dprec_cll/deterr
+    write(*,*) 'reductionD detX = ',detX,detXerr,dprec_cll/detXerr
 #endif
 
 ! added 17.01.2019
-    if (deterr.lt.dprec_cll) detX = 0d0
+    if (detXerr.lt.dprec_cll) detX = 0d0
 
 ! added 16.08.2018   
 ! commented out 7.01.2019, IR singular D0 more stable for small finite det
@@ -954,6 +958,11 @@ contains
                        w_pv**(rmax/2-1) * v_pv,err_C0, z_pv,err_C(rmax-1)
 #endif
         end if
+
+      ! added 13.09.2022  needed?, if yes implement also in pv2 and C
+      ! err_pv(rmax) = max( err_pv(rmax), D0est*dprec_cll/detZerr)
+      ! write(*,*) 'err_pv = ',err_pv(rmax), D0est*dprec_cll/detZerr, D0est,dprec_cll/detZerr
+        
       end if
     end if
 
@@ -3108,10 +3117,21 @@ contains
         end do
 !     end do
 
+
       ! determine error from symmetry for n0=0 and n1>1, n2>1 
       Derr(r)=Derr(r-1)
       Derr2(r)=Derr2(r-1)
 
+      ! use error on detZ for r=1 (enters r>1 implicitly)
+      ! added 13.09.2022
+      if (r==1) then
+        Derr(r) = max( Derr(r), &
+            max(abs(D(0,1,0,0)),abs(D(0,0,1,0)),abs(D(0,0,0,1)))*dprec_cll/detZerr)
+        Derr2(r) = max( Derr2(r), &
+            max(abs(D(0,1,0,0)),abs(D(0,0,1,0)),abs(D(0,0,0,1)))*dprec_cll/detZerr)
+      endif
+
+!      write(*,*) 'Derr(1) = ',Derr(1),max(abs(D(0,1,0,0)),abs(D(0,0,1,0)),abs(D(0,0,0,1))),dprec_cll/detZerr
 !      write(*,*) 'CalcDpv1: Derr(r)',r,Derr(r),Derr2(r)
 
       n0=0
@@ -3201,7 +3221,7 @@ contains
     write(*,*) 'Dij_err_jj',maxZadjf*Dij_err/adetZ
     write(*,*) 'Dij_err_00',maxZadj*D00_err(1:rmax)/adetZ
     write(*,*) 'Dij_err_cc',maxZadj*Cij_err/adetZ
-    write(*,*) 'factors',maxZadj/adetZ,maxZadjf/adetZ
+    write(*,*) 'factors',maxZadj/adetZ,maxZadjf/adetZ,maxZadj*maxZ/adetZ
     write(*,*) 'Dij_err2(r)', r,Dij_err2(r),D00_err2(r)
     write(*,*) 'Dij_err2_jj',maxZadjf*Dij_err/sqrt(adetZ*maxZ*maxZadj)
     write(*,*) 'Dij_err2_00',maxZadj*D00_err(1:rmax)/sqrt(adetZ*maxZ*maxZadj)
@@ -4311,6 +4331,16 @@ contains
 
           if(n3.eq.r-1) then
              D(0,0,0,r) = D_alt(0,0,0,r)          
+
+! use error on detX for r=1 (enters r>1 implicitly)
+! added 13.09.2022
+             if (r==1) then
+               Derr(r) = max( Derr(r), &
+                   max(abs(D(0,1,0,0)),abs(D(0,0,1,0)),abs(D(0,0,0,1)))*dprec_cll/detXerr)
+               Derr2(r) = max( Derr2(r), &
+                   max(abs(D(0,1,0,0)),abs(D(0,0,1,0)),abs(D(0,0,0,1)))*dprec_cll/detXerr)
+             endif
+
           else
 !             write(*,*) 'errsym=',abs(D(0,n1,n2,n3+1)-D_alt(0,n1,n2,n3+1)),  &
 !                     D(0,n1,n2,n3+1),D_alt(0,n1,n2,n3+1)
@@ -4863,7 +4893,6 @@ contains
           if (r.le.rmax+1) then
             D(0,n1,n2,n3) = Dexpg(0,n1,n2,n3,0)
           end if
-
 
 #ifdef Dgtest
           if(n0.eq.0.and.n1.eq.0.and.n2.eq.0.and.n3.eq.0) then 

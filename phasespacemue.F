@@ -68,7 +68,7 @@ c         ic = ic + 1
       
       double precision Erange(2,2)
 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       
       dimension twopis(0:nphmax),factorial(0:nphmax)
@@ -149,20 +149,22 @@ c      pmfreeze = 0.5d0*sqrt(lambda(sfreeze,m12,m22)/sfreeze)
          tmin = max(tmin,tmincut)
 
 ***** let's see if themax allows for a stricter range in the 2 -> 2
-         r  = sqrt(emulab**2-m3**2)/(emulab+m2)
-         r2 = r*r
-         ce = cos(themax*1d-3)
-         ce2 = ce*ce
-         Eeminfromthemax = m4*(1.d0+r2*ce2)/(1.d0-r2*ce2)
-         tmaxfromthemax  = 2.d0*m4*m4-2.d0*m4*Eeminfromthemax
-         tmax = min(tmax,tmaxfromthemax)
+! now themax is always 90 degrees, so commenting this         
+c         r  = sqrt(emulab**2-m3**2)/(emulab+m2)
+c         r2 = r*r
+c         ce = cos(themax*1d-3)
+c         ce2 = ce*ce
+c         Eeminfromthemax = m4*(1.d0+r2*ce2)/(1.d0-r2*ce2)
+c         tmaxfromthemax  = 2.d0*m4*m4-2.d0*m4*Eeminfromthemax
+c         tmax = min(tmax,tmaxfromthemax)
+************         
+
          if (tmin.gt.tmax) then
             phsp = 0.d0
             w    = 0.d0
             ier  = 1
             return
          endif
-************         
          
          if (thmumin.gt.1d-12) then         
 **** [[ implementing the thmumin cut on t13
@@ -653,8 +655,7 @@ c$$$         do k = 1,nph
 c$$$            den = den + prodwe * qph(0,k)/(p2(0)-qph(0,k))
 c$$$         enddo
 c$$$      endif
-***   end regulator      
-
+***   end regulator
       return
       end      
 ********************************************************************
@@ -4407,7 +4408,7 @@ c back in the p1+p2 rest frame!
       common/photoncutoff/egmin,egmin2
       common/tmintmax/tmincut,tmaxcut
 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       
       double precision Qmu
@@ -4875,7 +4876,7 @@ c            b_45 = dot(p1-p3-p5-p4,p1-p3-p5-p4) ! i.e.
       common/photoncutoff/egmin,egmin2
       common/tmintmax/tmincut,tmaxcut
 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       double precision Qmu
@@ -5355,7 +5356,7 @@ c     i.e.
       phsp = phsp * (iid * 0.5d0 + (1-iid))
       
 *************************
-*** since the are two channel also for iid=0, there is a regulator
+*** since there are two channel also for iid=0, there is a regulator
       
       f0_1 = 1.d0/dot(p1-p3,p1-p3)
       f0_2 = 1.d0/dot(p2-p4,p2-p4)
@@ -5568,4 +5569,3 @@ c      if (csi.lt.0.d0.or.csi.gt.1.d0) print*,'aa',csi,k
 
       return
       end
-

@@ -22,7 +22,7 @@
 
 module collier_global
 
-  character(len=5) :: version_cll="1.2.5"
+  character(len=5) :: version_cll="1.2.7"
 !  character(len=5) :: version_cll=" 1.2 "
   integer :: mode_cll, nminf_cll
   double precision :: muUV2_cll,muIR2_cll,DeltaUV_cll,DeltaIR1_cll,DeltaIR2_cll

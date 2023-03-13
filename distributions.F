@@ -77,9 +77,9 @@ c      tmp(37) = 'acoplCM_'
       
 ******** 2d distributions
       if (i2d.gt.0) then
-         tmp2(1) = '2d_thm_thin_'
-         tmp2(1) = 'xi1xi4_'
-         tmp2(2) = 'xi3xi4_'
+         tmp2(1) = '2d_gen_t13_'
+c         tmp2(1) = 'xi1xi4_'
+c         tmp2(2) = 'xi3xi4_'
 c         tmp2(2) = '2d_the_thm_nohad_'
 c         tmp2(3) = '2d_t13z_s4_'
 c         tmp2(4) = '2d_thm_aco_'
@@ -202,7 +202,7 @@ c         print*,trim(distrstring(1:i2+2))
       data ifirst,icount /1,0/ 
 
       common/tmintmaxfordistributions/tmin,tmax
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       common/beamspreadsigmas/esig1,esig2
@@ -238,7 +238,7 @@ c         print*,trim(distrstring(1:i2+2))
       common/minmaxeng/genmin,genmax
       common/udistr/u
 
-      common/el_limits_here/theminL,themaxL,eemax
+      common/el_limits_here/theminL,themaxL,eemaxL
       
 
       common/minmaxfun/funmin,funmax
@@ -334,16 +334,17 @@ calculating xmin, xmax, theminL, themaxL in the lab (L for local)
 
          r = sqrt(r2)
          
-         eemax = m2 - 0.5d0*tmin/m2         
+         eemaxL = m2 - 0.5d0*tmin/m2         
 
-         theminL = acos(min(1.d0,1.d0/r*sqrt((eemax-m2)/(eemax+m2))))
+         theminL = acos(min(1.d0,1.d0/r*sqrt((eemaxL-m2)/(eemaxL+m2))))
          themaxL = acos(1.d0/r*sqrt((eemin-m2)/(eemin+m2)))
          
          bmi(1) = nint(theminL*1000d0)
          bma(1) = nint(themaxL*1000d0)
          
          bmi(2) = eemin
-         bma(2) = 140.d0        !eemax
+         bma(2) = 140.d0        !eemaxL
+         bma(2) = eemax
          
          bmi(3) = 0.d0 !bmi(1)
          bma(3) = bma(1)/7.d0
@@ -502,13 +503,10 @@ c         bma(37) = -bmi(37)
 *****************************
 ****  2d distributions
          if (i2d.gt.0) then
-            bmi2(1,1) = 0.d0
-            bmi2(1,2) = 0.d0
-            bma2(1,1) = 1.d0
-            bma2(1,2) = 1.d0
-            bmi2 = 0.d0
-            bma2 = 1.d0
-
+            bmi2(1,1) = bmi(18)
+            bmi2(1,2) = bmi(7)
+            bma2(1,1) = bma(18)
+            bma2(1,2) = bma(7)
             
             dis2d  = 0.d0         
             edis2d = 0.d0
@@ -545,7 +543,7 @@ c      call new_boost(p12lab,p4,p4lab,-1)
 
       fun(1) = acos(fun27)*radtodeg
       fun(3) = acos(cccc)*radtodeg
-      
+
       fun(2) = p4lab(0)
       fun(4) = p3lab(0)
       
@@ -684,10 +682,8 @@ c         fun(33:36) = csid(1:4)
 c            fun2(1,1) = fun(3)
 c            fun2(1,2) = acos(pinside_e(3)/
 c     .           sqrt(tridot(pinside_e,pinside_e)))*1d3
-            fun2(1,1) = csid(1)
-            fun2(1,2) = csid(4)
-            fun2(2,1) = csid(3)
-            fun2(2,2) = csid(4)
+            fun2(1,1) = fun(18)
+            fun2(1,2) = fun(7)
 *******************      
             DO k = 1,ndistr2
                dx = (bma2(k,1) - bmi2(k,1))/nbin2
@@ -722,7 +718,7 @@ c            endif
 #include "distributions_inc.F"
       common/ionlyfirsttime/ifirst,icount
       data ifirst /1/
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       integer*8 nc

@@ -102,7 +102,7 @@ c     >     (istorunit,file=storfile(1:ilens)//".fifo",status='unknown')
       data nstored,nevts,ifirst /0,0,0/
 
       common/parameters/ame,ammu,convfac,alpha,pi
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer*8 iwriteout
       integer istorver,icwvp
@@ -373,7 +373,7 @@ c      write(ifoo,*)foonh
       character*30 cnstored,cnp,ctmp,ctag,ctmp2
       
       common/parameters/ame,ammu,convfac,alpha,pi
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       integer*8 iwriteout
       integer istorver,icwvp
@@ -534,7 +534,7 @@ c         write(istorunit,*)'  CoM photon k_0 (GeV)',egmin
          write(istorunit,*)'  MC generation cuts:'
          write(istorunit,*)'   Eemin   = ',eemin
          write(istorunit,*)'   themin  = ',themin
-         write(istorunit,*)'   themax  = ',themax
+         write(istorunit,*)'   Eemax  = ',eemax
          write(istorunit,*)'   thmumin = ',thmumin
          write(istorunit,*)'   thmumax = ',thmumax
          write(istorunit,*)'   Ethr    = ',Ethr

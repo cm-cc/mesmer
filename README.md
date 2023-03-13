@@ -58,7 +58,7 @@ If a parameter/value is missing, defaults are used. The only mandatory rule is t
 **Notice:** when the muom beam is not along the positive z-axis, all the angles described below, used as generator level cuts, must be intended as relative to the muon beam direction
 * `bspr [0]`: Gaussian beam energy spread, in % of `Ebeam`. Active only if `extmubeam no`
 * `Eemin [1]`: minimum outgoing electron energy in GeV
-* `themax [100]`: maximum outgoing electron angle in mrad
+* `Eemax [150]`: maximum outgoing electron energy in GeV
 * `thmumin [0]`: minimum outgoing muon angle in mrad
 * `thmumax [100]`: maximum outgoing muon angle in mrad
 * `acoplcut [no 3.5]`: if the acoplanarity cut has to be applied or not `[yes/no mrad]`
@@ -96,7 +96,7 @@ If `weighted`, to each event is associated a different weight, which must be app
 If `unweighted`, all events have the same constant weight, *i.e.* they are directly distributed according to the underlying cross sections.  
 **Notice:** unweighted generation can be much slower, due to the unweightening procedure
 * `nwrite [500000]`: files in `path` are dumped every `nwrite` generated events. If `nwrite < 0`, files are dumped (approximately) every `-nwrite` seconds
-* `nwarmup [0]`:  if `mode weighted`, the maximum weight for subsequent unweightening is searched generating first `nwarmup` events, after which unweighted generation is started. Notice that the maximum weight is a guessed value.  
+* `nwarmup [0]`:  if `mode unweighted`, the maximum weight for subsequent unweightening is searched generating first `nwarmup` events, after which unweighted generation is started. Notice that the maximum weight is a guessed value.  
 If `store yes` and `nwarmup > 0`, `wnorm` is calculated automatically throwing `nwarmup` events.  
 For unweightening, the maximum weight `sdmax` can be alternatively set by hand (setting `nwarmup 0` at the same time)
 * `sdmax [1e-10]`: maximum weight used for unweightening, when `mode unweighted` and `nwarmup 0`

@@ -14,7 +14,7 @@
       common/momentainitial/pin1(0:3),pin2(0:3)
       common/parameters/ame,ammu,convfac,alpha,pi
 
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       common/ifirstcuts/ifirst
@@ -52,7 +52,7 @@
 
       common/elasticityparam/emubeam0,ame0,amu0,ame20,amu20
       common/elasticitiesdistr/dist,distf      
-      
+
       if (ifirst.eq.0) then
 
          ame0 = ame
@@ -92,6 +92,7 @@
          if (iid.eq.1) iacademic = 0
          
          ifirst = 1
+         
       endif
 ** for elasticity routine      
       emubeam0 = p1lab(0)
@@ -103,7 +104,7 @@ c      icut = 0
 c      return
 
       icut = 1                  ! rejected by default
-
+      
       if (npairs.eq.10) then
 ! no cuts!
          icut = 0
@@ -154,11 +155,13 @@ c            if (j.ne.i.and.itriggers(i)*itriggers(j).gt.0) then
                lcond1 = thslab(i).ge.thmumin.and.thslab(i).le.thmaxmukin
      .              .and.pmatlab(0,i).ge.emulabmin
                lcond1 = lcond1.and.pmatlab(0,j).gt.eemin
+     .              .and.pmatlab(0,j).lt.eemax
      .              .and.thslab(j).ge.themin 
                
                lcond2 = thslab(j).ge.thmumin.and.thslab(j).le.thmaxmukin
      .              .and.pmatlab(0,j).ge.emulabmin
                lcond2 = lcond2.and.pmatlab(0,i).gt.eemin
+     .              .and.pmatlab(0,i).lt.eemax
      .              .and.thslab(i).ge.themin
 
                if (lcond1.or.lcond2) then
@@ -283,7 +286,7 @@ c         truep1lab(3) = p * cos(45.d0*pi/180.d0)
       dimension p3(0:3),p4(0:3)
       common/momentainitial/pin1(0:3),pin2(0:3)
       common/parameters/ame,ammu,convfac,alpha,pi
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       common/ifirstcuts/ifirst
       data ifirst /0/
@@ -611,7 +614,7 @@ c      endif
       common/labmomenta/p1lab,p2lab,truep1lab,p12lab
       
       common/processmasses/m1,m2,m12,m22
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
       common/rrrre/r,radtodeg,ifirst
       dimension pin1(0:3),pin2(0:3)

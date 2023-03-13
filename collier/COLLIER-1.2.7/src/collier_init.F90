@@ -167,7 +167,9 @@ contains
 
       if (erroutlev.ge.1) then
 ! set output-file for potential errors
-        call execute_command_line('mkdir -p '//trim(foldername_cll))
+!       write(*,*) "mkdir -p ",trim(foldername_cll)
+!       call execute_command_line('mkdir -p '//trim(foldername_cll))
+        call make_dir(trim(foldername_cll))
         
         call InitErrCnt_cll(0)
         call OpenErrOutFile_cll(trim(foldername_cll)//'/ErrOut.cll')
@@ -299,16 +301,16 @@ contains
     if (reset) then
 
     ! set standard output for infos
-!    call WriteIntro_cll(stdout_cll)
+    call WriteIntro_cll(stdout_cll)
     if (infoutlev.ge.1) then
-!      write(unit=stdout_cll,fmt=*) '                                                          '
-!      write(unit=stdout_cll,fmt=*) '***********************************************************'
-!      write(unit=stdout_cll,fmt=*) '                                                           '
-!      write(unit=stdout_cll,fmt=*) '  COLLIER: information on settings and internal parameters '
-!      write(unit=stdout_cll,fmt=*) '    is written to the file ',trim(foldername_cll)//'/InfOut.cll'
-!      write(unit=stdout_cll,fmt=*) '                                                           '
-!      write(unit=stdout_cll,fmt=*) '***********************************************************'
-!      write(unit=stdout_cll,fmt=*) '                                                           '
+      write(unit=stdout_cll,fmt=*) '                                                          '
+      write(unit=stdout_cll,fmt=*) '***********************************************************'
+      write(unit=stdout_cll,fmt=*) '                                                           '
+      write(unit=stdout_cll,fmt=*) '  COLLIER: information on settings and internal parameters '
+      write(unit=stdout_cll,fmt=*) '    is written to the file ',trim(foldername_cll)//'/InfOut.cll'
+      write(unit=stdout_cll,fmt=*) '                                                           '
+      write(unit=stdout_cll,fmt=*) '***********************************************************'
+      write(unit=stdout_cll,fmt=*) '                                                           '
 
       ! add here all the output for the default initialisation
       write(unit=ninfout_cll,fmt=*) '                                                          '
@@ -3603,7 +3605,8 @@ contains
     fname_cpout2_cll = ''    
     fname_statsoutcoli_cll = '' 
     
-    call execute_command_line('mkdir -p '//trim(foldername_cll))   
+!   call execute_command_line('mkdir -p '//trim(foldername_cll))   
+    call make_dir(trim(foldername_cll))
     
     call SwitchOffFileOutput_cll
     call SwitchOnFileOutput_cll    
@@ -4693,6 +4696,34 @@ contains
     write(unit=un,fmt=*) '                                                           ' 
 
   end subroutine WriteIntro_cll
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !  subroutine make_dir(dirname)
+  !
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine make_dir(dirname)
+    use iso_c_binding, only : c_int
+    integer(c_int) :: err
+    character(len=*), intent(in) :: dirname
+
+    interface
+        function c_mkdir(dirname, mode) bind(c, name='mkdir')
+            use iso_c_binding, only : c_char, c_int
+            integer(c_int)                    :: c_mkdir
+            character(c_char), intent(in)     :: dirname(*)
+            integer(c_int), intent(in), value :: mode
+        end function
+    end interface
+
+    err=c_mkdir(dirname // char(0), 511)
+
+!  err = -1 if directory exists or if it cannot be created!
+!   if (err > 0) then
+!       write(*,*) 'Directory ',dirname,' could not be created'
+!       stop
+!   end if
+  end subroutine
 
 
 end module collier_init

@@ -51,7 +51,7 @@ c      double precision pmu3beam(1:3) ! only tri-momentum!
 
       common/tmintmax/tmin,tmax
       common/tmintmaxfordistributions/tmind,tmaxd
-      common/mueexpsetup/emulab,eemin,semu,thmumin,themin,themax,
+      common/mueexpsetup/emulab,eemin,eemax,semu,thmumin,themin,themax,
      .     thmumax,ththr,Ethr,dthna7max,cutela,ina7,iela
 
       double precision p1lab(0:3),p2lab(0:3),p12lab(0:3)
