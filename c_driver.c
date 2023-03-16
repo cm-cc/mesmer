@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
   double wmax;
   double eemin;
   double themin;
+  double themax;
   double eemax;
   double thmumin;
   double thmumax;
@@ -123,6 +124,7 @@ int main(int argc, char* argv[])
      double* wmax,
      double* eemin,
      double* themin,
+     double* themax,
      double* eemax,
      double* thmumin,
      double* thmumax,
@@ -159,7 +161,7 @@ int main(int argc, char* argv[])
   mesmer_setup
     (&sampletag,mesmerversion,hostname,datetime,&idproc,&nev,&areweighted,RCorder,
      &includedfs,&radmu,&rade,&iseed1,&iseed2,&emulab,&spread,&extmubeam,&Qmu,
-     &mumass,&elmass,&invalpha,&wnorm,&wmax,&eemin,&themin,&eemax,&thmumin,
+     &mumass,&elmass,&invalpha,&wnorm,&wmax,&eemin,&themin,&themax,&eemax,&thmumin,
      &thmumax,&ethr,&ththr,&iacopl,&acopl,&iela,&ela,&ivpwgts,&ihadon,&ivpfl,&nwarmup,
      &ndistrw,&isync,&eps,&phmass); 
 

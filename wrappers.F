@@ -228,6 +228,7 @@ c      endif
      .     wmaxout,
      .     eeminout,
      .     theminout,
+     .     themaxout,
      .     eemaxout,
      .     thmuminout,
      .     thmumaxout,
@@ -271,6 +272,7 @@ c      character :: mesmerversion(40)
       double precision wmaxout
       double precision eeminout
       double precision theminout
+      double precision themaxout
       double precision eemaxout
       double precision thmuminout
       double precision thmumaxout
@@ -455,6 +457,7 @@ c      k0out = egmin
 
       eeminout   = eemin
       theminout  = themin
+      themaxout   = themax
       eemaxout   = eemax
       thmuminout = thmumin
       thmumaxout = thmumax

@@ -36,6 +36,7 @@ It reads the input parameters from a data card and initializes **`MESMER`**. It 
      double* wmax,
      double* eemin,
      double* themin,
+     double* themax,
      double* eemax,
      double* thmumin,
      double* thmumax,

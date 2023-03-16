@@ -153,16 +153,20 @@ c            if (j.ne.i.and.itriggers(i)*itriggers(j).gt.0) then
             if (itriggers(i)*itriggers(j).gt.0) then
 
                lcond1 = thslab(i).ge.thmumin.and.thslab(i).le.thmaxmukin
+     .              .and.thslab(i).le.thmumax
      .              .and.pmatlab(0,i).ge.emulabmin
                lcond1 = lcond1.and.pmatlab(0,j).gt.eemin
      .              .and.pmatlab(0,j).lt.eemax
      .              .and.thslab(j).ge.themin 
+     .              .and.thslab(j).le.themax
                
                lcond2 = thslab(j).ge.thmumin.and.thslab(j).le.thmaxmukin
+     .              .and.thslab(j).le.thmumax
      .              .and.pmatlab(0,j).ge.emulabmin
                lcond2 = lcond2.and.pmatlab(0,i).gt.eemin
      .              .and.pmatlab(0,i).lt.eemax
      .              .and.thslab(i).ge.themin
+     .              .and.thslab(i).le.themax
 
                if (lcond1.or.lcond2) then
                   ncoppie = ncoppie + 1

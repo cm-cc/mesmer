@@ -149,14 +149,13 @@ c      pmfreeze = 0.5d0*sqrt(lambda(sfreeze,m12,m22)/sfreeze)
          tmin = max(tmin,tmincut)
 
 ***** let's see if themax allows for a stricter range in the 2 -> 2
-! now themax is always 90 degrees, so commenting this         
-c         r  = sqrt(emulab**2-m3**2)/(emulab+m2)
-c         r2 = r*r
-c         ce = cos(themax*1d-3)
-c         ce2 = ce*ce
-c         Eeminfromthemax = m4*(1.d0+r2*ce2)/(1.d0-r2*ce2)
-c         tmaxfromthemax  = 2.d0*m4*m4-2.d0*m4*Eeminfromthemax
-c         tmax = min(tmax,tmaxfromthemax)
+         r  = sqrt(emulab**2-m3**2)/(emulab+m2)
+         r2 = r*r
+         ce = cos(themax*1d-3)
+         ce2 = ce*ce
+         Eeminfromthemax = m4*(1.d0+r2*ce2)/(1.d0-r2*ce2)
+         tmaxfromthemax  = 2.d0*m4*m4-2.d0*m4*Eeminfromthemax
+         tmax = min(tmax,tmaxfromthemax)
 ************         
 
          if (tmin.gt.tmax) then

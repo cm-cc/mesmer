@@ -75,7 +75,7 @@
       data iper,iid /0,0/
 !!!      
       common/weightnormalization/wnorm
-      character*9 setkey(41)
+      character*9 setkey(42)
 c for teubner et al, KNT
       integer iteubn
       common/teubner/iteubn
@@ -129,7 +129,8 @@ cc
      +     'themin', ! 38
      +     'Ethr', ! 39
      +     'ththr',  ! 40
-     +     'extmubeam'  ! 41
+     +     'extmubeam',  ! 41
+     +     'themax'  ! 42
      +     /
 * BSM parameters
       common/bsmparams/bsmmass,yae,yam,bsmlambda,gagg,ibsm
@@ -331,7 +332,7 @@ c      stop
       thmumin = 0.d0
       themin  = 0.d0
       thmumax = 100d0
-      themax  = pi*0.5d0*1000d0
+      themax  = 100d0 !pi*0.5d0*1000d0
       Ethr    = 0.2d0
       ththr   = 100.d0
       eemax   = emulab
@@ -407,15 +408,16 @@ c      ififo = 3 ! just write on the fifo
      .       ' LAB energy = ',trim(r8tostr(eemin)),' GeV'
          print*,trim(stringa)
 
+         write(stringa,*)' [ '//setkey(24)//' ] Maximum electron'//
+     .       ' LAB energy = ',trim(r8tostr(eemax)),' GeV'
+         print*,trim(stringa)
+         
          write(stringa,*)' [ '//setkey(38)//' ] Minimum electron'//
      .       ' LAB angle = ',trim(r8tostr(themin)),' mrad'
          print*,trim(stringa)
          
-c         write(stringa,*)' [ '//setkey(24)//' ] Maximum electron'//
-c     .       ' LAB angle = ',trim(r8tostr(themax)),' mrad'
-c         print*,trim(stringa)
-         write(stringa,*)' [ '//setkey(24)//' ] Maximum electron'//
-     .       ' LAB energy = ',trim(r8tostr(eemax)),' GeV'
+         write(stringa,*)' [ '//setkey(42)//' ] Maximum electron'//
+     .       ' LAB angle = ',trim(r8tostr(themax)),' mrad'
          print*,trim(stringa)
          
          write(stringa,*)' [ '//setkey(22)//' ] Minimum muon'//
@@ -656,7 +658,7 @@ c               if (ctmp3.eq.'old') istorver = 1
             if (c.eq.'thmumin') thmumin = x
             if (c.eq.'thmumax') thmumax = x
             if (c.eq.'themin')  themin = x
-c            if (c.eq.'themax')  themax = x
+            if (c.eq.'themax')  themax = x
             if (c.eq.'Eemax')   eemax = x
             if (c.eq.'Ethr')    Ethr = x
             if (c.eq.'ththr')   ththr = x
@@ -943,9 +945,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccc
      .     ' be fed into the pipe ''path''/beamprofile.fifo'
       print*,setkey(3) ,' ---> minimum electron energy in the LAB'//
      .     ' (GeV)'
+      print*,setkey(24) ,' ---> maximum electron energy in the LAB'//
+     .     ' (GeV)'
       print*,setkey(38) ,' ---> minimum electron angle in the LAB'//
      .     ' (mrad)'      
-      print*,setkey(24) ,' ---> maximum electron angle in the LAB'//
+      print*,setkey(42) ,' ---> maximum electron angle in the LAB'//
      .     ' (mrad)'
       print*,setkey(22) ,' ---> minimum muon angle in the LAB (mrad)'
       print*,setkey(23) ,' ---> maximum muon angle in the LAB (mrad)'

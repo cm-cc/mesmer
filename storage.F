@@ -534,6 +534,7 @@ c         write(istorunit,*)'  CoM photon k_0 (GeV)',egmin
          write(istorunit,*)'  MC generation cuts:'
          write(istorunit,*)'   Eemin   = ',eemin
          write(istorunit,*)'   themin  = ',themin
+         write(istorunit,*)'   themax  = ',themax
          write(istorunit,*)'   Eemax  = ',eemax
          write(istorunit,*)'   thmumin = ',thmumin
          write(istorunit,*)'   thmumax = ',thmumax

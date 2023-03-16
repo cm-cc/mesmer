@@ -59,6 +59,8 @@ If a parameter/value is missing, defaults are used. The only mandatory rule is t
 * `bspr [0]`: Gaussian beam energy spread, in % of `Ebeam`. Active only if `extmubeam no`
 * `Eemin [1]`: minimum outgoing electron energy in GeV
 * `Eemax [150]`: maximum outgoing electron energy in GeV
+* `themin [0]`: minimum outgoing electron angle in mrad
+* `themax [100]`: maximum outgoing electron angle in mrad
 * `thmumin [0]`: minimum outgoing muon angle in mrad
 * `thmumax [100]`: maximum outgoing muon angle in mrad
 * `acoplcut [no 3.5]`: if the acoplanarity cut has to be applied or not `[yes/no mrad]`
