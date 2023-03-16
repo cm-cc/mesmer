@@ -1,1 +1,1 @@
-      programversion='MESMER 1.1.5'
+      programversion='MESMER 1.1.6'
