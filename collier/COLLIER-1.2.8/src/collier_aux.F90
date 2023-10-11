@@ -1603,7 +1603,8 @@ contains
     character(len=*), intent(in) :: sub
     double precision, intent(in) :: acc
     integer, intent(in) :: N
-    integer :: i,cntr
+    integer :: i
+    integer(kind=long_int) :: cntr
 
     write(ncpout_cll,*)
     write(ncpout_cll,*)
@@ -1611,7 +1612,7 @@ contains
     write(ncpout_cll,*) '***********************************************************'
     write(ncpout_cll,'(A19,I6)') 'Critical Point NO.', cntr
     if (N.gt.0) then
-      write(ncpout_cll,'(A14,A9,A5,I2)') &
+      write(ncpout_cll,'(A14,A9,A6,I0)') &
           'in integral: ', trim(sub),', N = ',N
     else
       write(ncpout_cll,*) 'in integral: ', trim(sub)
@@ -1659,7 +1660,7 @@ contains
     write(ncpout2_cll,*) '***********************************************************'
     write(ncpout2_cll,'(A19,I6)') 'Critical Point NO.', cntr
     if (N.gt.0) then
-      write(ncpout2_cll,'(A14,A9,A5,I2)') &
+      write(ncpout2_cll,'(A14,A9,A6,I0)') &
           'in integral: ', trim(sub),', N = ',N
     else
       write(ncpout2_cll,*) 'in integral: ', trim(sub)
@@ -1698,22 +1699,40 @@ contains
   subroutine PrintStatistics_cll()
 
     integer :: i
+    logical :: infwri
 
 101 format(' #calls ',A9,'          = ',i20)
-102 format(' #calls ',A9,' (N = ',i1,')  = ',i20)
+102 format(' #calls ',A9,' (N =',i2,')  = ',i20)
 111 format(' #calls ',A9,'          = ',i20,' or ',F10.5,' %')
-112 format(' #calls ',A9,' (N = ',i1,')  = ',i20,' or ',F10.5,' %')
+112 format(' #calls ',A9,' (N =',i2,')  = ',i20,' or ',F10.5,' %')
 
     if (.not.Monitoring) then
       if (infoutlev_cll.ge.1) then
+        InfCnt_cll = InfCnt_cll + 1      
         write(ninfout_cll,*) 'COLLIER: CritPointsMonitor not initialized'
         write(ninfout_cll,*) '         no statistics available          '
+        write(ninfout_cll,*)
+        write(ninfout_cll,*)
+        write(ninfout_cll,*)
+        write(ninfout_cll,*) '***********************************************************'
+        write(ninfout_cll,*) 'Info-output NO.', InfCnt_cll
+        write(ninfout_cll,*) 'in routine: PrintStatistics_cll'
+        write(ninfout_cll,*) 'CritPointsMonitor not initialized'
+        write(ninfout_cll,*) 'no statistics available          '
       end if
       return
     else if(ncpout_cll.eq.closed_cll) then
       if (infoutlev_cll.ge.1) then
+        InfCnt_cll = InfCnt_cll + 1      
         write(ninfout_cll,*) 'COLLIER: Output for critical points switched off'
-      end if
+        write(ninfout_cll,*)
+        write(ninfout_cll,*)
+        write(ninfout_cll,*)
+        write(ninfout_cll,*) '***********************************************************'
+        write(ninfout_cll,*) 'Info-output NO.', InfCnt_cll
+        write(ninfout_cll,*) 'in routine: PrintStatistics_cll'
+        write(ninfout_cll,*) 'Output for critical points switched off'
+       end if
       return    
     endif
 
@@ -1781,22 +1800,22 @@ contains
 110 format (/' Numbers of calls of COLLIER functions'/  &
         ' with an estimated accuracy worse than  reqacc_coli =',Es11.4)
     if(PointsCntDB_cll.ne.0.and.AccPointsCntDB_cll.ne.0) then
-    write(ncpout_cll,111)  'DB_cll',AccPointsCntDB_cll,AccPointsCntDB_cll/real(PointsCntDB_cll)*1d2
+    write(ncpout_cll,111)  'DB_cll',AccPointsCntDB_cll,AccPointsCntDB_cll/real(PointsCntDB_cll,kind(1d0))*1d2
     endif
     if(PointsCntA_cll.ne.0.and.AccPointsCntA_cll.ne.0) then
-    write(ncpout_cll,111)  'A_cll',AccPointsCntA_cll,AccPointsCntA_cll/real(PointsCntA_cll)*1d2
+    write(ncpout_cll,111)  'A_cll',AccPointsCntA_cll,AccPointsCntA_cll/real(PointsCntA_cll,kind(1d0))*1d2
     endif
     if(PointsCntB_cll.ne.0.and.AccPointsCntB_cll.ne.0) then
-    write(ncpout_cll,111)  'B_cll',AccPointsCntB_cll,AccPointsCntB_cll/real(PointsCntB_cll)*1d2
+    write(ncpout_cll,111)  'B_cll',AccPointsCntB_cll,AccPointsCntB_cll/real(PointsCntB_cll,kind(1d0))*1d2
     endif
     if(PointsCntC_cll.ne.0.and.AccPointsCntC_cll.ne.0) then
-    write(ncpout_cll,111)  'C_cll',AccPointsCntC_cll,AccPointsCntC_cll/real(PointsCntC_cll)*1d2
+    write(ncpout_cll,111)  'C_cll',AccPointsCntC_cll,AccPointsCntC_cll/real(PointsCntC_cll,kind(1d0))*1d2
     endif
     if(PointsCntD_cll.ne.0.and.AccPointsCntD_cll.ne.0) then
-    write(ncpout_cll,111)  'D_cll',AccPointsCntD_cll,AccPointsCntD_cll/real(PointsCntD_cll)*1d2
+    write(ncpout_cll,111)  'D_cll',AccPointsCntD_cll,AccPointsCntD_cll/real(PointsCntD_cll,kind(1d0))*1d2
     endif
     if(PointsCntE_cll.ne.0.and.AccPointsCntE_cll.ne.0) then
-    write(ncpout_cll,111)  'E_cll',AccPointsCntE_cll,AccPointsCntE_cll/real(PointsCntE_cll)*1d2
+    write(ncpout_cll,111)  'E_cll',AccPointsCntE_cll,AccPointsCntE_cll/real(PointsCntE_cll,kind(1d0))*1d2
     endif
     if(PointsCntF_cll.ne.0.and.AccPointsCntF_cll.ne.0) then
     write(ncpout_cll,111)  'F_cll',AccPointsCntF_cll,AccPointsCntF_cll*1d2/PointsCntF_cll
@@ -1811,22 +1830,22 @@ contains
     end do
 
     if(PointsCntDBten_cll.ne.0.and.AccPointsCntDBten_cll.ne.0) then
-    write(ncpout_cll,111)  'DBten_cll',AccPointsCntDBten_cll,AccPointsCntDBten_cll/real(PointsCntDBten_cll)*1d2
+    write(ncpout_cll,111)  'DBten_cll',AccPointsCntDBten_cll,AccPointsCntDBten_cll/real(PointsCntDBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntAten_cll.ne.0.and.AccPointsCntAten_cll.ne.0) then
-    write(ncpout_cll,111)  'Aten_cll',AccPointsCntAten_cll,AccPointsCntAten_cll/real(PointsCntAten_cll)*1d2
+    write(ncpout_cll,111)  'Aten_cll',AccPointsCntAten_cll,AccPointsCntAten_cll/real(PointsCntAten_cll,kind(1d0))*1d2
     endif
     if(PointsCntBten_cll.ne.0.and.AccPointsCntBten_cll.ne.0) then
-    write(ncpout_cll,111)  'Bten_cll',AccPointsCntBten_cll,AccPointsCntBten_cll/real(PointsCntBten_cll)*1d2
+    write(ncpout_cll,111)  'Bten_cll',AccPointsCntBten_cll,AccPointsCntBten_cll/real(PointsCntBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntCten_cll.ne.0.and.AccPointsCntCten_cll.ne.0) then
-    write(ncpout_cll,111)  'Cten_cll',AccPointsCntCten_cll,AccPointsCntCten_cll/real(PointsCntCten_cll)*1d2
+    write(ncpout_cll,111)  'Cten_cll',AccPointsCntCten_cll,AccPointsCntCten_cll/real(PointsCntCten_cll,kind(1d0))*1d2
     endif
     if(PointsCntDten_cll.ne.0.and.AccPointsCntDten_cll.ne.0) then
-    write(ncpout_cll,111)  'Dten_cll',AccPointsCntDten_cll,AccPointsCntDten_cll/real(PointsCntDten_cll)*1d2
+    write(ncpout_cll,111)  'Dten_cll',AccPointsCntDten_cll,AccPointsCntDten_cll/real(PointsCntDten_cll,kind(1d0))*1d2
     endif
     if(PointsCntEten_cll.ne.0.and.AccPointsCntEten_cll.ne.0) then
-    write(ncpout_cll,111)  'Eten_cll',AccPointsCntEten_cll,AccPointsCntEten_cll/real(PointsCntEten_cll)*1d2
+    write(ncpout_cll,111)  'Eten_cll',AccPointsCntEten_cll,AccPointsCntEten_cll/real(PointsCntEten_cll,kind(1d0))*1d2
     endif
     if(PointsCntFten_cll.ne.0.and.AccPointsCntFten_cll.ne.0) then
     write(ncpout_cll,111)  'Ften_cll',AccPointsCntFten_cll,AccPointsCntFten_cll*1d2/PointsCntFten_cll
@@ -1847,22 +1866,22 @@ contains
 !        ' with an estimated accuracy worse than     '/  &
 !        ' sqrt(reqacc_coli) =',Es11.4)
     if(PointsCntDB_cll.ne.0.and.sAccPointsCntDB_cll.ne.0) then
-    write(ncpout_cll,111)  'DB_cll',sAccPointsCntDB_cll,sAccPointsCntDB_cll/real(PointsCntDB_cll)*1d2
+    write(ncpout_cll,111)  'DB_cll',sAccPointsCntDB_cll,sAccPointsCntDB_cll/real(PointsCntDB_cll,kind(1d0))*1d2
     endif
     if(PointsCntA_cll.ne.0.and.sAccPointsCntA_cll.ne.0) then
-    write(ncpout_cll,111)  'A_cll',sAccPointsCntA_cll,sAccPointsCntA_cll/real(PointsCntA_cll)*1d2
+    write(ncpout_cll,111)  'A_cll',sAccPointsCntA_cll,sAccPointsCntA_cll/real(PointsCntA_cll,kind(1d0))*1d2
     endif
     if(PointsCntB_cll.ne.0.and.sAccPointsCntB_cll.ne.0) then
-    write(ncpout_cll,111)  'B_cll',sAccPointsCntB_cll,sAccPointsCntB_cll/real(PointsCntB_cll)*1d2
+    write(ncpout_cll,111)  'B_cll',sAccPointsCntB_cll,sAccPointsCntB_cll/real(PointsCntB_cll,kind(1d0))*1d2
     endif
     if(PointsCntC_cll.ne.0.and.sAccPointsCntC_cll.ne.0) then
-    write(ncpout_cll,111)  'C_cll',sAccPointsCntC_cll,sAccPointsCntC_cll/real(PointsCntC_cll)*1d2
+    write(ncpout_cll,111)  'C_cll',sAccPointsCntC_cll,sAccPointsCntC_cll/real(PointsCntC_cll,kind(1d0))*1d2
     endif
     if(PointsCntD_cll.ne.0.and.sAccPointsCntD_cll.ne.0) then
-    write(ncpout_cll,111)  'D_cll',sAccPointsCntD_cll,sAccPointsCntD_cll/real(PointsCntD_cll)*1d2
+    write(ncpout_cll,111)  'D_cll',sAccPointsCntD_cll,sAccPointsCntD_cll/real(PointsCntD_cll,kind(1d0))*1d2
     endif
     if(PointsCntE_cll.ne.0.and.sAccPointsCntE_cll.ne.0) then
-    write(ncpout_cll,111)  'E_cll',sAccPointsCntE_cll,sAccPointsCntE_cll/real(PointsCntE_cll)*1d2
+    write(ncpout_cll,111)  'E_cll',sAccPointsCntE_cll,sAccPointsCntE_cll/real(PointsCntE_cll,kind(1d0))*1d2
     endif
     if(PointsCntF_cll.ne.0.and.sAccPointsCntF_cll.ne.0) then
     write(ncpout_cll,111)  'F_cll',sAccPointsCntF_cll,sAccPointsCntF_cll*1d2/PointsCntF_cll
@@ -1877,22 +1896,22 @@ contains
     end do
 
     if(PointsCntDBten_cll.ne.0.and.sAccPointsCntDBten_cll.ne.0) then
-    write(ncpout_cll,111)  'DBten_cll',sAccPointsCntDBten_cll,sAccPointsCntDBten_cll/real(PointsCntDBten_cll)*1d2
+    write(ncpout_cll,111)  'DBten_cll',sAccPointsCntDBten_cll,sAccPointsCntDBten_cll/real(PointsCntDBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntAten_cll.ne.0.and.sAccPointsCntAten_cll.ne.0) then
-    write(ncpout_cll,111)  'Aten_cll',sAccPointsCntAten_cll,sAccPointsCntAten_cll/real(PointsCntAten_cll)*1d2
+    write(ncpout_cll,111)  'Aten_cll',sAccPointsCntAten_cll,sAccPointsCntAten_cll/real(PointsCntAten_cll,kind(1d0))*1d2
     endif
     if(PointsCntBten_cll.ne.0.and.sAccPointsCntBten_cll.ne.0) then
-    write(ncpout_cll,111)  'Bten_cll',sAccPointsCntBten_cll,sAccPointsCntBten_cll/real(PointsCntBten_cll)*1d2
+    write(ncpout_cll,111)  'Bten_cll',sAccPointsCntBten_cll,sAccPointsCntBten_cll/real(PointsCntBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntCten_cll.ne.0.and.sAccPointsCntCten_cll.ne.0) then
-    write(ncpout_cll,111)  'Cten_cll',sAccPointsCntCten_cll,sAccPointsCntCten_cll/real(PointsCntCten_cll)*1d2
+    write(ncpout_cll,111)  'Cten_cll',sAccPointsCntCten_cll,sAccPointsCntCten_cll/real(PointsCntCten_cll,kind(1d0))*1d2
     endif
     if(PointsCntDten_cll.ne.0.and.sAccPointsCntDten_cll.ne.0) then
-    write(ncpout_cll,111)  'Dten_cll',sAccPointsCntDten_cll,sAccPointsCntDten_cll/real(PointsCntDten_cll)*1d2
+    write(ncpout_cll,111)  'Dten_cll',sAccPointsCntDten_cll,sAccPointsCntDten_cll/real(PointsCntDten_cll,kind(1d0))*1d2
     endif
     if(PointsCntEten_cll.ne.0.and.sAccPointsCntEten_cll.ne.0) then
-    write(ncpout_cll,111)  'Eten_cll',sAccPointsCntEten_cll,sAccPointsCntEten_cll/real(PointsCntEten_cll)*1d2
+    write(ncpout_cll,111)  'Eten_cll',sAccPointsCntEten_cll,sAccPointsCntEten_cll/real(PointsCntEten_cll,kind(1d0))*1d2
     endif
     if(PointsCntFten_cll.ne.0.and.sAccPointsCntFten_cll.ne.0) then
     write(ncpout_cll,111)  'Ften_cll',sAccPointsCntFten_cll,sAccPointsCntFten_cll*1d2/PointsCntFten_cll
@@ -1912,22 +1931,22 @@ contains
         ' with an estimated accuracy worse than  critacc_coli =',Es11.4)
     
     if(PointsCntDB_cll.ne.0.and.CritPointsCntDB_cll.ne.0) then
-    write(ncpout_cll,111)  'DB_cll',CritPointsCntDB_cll,CritPointsCntDB_cll/real(PointsCntDB_cll)*1d2
+    write(ncpout_cll,111)  'DB_cll',CritPointsCntDB_cll,CritPointsCntDB_cll/real(PointsCntDB_cll,kind(1d0))*1d2
     endif
     if(PointsCntA_cll.ne.0.and.CritPointsCntA_cll.ne.0) then
-    write(ncpout_cll,111)  'A_cll',CritPointsCntA_cll,CritPointsCntA_cll/real(PointsCntA_cll)*1d2
+    write(ncpout_cll,111)  'A_cll',CritPointsCntA_cll,CritPointsCntA_cll/real(PointsCntA_cll,kind(1d0))*1d2
     endif
     if(PointsCntB_cll.ne.0.and.CritPointsCntB_cll.ne.0) then
-    write(ncpout_cll,111)  'B_cll',CritPointsCntB_cll,CritPointsCntB_cll/real(PointsCntB_cll)*1d2
+    write(ncpout_cll,111)  'B_cll',CritPointsCntB_cll,CritPointsCntB_cll/real(PointsCntB_cll,kind(1d0))*1d2
     endif
     if(PointsCntC_cll.ne.0.and.CritPointsCntC_cll.ne.0) then
-    write(ncpout_cll,111)  'C_cll',CritPointsCntC_cll,CritPointsCntC_cll/real(PointsCntC_cll)*1d2
+    write(ncpout_cll,111)  'C_cll',CritPointsCntC_cll,CritPointsCntC_cll/real(PointsCntC_cll,kind(1d0))*1d2
     endif
     if(PointsCntD_cll.ne.0.and.CritPointsCntD_cll.ne.0) then
-    write(ncpout_cll,111)  'D_cll',CritPointsCntD_cll,CritPointsCntD_cll/real(PointsCntD_cll)*1d2
+    write(ncpout_cll,111)  'D_cll',CritPointsCntD_cll,CritPointsCntD_cll/real(PointsCntD_cll,kind(1d0))*1d2
     endif
     if(PointsCntE_cll.ne.0.and.CritPointsCntE_cll.ne.0) then
-    write(ncpout_cll,111)  'E_cll',CritPointsCntE_cll,CritPointsCntE_cll/real(PointsCntE_cll)*1d2
+    write(ncpout_cll,111)  'E_cll',CritPointsCntE_cll,CritPointsCntE_cll/real(PointsCntE_cll,kind(1d0))*1d2
     endif
     if(PointsCntF_cll.ne.0.and.CritPointsCntF_cll.ne.0) then
     write(ncpout_cll,111)  'F_cll',CritPointsCntF_cll,CritPointsCntF_cll*1d2/PointsCntF_cll
@@ -1942,22 +1961,22 @@ contains
     end do
 
     if(PointsCntDBten_cll.ne.0.and.CritPointsCntDBten_cll.ne.0) then
-    write(ncpout_cll,111)  'DBten_cll',CritPointsCntDBten_cll,CritPointsCntDBten_cll/real(PointsCntDBten_cll)*1d2
+    write(ncpout_cll,111)  'DBten_cll',CritPointsCntDBten_cll,CritPointsCntDBten_cll/real(PointsCntDBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntAten_cll.ne.0.and.CritPointsCntAten_cll.ne.0) then
-    write(ncpout_cll,111)  'Aten_cll',CritPointsCntAten_cll,CritPointsCntAten_cll/real(PointsCntAten_cll)*1d2
+    write(ncpout_cll,111)  'Aten_cll',CritPointsCntAten_cll,CritPointsCntAten_cll/real(PointsCntAten_cll,kind(1d0))*1d2
     endif
     if(PointsCntBten_cll.ne.0.and.CritPointsCntBten_cll.ne.0) then
-    write(ncpout_cll,111)  'Bten_cll',CritPointsCntBten_cll,CritPointsCntBten_cll/real(PointsCntBten_cll)*1d2
+    write(ncpout_cll,111)  'Bten_cll',CritPointsCntBten_cll,CritPointsCntBten_cll/real(PointsCntBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntCten_cll.ne.0.and.CritPointsCntCten_cll.ne.0) then
-    write(ncpout_cll,111)  'Cten_cll',CritPointsCntCten_cll,CritPointsCntCten_cll/real(PointsCntCten_cll)*1d2
+    write(ncpout_cll,111)  'Cten_cll',CritPointsCntCten_cll,CritPointsCntCten_cll/real(PointsCntCten_cll,kind(1d0))*1d2
     endif
     if(PointsCntDten_cll.ne.0.and.CritPointsCntDten_cll.ne.0) then
-    write(ncpout_cll,111)  'Dten_cll',CritPointsCntDten_cll,CritPointsCntDten_cll/real(PointsCntDten_cll)*1d2
+    write(ncpout_cll,111)  'Dten_cll',CritPointsCntDten_cll,CritPointsCntDten_cll/real(PointsCntDten_cll,kind(1d0))*1d2
     endif
     if(PointsCntEten_cll.ne.0.and.CritPointsCntEten_cll.ne.0) then
-    write(ncpout_cll,111)  'Eten_cll',CritPointsCntEten_cll,CritPointsCntEten_cll/real(PointsCntEten_cll)*1d2
+    write(ncpout_cll,111)  'Eten_cll',CritPointsCntEten_cll,CritPointsCntEten_cll/real(PointsCntEten_cll,kind(1d0))*1d2
     endif
     if(PointsCntFten_cll.ne.0.and.CritPointsCntFten_cll.ne.0) then
     write(ncpout_cll,111)  'Ften_cll',CritPointsCntFten_cll,CritPointsCntFten_cll*1d2/PointsCntFten_cll
@@ -2250,31 +2269,39 @@ contains
 
     write(nerrout_cll,400)
 400 format (/' Numbers of errors in COLI functions')
+    if(real(ErrCnt(1),kind(1d0)) /= 0d0) then
     do i=-10,0
-      write(nerrout_cll,411)  i,ErrCntcoli(i),ErrCntcoli(i)/real(ErrCnt(1))*1d2
+      write(nerrout_cll,411)  i,ErrCntcoli(i),ErrCntcoli(i)/real(ErrCnt(1),kind(1d0))*1d2
     end do
     write(nerrout_cll,401)  ErrCnt(1)
+    endif
 
     write(nerrout_cll,405)
 405 format (/' Numbers of errors in DD functions')
+    if(real(ErrCnt(1),kind(1d0)) /= 0d0) then
     do i=-10,0
-      write(nerrout_cll,411)  i,ErrCntdd(i),ErrCntdd(i)/real(ErrCnt(1))*1d2
+      write(nerrout_cll,411)  i,ErrCntdd(i),ErrCntdd(i)/real(ErrCnt(1),kind(1d0))*1d2
     end do
     write(nerrout_cll,401)  ErrCnt(1)
+    endif
 
     write(nerrout_cll,410)
 410 format (/' Numbers of errors in COLLIER functions')
+    if(real(ErrCnt(1),kind(1d0)) /= 0d0) then
     do i=-10,0
-      write(nerrout_cll,411)  i,ErrCnt(i),ErrCnt(i)/real(ErrCnt(1))*1d2
+      write(nerrout_cll,411)  i,ErrCnt(i),ErrCnt(i)/real(ErrCnt(1),kind(1d0))*1d2
     end do
     write(nerrout_cll,401)  ErrCnt(1)
+    endif
 
     write(nerrout_cll,415)
 415 format (/' Numbers of errors in Events')
+    if(real(ErrEventCnt(1),kind(1d0)) /= 0d0) then
     do i=-10,0
-      write(nerrout_cll,431)  i,ErrEventCnt(i),ErrEventCnt(i)/real(ErrEventCnt(1))*1d2
+      write(nerrout_cll,431)  i,ErrEventCnt(i),ErrEventCnt(i)/real(ErrEventCnt(1),kind(1d0))*1d2
     end do
     write(nerrout_cll,421)  ErrEventCnt(1)
+    endif
 
 
 501 format(' #calls all          ','                = ',i20)
@@ -2284,18 +2311,22 @@ contains
 
     write(ncpout_cll,510)
 510 format (/' Numbers of COLLIER calls with accuracy levels')
+    if(real(AccCnt(1),kind(1d0)) /= 0d0) then
     do i=-2,0
-      write(ncpout_cll,511)  i,AccCnt(i),AccCnt(i)/real(AccCnt(1))*1d2
+      write(ncpout_cll,511)  i,AccCnt(i),AccCnt(i)/real(AccCnt(1),kind(1d0))*1d2
     end do
     write(ncpout_cll,501)  AccCnt(1)
+    endif
 
     write(ncpout_cll,500)
 500 format (/' Numbers of Events with accuracy levels')
+    if(real(AccEventCnt(1),kind(1d0)) /= 0d0) then
     do i=-2,0
-      write(ncpout_cll,531)  i,AccEventCnt(i),AccEventCnt(i)/real(AccEventCnt(1))*1d2
+      write(ncpout_cll,531)  i,AccEventCnt(i),AccEventCnt(i)/real(AccEventCnt(1),kind(1d0))*1d2
     end do
     write(ncpout_cll,521)  AccEventCnt(1)
 !   write(ncpout_cll,521)  EventCnt_cll+1
+    endif
     write(ncpout_cll,*) 
 
 
@@ -2393,19 +2424,19 @@ contains
 110 format (/' Numbers of calls of COLLIER functions'/  &
         ' with an estimated accuracy worse than  reqacc_coli =',Es11.4)
     if(PointsCntA_cll.ne.0.and.AccPointsCntA_cll.ne.0) then
-    write(ncpout2_cll,111)  'A_cll',AccPointsCntA2_cll,AccPointsCntA2_cll/real(PointsCntA_cll)*1d2
+    write(ncpout2_cll,111)  'A_cll',AccPointsCntA2_cll,AccPointsCntA2_cll/real(PointsCntA_cll,kind(1d0))*1d2
     endif
     if(PointsCntB_cll.ne.0.and.AccPointsCntB2_cll.ne.0) then
-    write(ncpout2_cll,111)  'B_cll',AccPointsCntB2_cll,AccPointsCntB2_cll/real(PointsCntB_cll)*1d2
+    write(ncpout2_cll,111)  'B_cll',AccPointsCntB2_cll,AccPointsCntB2_cll/real(PointsCntB_cll,kind(1d0))*1d2
     endif
     if(PointsCntC_cll.ne.0.and.AccPointsCntC2_cll.ne.0) then
-    write(ncpout2_cll,111)  'C_cll',AccPointsCntC2_cll,AccPointsCntC2_cll/real(PointsCntC_cll)*1d2
+    write(ncpout2_cll,111)  'C_cll',AccPointsCntC2_cll,AccPointsCntC2_cll/real(PointsCntC_cll,kind(1d0))*1d2
     endif
     if(PointsCntD_cll.ne.0.and.AccPointsCntD2_cll.ne.0) then
-    write(ncpout2_cll,111)  'D_cll',AccPointsCntD2_cll,AccPointsCntD2_cll/real(PointsCntD_cll)*1d2
+    write(ncpout2_cll,111)  'D_cll',AccPointsCntD2_cll,AccPointsCntD2_cll/real(PointsCntD_cll,kind(1d0))*1d2
     endif
     if(PointsCntE_cll.ne.0.and.AccPointsCntE2_cll.ne.0) then
-    write(ncpout2_cll,111)  'E_cll',AccPointsCntE2_cll,AccPointsCntE2_cll/real(PointsCntE_cll)*1d2
+    write(ncpout2_cll,111)  'E_cll',AccPointsCntE2_cll,AccPointsCntE2_cll/real(PointsCntE_cll,kind(1d0))*1d2
     endif
     if(PointsCntF_cll.ne.0.and.AccPointsCntF2_cll.ne.0) then
     write(ncpout2_cll,111)  'F_cll',AccPointsCntF2_cll,AccPointsCntF2_cll*1d2/PointsCntF_cll
@@ -2420,22 +2451,22 @@ contains
     end do
 
     if(PointsCntDBten_cll.ne.0.and.AccPointsCntDBten_cll.ne.0) then
-    write(ncpout2_cll,111)  'DBten_cll',AccPointsCntDBten_cll,AccPointsCntDBten_cll/real(PointsCntDBten_cll)*1d2
+    write(ncpout2_cll,111)  'DBten_cll',AccPointsCntDBten_cll,AccPointsCntDBten_cll/real(PointsCntDBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntAten_cll.ne.0.and.AccPointsCntAten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Aten_cll',AccPointsCntAten_cll,AccPointsCntAten_cll/real(PointsCntAten_cll)*1d2
+    write(ncpout2_cll,111)  'Aten_cll',AccPointsCntAten_cll,AccPointsCntAten_cll/real(PointsCntAten_cll,kind(1d0))*1d2
     endif
     if(PointsCntBten_cll.ne.0.and.AccPointsCntBten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Bten_cll',AccPointsCntBten_cll,AccPointsCntBten_cll/real(PointsCntBten_cll)*1d2
+    write(ncpout2_cll,111)  'Bten_cll',AccPointsCntBten_cll,AccPointsCntBten_cll/real(PointsCntBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntCten_cll.ne.0.and.AccPointsCntCten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Cten_cll',AccPointsCntCten_cll,AccPointsCntCten_cll/real(PointsCntCten_cll)*1d2
+    write(ncpout2_cll,111)  'Cten_cll',AccPointsCntCten_cll,AccPointsCntCten_cll/real(PointsCntCten_cll,kind(1d0))*1d2
     endif
     if(PointsCntDten_cll.ne.0.and.AccPointsCntDten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Dten_cll',AccPointsCntDten_cll,AccPointsCntDten_cll/real(PointsCntDten_cll)*1d2
+    write(ncpout2_cll,111)  'Dten_cll',AccPointsCntDten_cll,AccPointsCntDten_cll/real(PointsCntDten_cll,kind(1d0))*1d2
     endif
     if(PointsCntEten_cll.ne.0.and.AccPointsCntEten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Eten_cll',AccPointsCntEten_cll,AccPointsCntEten_cll/real(PointsCntEten_cll)*1d2
+    write(ncpout2_cll,111)  'Eten_cll',AccPointsCntEten_cll,AccPointsCntEten_cll/real(PointsCntEten_cll,kind(1d0))*1d2
     endif
     if(PointsCntFten_cll.ne.0.and.AccPointsCntFten_cll.ne.0) then
     write(ncpout2_cll,111)  'Ften_cll',AccPointsCntFten_cll,AccPointsCntFten_cll*1d2/PointsCntFten_cll
@@ -2454,19 +2485,19 @@ contains
         ' with an estimated accuracy worse than ',  &
         ' sqrt(reqacc_coli) =',Es11.4)
     if(PointsCntA_cll.ne.0.and.sAccPointsCntA_cll.ne.0) then
-    write(ncpout2_cll,111)  'A_cll',sAccPointsCntA2_cll,sAccPointsCntA2_cll/real(PointsCntA_cll)*1d2
+    write(ncpout2_cll,111)  'A_cll',sAccPointsCntA2_cll,sAccPointsCntA2_cll/real(PointsCntA_cll,kind(1d0))*1d2
     endif
     if(PointsCntB_cll.ne.0.and.sAccPointsCntB2_cll.ne.0) then
-    write(ncpout2_cll,111)  'B_cll',sAccPointsCntB2_cll,sAccPointsCntB2_cll/real(PointsCntB_cll)*1d2
+    write(ncpout2_cll,111)  'B_cll',sAccPointsCntB2_cll,sAccPointsCntB2_cll/real(PointsCntB_cll,kind(1d0))*1d2
     endif
     if(PointsCntC_cll.ne.0.and.sAccPointsCntC2_cll.ne.0) then
-    write(ncpout2_cll,111)  'C_cll',sAccPointsCntC2_cll,sAccPointsCntC2_cll/real(PointsCntC_cll)*1d2
+    write(ncpout2_cll,111)  'C_cll',sAccPointsCntC2_cll,sAccPointsCntC2_cll/real(PointsCntC_cll,kind(1d0))*1d2
     endif
     if(PointsCntD_cll.ne.0.and.sAccPointsCntD2_cll.ne.0) then
-    write(ncpout2_cll,111)  'D_cll',sAccPointsCntD2_cll,sAccPointsCntD2_cll/real(PointsCntD_cll)*1d2
+    write(ncpout2_cll,111)  'D_cll',sAccPointsCntD2_cll,sAccPointsCntD2_cll/real(PointsCntD_cll,kind(1d0))*1d2
     endif
     if(PointsCntE_cll.ne.0.and.sAccPointsCntE2_cll.ne.0) then
-    write(ncpout2_cll,111)  'E_cll',sAccPointsCntE2_cll,sAccPointsCntE2_cll/real(PointsCntE_cll)*1d2
+    write(ncpout2_cll,111)  'E_cll',sAccPointsCntE2_cll,sAccPointsCntE2_cll/real(PointsCntE_cll,kind(1d0))*1d2
     endif
     if(PointsCntF_cll.ne.0.and.sAccPointsCntF2_cll.ne.0) then
     write(ncpout2_cll,111)  'F_cll',sAccPointsCntF2_cll,sAccPointsCntF2_cll*1d2/PointsCntF_cll
@@ -2481,22 +2512,22 @@ contains
     end do
 
     if(PointsCntDBten_cll.ne.0.and.sAccPointsCntDBten_cll.ne.0) then
-    write(ncpout2_cll,111)  'DBten_cll',sAccPointsCntDBten_cll,sAccPointsCntDBten_cll/real(PointsCntDBten_cll)*1d2
+    write(ncpout2_cll,111)  'DBten_cll',sAccPointsCntDBten_cll,sAccPointsCntDBten_cll/real(PointsCntDBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntAten_cll.ne.0.and.sAccPointsCntAten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Aten_cll',sAccPointsCntAten_cll,sAccPointsCntAten_cll/real(PointsCntAten_cll)*1d2
+    write(ncpout2_cll,111)  'Aten_cll',sAccPointsCntAten_cll,sAccPointsCntAten_cll/real(PointsCntAten_cll,kind(1d0))*1d2
     endif
     if(PointsCntBten_cll.ne.0.and.sAccPointsCntBten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Bten_cll',sAccPointsCntBten_cll,sAccPointsCntBten_cll/real(PointsCntBten_cll)*1d2
+    write(ncpout2_cll,111)  'Bten_cll',sAccPointsCntBten_cll,sAccPointsCntBten_cll/real(PointsCntBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntCten_cll.ne.0.and.sAccPointsCntCten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Cten_cll',sAccPointsCntCten_cll,sAccPointsCntCten_cll/real(PointsCntCten_cll)*1d2
+    write(ncpout2_cll,111)  'Cten_cll',sAccPointsCntCten_cll,sAccPointsCntCten_cll/real(PointsCntCten_cll,kind(1d0))*1d2
     endif
     if(PointsCntDten_cll.ne.0.and.sAccPointsCntDten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Dten_cll',sAccPointsCntDten_cll,sAccPointsCntDten_cll/real(PointsCntDten_cll)*1d2
+    write(ncpout2_cll,111)  'Dten_cll',sAccPointsCntDten_cll,sAccPointsCntDten_cll/real(PointsCntDten_cll,kind(1d0))*1d2
     endif
     if(PointsCntEten_cll.ne.0.and.sAccPointsCntEten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Eten_cll',sAccPointsCntEten_cll,sAccPointsCntEten_cll/real(PointsCntEten_cll)*1d2
+    write(ncpout2_cll,111)  'Eten_cll',sAccPointsCntEten_cll,sAccPointsCntEten_cll/real(PointsCntEten_cll,kind(1d0))*1d2
     endif
     if(PointsCntFten_cll.ne.0.and.sAccPointsCntFten_cll.ne.0) then
     write(ncpout2_cll,111)  'Ften_cll',sAccPointsCntFten_cll,sAccPointsCntFten_cll*1d2/PointsCntFten_cll
@@ -2515,19 +2546,19 @@ contains
         ' with an estimated accuracy worse than  critacc_coli =',Es11.4)
     
     if(PointsCntA_cll.ne.0.and.CritPointsCntA_cll.ne.0) then
-    write(ncpout2_cll,111)  'A_cll',CritPointsCntA_cll,CritPointsCntA_cll/real(PointsCntA_cll)*1d2
+    write(ncpout2_cll,111)  'A_cll',CritPointsCntA_cll,CritPointsCntA_cll/real(PointsCntA_cll,kind(1d0))*1d2
     endif
     if(PointsCntB_cll.ne.0.and.CritPointsCntB_cll.ne.0) then
-    write(ncpout2_cll,111)  'B_cll',CritPointsCntB_cll,CritPointsCntB_cll/real(PointsCntB_cll)*1d2
+    write(ncpout2_cll,111)  'B_cll',CritPointsCntB_cll,CritPointsCntB_cll/real(PointsCntB_cll,kind(1d0))*1d2
     endif
     if(PointsCntC_cll.ne.0.and.CritPointsCntC2_cll.ne.0) then
-    write(ncpout2_cll,111)  'C_cll',CritPointsCntC2_cll,CritPointsCntC2_cll/real(PointsCntC_cll)*1d2
+    write(ncpout2_cll,111)  'C_cll',CritPointsCntC2_cll,CritPointsCntC2_cll/real(PointsCntC_cll,kind(1d0))*1d2
     endif
     if(PointsCntD_cll.ne.0.and.CritPointsCntD2_cll.ne.0) then
-    write(ncpout2_cll,111)  'D_cll',CritPointsCntD2_cll,CritPointsCntD2_cll/real(PointsCntD_cll)*1d2
+    write(ncpout2_cll,111)  'D_cll',CritPointsCntD2_cll,CritPointsCntD2_cll/real(PointsCntD_cll,kind(1d0))*1d2
     endif
     if(PointsCntE_cll.ne.0.and.CritPointsCntE2_cll.ne.0) then
-    write(ncpout2_cll,111)  'E_cll',CritPointsCntE2_cll,CritPointsCntE2_cll/real(PointsCntE_cll)*1d2
+    write(ncpout2_cll,111)  'E_cll',CritPointsCntE2_cll,CritPointsCntE2_cll/real(PointsCntE_cll,kind(1d0))*1d2
     endif
     if(PointsCntF_cll.ne.0.and.CritPointsCntF2_cll.ne.0) then
     write(ncpout2_cll,111)  'F_cll',CritPointsCntF2_cll,CritPointsCntF2_cll*1d2/PointsCntF_cll
@@ -2543,22 +2574,22 @@ contains
     write(ncpout2_cll,*) 
 
     if(PointsCntDBten_cll.ne.0.and.CritPointsCntDBten_cll.ne.0) then
-    write(ncpout2_cll,111)  'DBten_cll',CritPointsCntDBten_cll,CritPointsCntDBten_cll/real(PointsCntDBten_cll)*1d2
+    write(ncpout2_cll,111)  'DBten_cll',CritPointsCntDBten_cll,CritPointsCntDBten_cll/real(PointsCntDBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntAten_cll.ne.0.and.CritPointsCntAten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Aten_cll',CritPointsCntAten_cll,CritPointsCntAten_cll/real(PointsCntAten_cll)*1d2
+    write(ncpout2_cll,111)  'Aten_cll',CritPointsCntAten_cll,CritPointsCntAten_cll/real(PointsCntAten_cll,kind(1d0))*1d2
     endif
     if(PointsCntBten_cll.ne.0.and.CritPointsCntBten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Bten_cll',CritPointsCntBten_cll,CritPointsCntBten_cll/real(PointsCntBten_cll)*1d2
+    write(ncpout2_cll,111)  'Bten_cll',CritPointsCntBten_cll,CritPointsCntBten_cll/real(PointsCntBten_cll,kind(1d0))*1d2
     endif
     if(PointsCntCten_cll.ne.0.and.CritPointsCntCten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Cten_cll',CritPointsCntCten_cll,CritPointsCntCten_cll/real(PointsCntCten_cll)*1d2
+    write(ncpout2_cll,111)  'Cten_cll',CritPointsCntCten_cll,CritPointsCntCten_cll/real(PointsCntCten_cll,kind(1d0))*1d2
     endif
     if(PointsCntDten_cll.ne.0.and.CritPointsCntDten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Dten_cll',CritPointsCntDten_cll,CritPointsCntDten_cll/real(PointsCntDten_cll)*1d2
+    write(ncpout2_cll,111)  'Dten_cll',CritPointsCntDten_cll,CritPointsCntDten_cll/real(PointsCntDten_cll,kind(1d0))*1d2
     endif
     if(PointsCntEten_cll.ne.0.and.CritPointsCntEten_cll.ne.0) then
-    write(ncpout2_cll,111)  'Eten_cll',CritPointsCntEten_cll,CritPointsCntEten_cll/real(PointsCntEten_cll)*1d2
+    write(ncpout2_cll,111)  'Eten_cll',CritPointsCntEten_cll,CritPointsCntEten_cll/real(PointsCntEten_cll,kind(1d0))*1d2
     endif
     if(PointsCntFten_cll.ne.0.and.CritPointsCntFten_cll.ne.0) then
     write(ncpout2_cll,111)  'Ften_cll',CritPointsCntFten_cll,CritPointsCntFten_cll*1d2/PointsCntFten_cll
@@ -2581,14 +2612,14 @@ contains
     write(ncpout2_cll,510)
 510 format (/' Numbers of COLLIER calls with accuracy levels')
     do i=-2,0
-      write(ncpout2_cll,511)  i,AccCnt(i),AccCnt(i)/real(AccCnt(1))*1d2
+      write(ncpout2_cll,511)  i,AccCnt(i),AccCnt(i)/real(AccCnt(1),kind(1d0))*1d2
     end do
     write(ncpout2_cll,501)  AccCnt(1)
 
     write(ncpout2_cll,500)
 500 format (/' Numbers of Events with accuracy levels')
     do i=-2,0
-      write(ncpout2_cll,531)  i,AccEventCnt(i),AccEventCnt(i)/real(AccEventCnt(1))*1d2
+      write(ncpout2_cll,531)  i,AccEventCnt(i),AccEventCnt(i)/real(AccEventCnt(1),kind(1d0))*1d2
     end do
     write(ncpout2_cll,521)  AccEventCnt(1)
 !   write(ncpout2_cll,521)  EventCnt_cll+1

@@ -79,7 +79,7 @@ ifeq ($(SMH),-DSMH)
 endif
 
 ifeq ($(COLLIER),-DCOLLIER)
-  CLLDIR = collier/COLLIER-1.2.7/
+  CLLDIR = collier/COLLIER-1.2.8/
   CLLMOD = -I$(CLLDIR)include/
   CLLLIB = -L$(CLLDIR)lib -lcollier
 endif
@@ -131,7 +131,7 @@ pack: # use only to release MESMER
 	mkdir -p $(RELEASEDIR)/c_ranlux &&\
 	mkdir -p $(RELEASEDIR)/collier/ &&\
 	cp -ra LoopTools-$(LTVER)-clean/ $(RELEASEDIR)/LoopTools-$(LTVER) &&\
-	cp -ra collier/COLLIER-1.2.7-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.7 &&\
+	cp -ra collier/COLLIER-1.2.8-clean/ $(RELEASEDIR)/collier/COLLIER-1.2.8 &&\
         cp -ra Makefile README.md STANDALONE.md EMBEDDED.md input-example mesmerversion.f\
         distributions.F distributions_inc.F invariants.h muemue1g1Lnoud.F funsdeccmn1g1L.h AUTHORS.md\
         main.F matrix_model.F vpol_novosibirsk.dat vpol_novosibirsk_v2.dat vpol_novosibirsk_v2.7.dat\

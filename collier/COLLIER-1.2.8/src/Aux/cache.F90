@@ -584,6 +584,9 @@ contains
       infwri = .false.
       if (infoutlev_cache.ge.1) call InfOut_cache('SwitchOnCacheSystem_cll','cache has not been initialized',infwri)    
       if(infwri)  write(ninfout_cache,*) '--> it cannot be switched on' 
+    elseif(argperm_cll) then
+       if (infoutlev_cache.ge.1) call InfOut_cache('SwitchOnCacheSystem_cll','permutation of tensor arguments switched on',infwri)    
+       if(infwri)  write(ninfout_cache,*) '--> cache cannot be switched on'      
     else  
       do i=1,ncache_max
         call SetCacheMode_cll(i,2)

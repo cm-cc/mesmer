@@ -13,7 +13,7 @@
 !#define Cpv1otest
 !#define Cpv2test
 !#define Cpvshifttest
-!#define Cgtest 
+!#define Cgtest
 !#define Cgytest
 !#define Cgrtest
 !#define Cgptest
@@ -21,7 +21,7 @@
 #define ALWAYSPV                ! default
 !#define USEC0
 !#define PPEXP00
-#define Cutrloop                ! default 
+#define Cutrloop                ! default
 !#define TRACECin
 !#define TRACECout
 !#define CritPointsCOLI
@@ -38,7 +38,7 @@
 !  *    by Lars Hofer    *
 !  * adapted by A Denner *
 !  ***********************
-! 
+!
 !  functions and subroutines:
 !  CalcCuv, CalcCpv, CalcCpv2, CalcCg, CalcCgy, CalcCgp, CalcCgr, CalcCgpf, CopyCimp3
 !
@@ -61,9 +61,9 @@ module globalC
   double complex :: Zinvshift(2,2),Zadjsshift(2),detZmZadjfshift
   double complex :: mxshift(0:2,0:2), mxinvshift(0:2,0:2)
   double precision ::  maxZadjshift
-  double precision :: detZerr,detXerr,detZshifterr,detXshifterr  !  added 13.09.2022  
+  double precision :: detZerr,detXerr,detZshifterr,detXshifterr  !  added 13.09.2022
   double complex, parameter :: undefined_C=1d50
-  
+
 end module globalC
 
 
@@ -93,9 +93,9 @@ contains
   !  subroutine CalcC(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr1,Cerr2,rbasic,acc_req_Cextra)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcC(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr1,Cerr2,rbasic,acc_req_Cextra)
-  
+
     integer, intent(in) :: rmax, id
     integer, optional, intent(in) :: rbasic
     double precision, optional, intent(in) :: acc_req_Cextra(0:rmax)
@@ -131,24 +131,35 @@ contains
             rb = rmax
           endif
 
-          if(rmax.ge.1) then
-            allocate(fct(NCoefsG(rmax,3)+NCoefsG(rmax-1,3)+2*(rmax+1)))
-            call ReadCache(fct,NCoefsG(rmax,3)+NCoefsG(rmax-1,3)+2*(rmax+1),x,6,1,id,3,rb,nocalc,wrica)
-          else 
-            allocate(fct(NCoefsG(rmax,3)+2*(rmax+1)))
-            call ReadCache(fct,NCoefsG(rmax,3)+2*(rmax+1),x,6,1,id,3,rb,nocalc,wrica)
-          end if
-    
+! changed 10.07.2023 AD
+! read cache only if also coefficents for rb < r < rmax are present
+!          if(rmax.ge.1) then
+!            allocate(fct(NCoefsG(rmax,3)+NCoefsG(rmax-1,3)+2*(rmax+1)))
+!            call ReadCache(fct,NCoefsG(rmax,3)+NCoefsG(rmax-1,3)+2*(rmax+1),x,6,1,id,3,rb,nocalc,wrica)
+!          else
+!            allocate(fct(NCoefsG(rmax,3)+2*(rmax+1)))
+!            call ReadCache(fct,NCoefsG(rmax,3)+2*(rmax+1),x,6,1,id,3,rb,nocalc,wrica)
+!          end if
+
           rank = max(rmax,rb)
 
-          if(nocalc)then
+          if(rank.ge.1) then
+            allocate(fct(NCoefsG(rank,3)+NCoefsG(rank-1,3)+2*(rank+1)))
+            call ReadCache(fct,NCoefsG(rank,3)+NCoefsG(rank-1,3)+2*(rank+1),x,6,1,id,3,rank,nocalc,wrica)
+          else
+            allocate(fct(NCoefsG(rank,3)+2*(rank+1)))
+            call ReadCache(fct,NCoefsG(rank,3)+2*(rank+1),x,6,1,id,3,rank,nocalc,wrica)
+          end if
+! end changed 10.07.2023 AD
 
+          if(nocalc)then
+              Cuv(0,:,:) = 0d0
               cnt = 0
               do r=0,rmax
                 do n0=0,r
                   do n1=0,r-n0
                     n2 = r-n0-n1
- 
+
                     cnt = cnt+1
                     C(n0,n1,n2) = fct(cnt)
 
@@ -157,7 +168,7 @@ contains
                 do n0=1,r
                   do n1=0,r-n0
                     n2 = r-n0-n1
- 
+
                     cnt = cnt+1
                     Cuv(n0,n1,n2) = fct(cnt)
 
@@ -179,7 +190,7 @@ contains
               if(rb.gt.rbasic) then
                 allocate(acc_req_Cexnew(0:rank))
                 acc_req_Cexnew(0:rb)=acc_req_Cextra(0)
-                acc_req_Cexnew(rb+1:rank)=acc_req_Cextra(rbasic+1:rank-rb+rbasic) 
+                acc_req_Cexnew(rb+1:rank)=acc_req_Cextra(rbasic+1:rank-rb+rbasic)
                 call CalcCred(C,Cuv,p10,p21,p20,m02,m12,m22,rank,id,Cerr1,Cerr2,rb,acc_req_Cexnew)
               else
                 call CalcCred(C,Cuv,p10,p21,p20,m02,m12,m22,rank,id,Cerr1,Cerr2,rbasic,acc_req_Cextra)
@@ -194,7 +205,7 @@ contains
                 do n0=0,r
                   do n1=0,r-n0
                     n2 = r-n0-n1
- 
+
                     cnt = cnt+1
                     fct(cnt) = C(n0,n1,n2)
                   end do
@@ -202,7 +213,7 @@ contains
                 do n0=1,r
                   do n1=0,r-n0
                     n2 = r-n0-n1
- 
+
                     cnt = cnt+1
                     fct(cnt) = Cuv(n0,n1,n2)
                   end do
@@ -215,15 +226,15 @@ contains
 
               if(rank.ge.1) then
                 call WriteCache(fct,NCoefsG(rank,3)+NCoefsG(rank-1,3)+2*(rank+1),id,3,rb)
-              else 
+              else
                 call WriteCache(fct,NCoefsG(rank,3)+2*(rank+1),id,3,rb)
               end if
 
             end if
 
             return
-          
-          
+
+
           else
 
             allocate(Caux(0:rank,0:rank,0:rank))
@@ -235,9 +246,9 @@ contains
               if(rb.gt.rbasic) then
                 allocate(acc_req_Cexnew(0:rank))
                 acc_req_Cexnew(0:rb)=acc_req_Cextra(0)
-                acc_req_Cexnew(rb+1:rank)=acc_req_Cextra(rbasic+1:rank-rb+rbasic) 
-!                acc_req_Cexnew(rb+1:rmax)=acc_req_Cextra(rbasic+1:rmax-rb+rbasic) 
-!                acc_req_Cexnew(rmax+1:rank)=acc_req_Cextra(rmax) 
+                acc_req_Cexnew(rb+1:rank)=acc_req_Cextra(rbasic+1:rank-rb+rbasic)
+!                acc_req_Cexnew(rb+1:rmax)=acc_req_Cextra(rbasic+1:rmax-rb+rbasic)
+!                acc_req_Cexnew(rmax+1:rank)=acc_req_Cextra(rmax)
                 call CalcCred(C,Cuv,p10,p21,p20,m02,m12,m22,rank,id,Cerr1,Cerr2,rb,acc_req_Cexnew)
               else
                 call CalcCred(C,Cuv,p10,p21,p20,m02,m12,m22,rank,id,Cerr1,Cerr2,rbasic,acc_req_Cextra)
@@ -253,14 +264,14 @@ contains
               deallocate(fct)
               if(rank.ge.1) then
                 allocate(fct(NCoefsG(rank,3)+NCoefsG(rank-1,3)+2*(rank+1)))
-              else 
+              else
                 allocate(fct(NCoefsG(rank,3)+2*(rank+1)))
               end if
               do r=0,rank
                 do n0=0,r
                   do n1=0,r-n0
                     n2 = r-n0-n1
- 
+
                     cnt = cnt+1
                     fct(cnt) = Caux(n0,n1,n2)
                   end do
@@ -268,7 +279,7 @@ contains
                 do n0=1,r
                   do n1=0,r-n0
                     n2 = r-n0-n1
- 
+
                     cnt = cnt+1
                     fct(cnt) = Cuvaux(n0,n1,n2)
                   end do
@@ -281,7 +292,7 @@ contains
 
               if(rank.ge.1) then
                 call WriteCache(fct,NCoefsG(rank,3)+NCoefsG(rank-1,3)+2*(rank+1),id,3,rb)
-              else 
+              else
                 call WriteCache(fct,NCoefsG(rank,3)+2*(rank+1),id,3,rb)
               end if
 
@@ -318,14 +329,13 @@ contains
 
 
 
-
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !  subroutine CalcCred(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr1,Cerr2,rbasic,acc_req_Cextra)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCred(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr1,Cerr2,rbasic,acc_req_Cextra)
-  
+
     use globalC
 
     integer, intent(in) :: rmax,id
@@ -355,7 +365,7 @@ contains
     double precision :: acc_pv_alt, acc_pv2_alt, acc_Cr_alt
 
     !   CalcC stores methods that have been calculated
-    !   Crmethod(r) stores best method=used for rank r 
+    !   Crmethod(r) stores best method=used for rank r
 
     double precision :: err_pv(0:rmax),err_pv2(0:rmax),err_g(0:rmax),err_gy(0:rmax),  &
                         err_gp(0:rmax),err_gr(0:rmax),err_gpf(0:rmax)
@@ -374,7 +384,7 @@ contains
 
     character(len=*),parameter :: fmt1 = "(A7,'dcmplx(',d25.18,' , ',d25.18,' )')"
     character(len=*),parameter :: fmt10 = "(A17,'(',d25.18,' , ',d25.18,' )')"
-#ifdef CritPointsCOLI    
+#ifdef CritPointsCOLI
     integer, parameter :: MaxCritPointC=50
 #else
     integer, parameter :: MaxCritPointC=0
@@ -399,13 +409,13 @@ contains
 #endif
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! for rank = 0 calculate C0 directly 
+    ! for rank = 0 calculate C0 directly
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    use_C0 = .false.  
+    use_C0 = .false.
     if (rmax.eq.0d0) then
     ! rough estimate for C0 to set the scale, to be improved
       Cscale = max(abs(p10),abs(p21),abs(p20),abs(m02),abs(m12),abs(m22))
-      if(Cscale.ne.0d0) then 
+      if(Cscale.ne.0d0) then
         Cerr1 = acc_inf/Cscale
       else
         C0est = acc_inf
@@ -416,7 +426,7 @@ contains
       Z(2,1) = p10+p20-p21
       Z(1,2) = Z(2,1)
       Z(2,2) = 2d0*p20
-      
+
       adetZ = abs(chdet(2,Z))
 
 #ifdef DETTEST
@@ -449,18 +459,18 @@ contains
       if (adetZ.gt.dprec_cll*maxval(abs(Z(1,:)))*maxval(abs(Z(2,:)))) then
         C(0,0,0) = C0_coli(p10,p21,p20,m02,m12,m22)
         Cuv(0,0,0) = 0d0
-        if (C(0,0,0).ne.undefined_C) then         
+        if (C(0,0,0).ne.undefined_C) then
           Cerr1(0) = acc_def_C0*max( abs(C(0,0,0)), 1d0/sqrt(adetZ) )
         else
           Cerr1(0) = acc_inf*abs(C(0,0,0))
         end if
         Cerr2(0) = Cerr1(0)
-        if (Cerr1(0).lt.acc_req_C*abs(C(0,0,0))) then 
+        if (Cerr1(0).lt.acc_req_C*abs(C(0,0,0))) then
           return
         else
           use_C0 = .true.
         endif
-      end if 
+      end if
     end if
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -478,7 +488,7 @@ contains
      write(*,*) 'CalcCred rdef ',rdef
 #endif
 
-    if (present(acc_req_Cextra)) then 
+    if (present(acc_req_Cextra)) then
       acc_req_Cr = acc_req_Cextra
     else
       acc_req_Cr = acc_req_C
@@ -500,7 +510,7 @@ contains
     q2max = max(abs(q10),abs(q21),abs(q20))
     m2max = max(abs(mm02),abs(mm12),abs(mm22))
     m2scale = max(q2max,m2max)
- 
+
     ! Gram and related stuff
     Z(1,1) = 2d0*q10
     Z(2,1) = q10+q20-q21   !  = q1q2
@@ -524,7 +534,7 @@ contains
 ! added 16.08.2018
 !    if (abs(detZ).lt.dprec_cll*maxval(abs(Z(1,:)))*maxval(abs(Z(2,:)))) then
     if (abs(detZ).lt.dprec_cll*max(  &
-        abs(Z(1,1)*Z(2,2)),abs(Z(1,2)*Z(2,1))) ) then 
+        abs(Z(1,1)*Z(2,2)),abs(Z(1,2)*Z(2,1))) ) then
 #ifdef Credtest
     write(*,*) 'detZ set to 0  ',abs(detZ),  &
         dprec_cll*maxval(abs(Z(1,:)))*maxval(abs(Z(2,:))),  &
@@ -546,8 +556,8 @@ contains
       Zadj(2,2) = Z(1,1)
 !    end if
 
-    Zadjs(1) = q21 + q20 - q10 
-    Zadjs(2) = q21 + q10 - q20 
+    Zadjs(1) = q21 + q20 - q10
+    Zadjs(2) = q21 + q10 - q20
 
 #ifdef Credtest
     write(*,*) 'Z(1) ',Z(1,1), Z(1,2),Z(2,1),Z(2,2),detZ
@@ -559,7 +569,7 @@ contains
 
     detZmZadjf = q21*Z(2,1)
 
-!   write(*,*) 'Zn    ',Z   
+!   write(*,*) 'Zn    ',Z
 !   write(*,*) 'Zinvn ',Zinv
 !   write(*,*) 'Zadjn ',Zadj
 !   write(*,*) 'detZn ',detZ
@@ -599,15 +609,15 @@ contains
 !    if (abs(detX).lt.dprec_cll*maxval(abs(mx(0,:)))*maxval(abs(mx(1,:)))*maxval(abs(mx(2,:)))) then
     if (abs(detX).lt.dprec_cll*max(  &
         abs(mx(0,0)*mx(1,1)*mx(2,2)),abs(mx(0,1)*mx(1,2)*mx(2,0)),   &
-        abs(mx(0,0)*mx(1,2)*mx(2,1)),abs(mx(1,1)*mx(0,2)*mx(2,0)),   &    
-        abs(mx(2,2)*mx(0,1)*mx(1,0)) ) ) then 
+        abs(mx(0,0)*mx(1,2)*mx(2,1)),abs(mx(1,1)*mx(0,2)*mx(2,0)),   &
+        abs(mx(2,2)*mx(0,1)*mx(1,0)) ) ) then
 #ifdef Credtest
-      write(*,*) 'detX set to 0  ',abs(detX),   &  
+      write(*,*) 'detX set to 0  ',abs(detX),   &
           dprec_cll*maxval(abs(mx(0,:)))*maxval(abs(mx(1,:)))*maxval(abs(mx(2,:))),  &
           dprec_cll*max(  &
           abs(mx(0,0)*mx(1,1)*mx(2,2)),abs(mx(0,1)*mx(1,2)*mx(2,0)),   &
-          abs(mx(0,0)*mx(1,2)*mx(2,1)),abs(mx(1,1)*mx(0,2)*mx(2,0)),   &    
-          abs(mx(2,2)*mx(0,1)*mx(1,0))  )   
+          abs(mx(0,0)*mx(1,2)*mx(2,1)),abs(mx(1,1)*mx(0,2)*mx(2,0)),   &
+          abs(mx(2,2)*mx(0,1)*mx(1,0))  )
 #endif
       detX = 0d0
     end if
@@ -693,7 +703,7 @@ contains
 !    wmaxXadj = max(pweight(1)*abs(Xadj(1,1)),   &
 !        pweight(1)*abs(Xadj(1,2)),pweight(2)*abs(Xadj(2,1)),  &
 !        pweight(2)*abs(Xadj(2,2)))
-!    wmaxXadj = max(2d0*abs(mm02)*sqrt(adetZ*maxZadj/maxZ),maxZadj2ff*maxZadjf/(maxZadj*fmax))        
+!    wmaxXadj = max(2d0*abs(mm02)*sqrt(adetZ*maxZadj/maxZ),maxZadj2ff*maxZadjf/(maxZadj*fmax))
 
 !    write(*,*) 'CalcCred pweight',pweight(1:2)
 !    write(*,*) 'CalcCred wmaxZadj',maxZadj,wmaxZadj
@@ -708,7 +718,7 @@ contains
     lerr_C0 = .true.
 #else
 ! changed 09.09.16
-     if(Cscale.ne.0d0) then 
+     if(Cscale.ne.0d0) then
        C0est = 1d0/Cscale
      else
        C0est = 1d0
@@ -720,10 +730,10 @@ contains
 !    else if (maxZ.ne.0d0) then
 !      C0est = 1d0/maxZ
 !    else
-!      C0est = 1d0 
+!      C0est = 1d0
 !    end if
     lerr_C0 = .false.
-#endif 
+#endif
 
 #ifdef Credtest
     write(*,*) 'CalcCred C0    = ',C0_coli(p10,p21,p20,m02,m12,m22)
@@ -755,7 +765,6 @@ contains
       err_C0 = acc_def_C0 * C0est
     end if
     err_B = acc_def_B
-     
 
     ! estimate accuracy of PV-reduction
     h_pv = real(undefined_C)
@@ -771,7 +780,9 @@ contains
     else
       use_pv = .true.
       err_pv(0) = err_C0
-      if (rdef.gt.0) then
+! changed AD 07.08.2023 to define  w_pv etc for later
+!      if (rdef.gt.0) then
+      if (rdef.gt.0.or.rmax.gt.0) then
 #ifdef PVEST2
         h_pv = sqrt(adetZ)/maxZadj
         w_pv = max((maxZadjf*h_pv/adetZ)**2, abs(mm02)*maxZ*h_pv/adetZ, aZadjff*maxZ*(h_pv/adetZ)**2)
@@ -798,16 +809,20 @@ contains
           write(*,*) 'CalcCred err_pv cont', w_pv**((rdef-1)/2),v_pv, err_C0
 #endif
 
-        else
+! changed AD 07.08.2023 to define  w_pv etc for later
+!        else 
+        else if (rdef>0) then
           err_pv(rdef) = max( w_pv**(rdef/2) * err_C0,  &
               max(w_pv**(rdef/2-1) * v_pv, 1d0) * z_pv * err_B )
-      
-#ifdef Credtest      
+
+#ifdef Credtest
           write(*,*) 'CalcCred w_pv', w_pv,err_C0,sqrt(w_pv)
           write(*,*) 'CalcCred err_pv cont', w_pv**(rdef/2) * err_C0, &
                         w_pv**(rdef/2-1) * v_pv * z_pv * err_B, z_pv * err_B, err_C0,err_B
 #endif
 
+        else
+          err_pv(rdef) = err_C0
         end if
       end if
     end if
@@ -817,7 +832,7 @@ contains
     v_pv2 = real(undefined_C)
     w_pv2 = real(undefined_C)
     hw_pv2 = real(undefined_C)
-!   14.07.2017   
+!   14.07.2017
 !   16.08.2018 changed back, since detZ=0 set above if too small
     if ((adetZ.lt.dprec_cll*maxZadjf).or.(adetX.lt.dprec_cll*maxval(abs(mx))*adetZ).or.adetZ.eq.0d0.or.adetX.eq.0d0) then
 !    if ((adetZ.lt.dprec_cll*maxZadjf).or.(adetX.lt.dprec_cll*maxval(abs(mx))*adetZ).or.  &
@@ -827,16 +842,18 @@ contains
     else
       use_pv2 = .true.
       err_pv2(0) = err_C0
-      if (rdef.gt.0) then
+! changed AD 07.08.2023 to define  w_pv etc for later
+!      if (rdef.gt.0) then
+      if (rdef.gt.0 .or. rmax.gt.0) then
         w_pv2 = maxZadjf/adetZ
 #ifdef PVEST2
         h_pv2 = sqrt(adetZ)/maxZadj
         hw_pv2 =  w_pv2*h_pv2
 #else
-        hw_pv2 =  w_pv2 
+        hw_pv2 =  w_pv2
 #endif
         v_pv2 = maxXadj/adetZ
-        z_pv2 = adetZ/adetX 
+        z_pv2 = adetZ/adetX
 
 !        write(*,*) 'CalcCred: w_pv2',w_pv2,v_pv2,z_pv2,err_C0,err_B
 
@@ -844,21 +861,23 @@ contains
 ! change 21.10.15 for PVEST2
 !          err_pv2(rdef) = max( err_C0 * max(w_pv2**rdef,w_pv2*v_pv2**((rdef-1)/2) ),  &
 !              err_B * z_pv2 * max(w_pv2**(rdef+1),w_pv2, &
-!                              w_pv2*v_pv2**((rdef-1)/2),w_pv2**2, & 
+!                              w_pv2*v_pv2**((rdef-1)/2),w_pv2**2, &
 !                              v_pv2**((rdef+1)/2),v_pv2 ) )
 
           err_pv2(rdef) = max( err_C0 * max(hw_pv2**rdef,hw_pv2*v_pv2**((rdef-1)/2) ),  &
               err_B * z_pv2 * max(w_pv2*hw_pv2**(rdef),hw_pv2, &
                               w_pv2*hw_pv2*v_pv2**((rdef-1)/2), &
-                              hw_pv2*v_pv2**((rdef-1)/2),w_pv2*hw_pv2, & 
+                              hw_pv2*v_pv2**((rdef-1)/2),w_pv2*hw_pv2, &
                               v_pv2**((rdef+1)/2),v_pv2 ) )
 
 !        write(*,*) 'CalcCred: err_pv2',rdef,err_C0 * max(1d0,w_pv2**rdef,v_pv2**((rdef-1)/2),w_pv2*v_pv2**((rdef-1)/2) ), &
 !            err_B * max(1d0,z_pv2*w_pv2**(rdef+1),z_pv2*w_pv2, &
-!              z_pv2*w_pv2*v_pv2**((rdef-1)/2),z_pv2*w_pv2**2, & 
-!              z_pv2*v_pv2**((rdef+1)/2),z_pv2*v_pv2 ) 
+!              z_pv2*w_pv2*v_pv2**((rdef-1)/2),z_pv2*w_pv2**2, &
+!              z_pv2*v_pv2**((rdef+1)/2),z_pv2*v_pv2 )
 
-        else
+! changed AD 07.08.2023 to define  w_pv etc for later
+!        else
+        else if (rdef>0) then
 ! change 21.10.15 for PVEST2
 !          err_pv2(rdef) = max( err_C0 * max(w_pv2**rdef,v_pv2**(rdef/2)),  &
 !              err_B * z_pv2 * max(w_pv2**(rdef+1),w_pv2,  &
@@ -868,13 +887,15 @@ contains
               err_B * z_pv2 * max(w_pv2*hw_pv2**(rdef),hw_pv2,  &
                                   w_pv2*v_pv2**(rdef/2), w_pv2*hw_pv2,  &
                                   v_pv2**(rdef/2),v_pv2) )
+        else
+           err_pv2(rdef) = err_C0
         end if
       end if
-    end if 
+    end if
 
     ! scale estimates down to allow trying other methods
     err_pv(rdef)  = err_pv(rdef)/impest_C
-    err_pv2(rdef) = err_pv2(rdef)/impest_C     
+    err_pv2(rdef) = err_pv2(rdef)/impest_C
 
 #ifdef TEST
    use_pv = .false.     ! TEST switch off PV
@@ -987,7 +1008,7 @@ contains
       if (maxval(Cerr1-err_req_Cr).lt.0) then
         CCount(CCalc+CCountoffset0) = CCount(CCalc+CCountoffset0)+1
         return
-      end if      
+      end if
     else if (.not.use_C0) then  !  added 14.07.2017 adapted 12.4.2018
       C = 0d0
       Cuv = 0d0
@@ -998,7 +1019,7 @@ contains
 #ifdef TEST
 !    return          ! use only PV
 #endif
-        
+
     ! choose most promising expansion scheme
     ! Gram expansion
 !    if (maxZadjf.ne.0d0) then
@@ -1022,7 +1043,7 @@ contains
         use_g = .true.
 !       z_g = max(1d0,m2scale*q2max/maxZadjf)
         z_g = maxZ/maxZadjf
-        err_g_B(rdef) = err_B * u_g**rdef * z_g 
+        err_g_B(rdef) = err_B * u_g**rdef * z_g
         err_g_exp = u_g**(rdef-1) * Ctyp
       end if
     else
@@ -1039,7 +1060,7 @@ contains
       write(*,*) 'CalcCred: after Gram pars',use_g,fac_g,x_g,u_g,z_g,err_g_B(rdef),err_g_exp
     else
       write(*,*) 'CalcCred: after Gram pars',use_g,err_g_exp
-    end if 
+    end if
 #endif
 
     ! Gram-Cayley expansion
@@ -1071,7 +1092,7 @@ contains
       err_gy_exp = err_inf
       v1_gy = real(undefined_C)
       b_gy = real(undefined_C)
-    end if 
+    end if
 
 #ifdef Credtest
     if(use_gy) then
@@ -1156,7 +1177,7 @@ contains
     !  expansion in small momenta and f's
 !  estimates to be confirmed 16.08.2017, r dependence may be different
 !  since C_mni... is needed in contrast to Cgy expansion
-    if (abs(m02).gt.m2scale*dprec_cll) then 
+    if (abs(m02).gt.m2scale*dprec_cll) then
       x_gpf = fmax/abs(m02)
       y_gpf =  maxZ/abs(m02)
       v_gpf = 0d0
@@ -1181,7 +1202,7 @@ contains
       err_gpf_exp = err_inf
       v1_gpf = real(undefined_C)
       b_gpf = real(undefined_C)
-    end if 
+    end if
 
 #ifdef Credtest
     if(use_gpf) then
@@ -1208,7 +1229,7 @@ contains
         write(nerrout_coli,fmt10) ' CalcCred: p20 = ',p20
         write(nerrout_coli,fmt10) ' CalcCred: m02 = ',m02
         write(nerrout_coli,fmt10) ' CalcCred: m12 = ',m12
-        write(nerrout_coli,fmt10) ' CalcCred: m22 = ',m22   
+        write(nerrout_coli,fmt10) ' CalcCred: m22 = ',m22
       end if
       C = 0d0
       Cuv = 0d0
@@ -1233,7 +1254,7 @@ contains
 
     iexp = 0
     do i=0,rmax_C-rmax
- 
+
       if (use_g) then
         if (err_g_exp.gt.err_g_B(rdef)) then
           g = i
@@ -1247,7 +1268,7 @@ contains
           end if
 
 #ifdef Credtest
-          write(*,*) 'CalcCred i g',i,g,err_g_exp,err_g_B(rdef),err_g(rdef) 
+          write(*,*) 'CalcCred i g',i,g,err_g_exp,err_g_B(rdef),err_g(rdef)
 #endif
 
         end if
@@ -1267,7 +1288,7 @@ contains
             end if
 
 #ifdef Credtest
-          write(*,*) 'CalcCred i gy',i,gy,err_gy_exp,err_gy_B(rdef),err_gy(rdef) 
+          write(*,*) 'CalcCred i gy',i,gy,err_gy_exp,err_gy_B(rdef),err_gy(rdef)
 #endif
 
           end if
@@ -1287,7 +1308,7 @@ contains
           end if
 
 #ifdef Credtest
-          write(*,*) 'CalcCred i gp',i,gp,err_gp_exp,err_gp_B(rdef),err_gp(rdef) 
+          write(*,*) 'CalcCred i gp',i,gp,err_gp_exp,err_gp_B(rdef),err_gp(rdef)
 #endif
 
         end if
@@ -1301,7 +1322,7 @@ contains
           write(*,*) 'CalcCred: it gr',use_gr,err_gr_exp,err_gr_B(rdef),err_gr(rdef),  &
                                      err_req_Cr(rdef)
 #endif
- 
+
           if (err_gr_exp.gt.err_gr_B(rdef)) then
             gr = i/2
             err_gr_exp = err_gr_exp*fac_gr
@@ -1348,10 +1369,10 @@ contains
 
     ! scale estimates down to allow trying other methods
     err_g(rdef)  =  err_g(rdef)/impest_C
-    err_gy(rdef) =  err_gy(rdef)/impest_C     
+    err_gy(rdef) =  err_gy(rdef)/impest_C
     err_gp(rdef) =  err_gp(rdef)/impest_C
-    err_gr(rdef) =  err_gr(rdef)/impest_C     
-    err_gpf(rdef)=  err_gpf(rdef)/impest_C     
+    err_gr(rdef) =  err_gr(rdef)/impest_C
+    err_gpf(rdef)=  err_gpf(rdef)/impest_C
 
 #ifdef Credtest
     write(*,*) 'iexp=',iexp
@@ -1364,7 +1385,7 @@ contains
     write(*,*) 'gr: errexptot =',gr,err_gr(rdef)
     write(*,*) 'gpf: errexptot=',gpf,err_gpf(rdef)
     write(*,*) 'errexptot=',i,g,err_g(rdef),gy,err_gy(rdef),gp,err_gp(rdef),gr,err_gr(rdef),gpf,err_gpf(rdef)
-    write(*,*) 'accexptot=',i,g,err_g(rdef)/Ctyp,gy,err_gy(rdef)/Ctyp,gp,err_gp(rdef)/Ctyp,      &    
+    write(*,*) 'accexptot=',i,g,err_g(rdef)/Ctyp,gy,err_gy(rdef)/Ctyp,gp,err_gp(rdef)/Ctyp,      &
         gr,err_gr(rdef)/Ctyp,gpf,err_gpf(rdef)/Ctyp
 #endif
 
@@ -1376,10 +1397,10 @@ contains
 #endif
 
     select case (iexp)
- 
+
 #ifdef TEST
 !  case only as replacement for CalcCg, not as extra case
-      case (7)  
+      case (7)
         call CalcCgn(C_alt,Cuv,p10,p21,p20,m02,m12,m22,rmax,g,g,id,Cerr1_alt,acc_req_Cr,Cerr2_alt)
 #ifdef PVEST2
         Cerr_alt = Cerr2_alt
@@ -1390,7 +1411,7 @@ contains
         CrCalc(0:rmax)=CrCalc(0:rmax)+4
         CCalc=CCalc+4
         Crmethod_alt(0:rmax)=4
-        
+
 #ifdef Credtest
         checkest=Cerr_alt(rdef)/err_g(rdef)
         if(checkest.gt.1d2*impest_C.or.checkest.lt.1d-2*impest_C) then
@@ -1401,7 +1422,7 @@ contains
         err_g=Cerr_alt
 
         call CopyCimp3(C,C_alt,Cerr,Cerr_alt,Cerr1,Cerr1_alt,Cerr2,Cerr2_alt,Crmethod,Crmethod_alt,rmax,rmax)
-        
+
 #ifdef Credtest
         write(*,*) 'CalcCred Cerr after expgn =',Cerr
         write(*,*) 'CalcCred Cacc=',Cerr/Ctyp
@@ -1409,7 +1430,7 @@ contains
 #endif
 #endif
 
-      case (1)  
+      case (1)
         call CalcCg(C_alt,Cuv,p10,p21,p20,m02,m12,m22,rmax,g,g,id,Cerr1_alt,acc_req_Cr,Cerr2_alt)
 #ifdef PVEST2
         Cerr_alt = Cerr2_alt
@@ -1420,7 +1441,7 @@ contains
         CrCalc(0:rmax)=CrCalc(0:rmax)+4
         CCalc=CCalc+4
         Crmethod_alt(0:rmax)=4
-        
+
 #ifdef Credtest
         checkest=Cerr_alt(rdef)/err_g(rdef)
         if(checkest.gt.1d2*impest_C.or.checkest.lt.1d-2*impest_C) then
@@ -1431,7 +1452,7 @@ contains
         err_g=Cerr_alt
 
         call CopyCimp3(C,C_alt,Cerr,Cerr_alt,Cerr1,Cerr1_alt,Cerr2,Cerr2_alt,Crmethod,Crmethod_alt,rmax,rmax)
-        
+
 #ifdef Credtest
         write(*,*) 'CalcCred Cerr after expg =',Cerr
         write(*,*) 'CalcCred Cacc=',Cerr/Ctyp
@@ -1468,7 +1489,7 @@ contains
         write(*,*) 'CalcCred method=',Crmethod
 #endif
 
-      case (3)  
+      case (3)
         call CalcCgp(C_alt,Cuv,p10,p21,p20,m02,m12,m22,rmax,gp,gp,id,Cerr1_alt,acc_req_Cr,Cerr2_alt)
 #ifdef PVEST2
         Cerr_alt = Cerr2_alt
@@ -1497,7 +1518,7 @@ contains
         write(*,*) 'CalcCred method=',Crmethod
 #endif
 
-      case (4)  
+      case (4)
         call CalcCgr(C_alt,Cuv,p10,p21,p20,m02,m12,m22,rmax,gr,gr,id,Cerr1_alt,acc_req_Cr,Cerr2_alt)
 #ifdef PVEST2
         Cerr_alt = Cerr2_alt
@@ -1570,19 +1591,19 @@ contains
 #endif
 #endif
 
-    if (iexp.ne.0)  then         !  if added 21.11.2016 
+    if (iexp.ne.0)  then         !  if added 21.11.2016
       if (rmax.ge.1) then
         Ctyp =  max(abs(C(0,0,0)),abs(C(0,1,0)),abs(C(0,0,1)))
       else
         Ctyp =  abs(C(0,0,0))
       end if
       err_req_Cr = acc_req_Cr * Ctyp
-      
+
       if (maxval(Cerr1-err_req_Cr).lt.0) then
         CCount(CCalc+CCountoffset0) = CCount(CCalc+CCountoffset0)+1
         return
       end if
-    end if    
+    end if
 
 #ifdef Credtest
     write(*,*) 'CalcCred no optimal method bef shift',Ctyp,acc_req_Cr
@@ -1595,7 +1616,7 @@ contains
     return          ! do not try shifted PV
 #endif
 
-#ifdef PVSHIFT 
+#ifdef PVSHIFT
 200 continue
 
     ! try PV with shifted momentum
@@ -1603,7 +1624,7 @@ contains
 
 #ifdef Credtest
       write(*,*) 'CalcCred try pv shift i = ',i
-#endif    
+#endif
 
       if (i.eq.1) then
         mm02shift = mm12
@@ -1612,7 +1633,7 @@ contains
         q10shift = q10
         q21shift = q20
         q20shift = q21
-      else 
+      else
         mm02shift = mm22
         mm12shift = mm12
         mm22shift = mm02
@@ -1654,7 +1675,7 @@ contains
         Zadjshift(2,2) = Zshift(1,1)
 !      end if
 
-      Zadjsshift(1) = q21shift + q20shift - q10shift 
+      Zadjsshift(1) = q21shift + q20shift - q10shift
       Zadjsshift(2) = q21shift + q10shift - q20shift
 
       detZmZadjfshift = q21shift*Zshift(2,1)
@@ -1662,7 +1683,7 @@ contains
       adetZshift = abs(detZshift)
       maxZadjshift = max(abs(Zadjshift(1,1)),abs(Zadjshift(2,1)),abs(Zadjshift(2,2)))
 
-      fshift(1) = q10shift+mm02shift-mm12shift 
+      fshift(1) = q10shift+mm02shift-mm12shift
       fshift(2) = q20shift+mm02shift-mm22shift
 
 #ifdef Credtest
@@ -1735,12 +1756,12 @@ contains
       write(*,*) 'Xadjshift21 ', 2d0*mm02shift*mxshift(1,2) - fshift(1)*fshift(2),Xadjshift(1,2)
       write(*,*) 'Xadjshift22 ', 2d0*mm02shift*mxshift(2,2) - fshift(1)*fshift(1),Xadjshift(2,2)
       write(*,*) 'detXshiftn ',detXshift
-      write(*,*) 'Zadjfshift1',Zadjfshift(1),2d0*q20shift*fshift(1)  &  
+      write(*,*) 'Zadjfshift1',Zadjfshift(1),2d0*q20shift*fshift(1)  &
           +(q21shift-q20shift-q10shift)*fshift(2)
-      write(*,*) 'Zadjfshift2',Zadjfshift(2), &  
+      write(*,*) 'Zadjfshift2',Zadjfshift(2), &
           (q21shift-q20shift-q10shift)*fshift(1)+2d0*q10shift*fshift(2)
 #endif
-      
+
       maxZadjfshift = max(abs(Zadjfshift(1)),abs(Zadjfshift(2)))
 !    maxZadjfds = max(maxZadjfshift,adetZshift)
 
@@ -1782,32 +1803,32 @@ contains
           if (mod(rdef,2).eq.1) then
             err_pvs(rdef) = max( w_pvs**((rdef-1)/2) * v_pvs * err_C0,  &
                 max(w_pvs**((rdef-1)/2),1d0) * z_pvs * err_B )
-            
+
 #ifdef Credtest
             write(*,*) 'CalcCred err_pvs', w_pvs**((rdef-1)/2)* v_pvs* err_C0, &
                 w_pvs**((rdef-1)/2) * z_pvs * err_B, err_C0,err_B
             write(*,*) 'CalcCred err_pvs', w_pvs**((rdef-1)/2),v_pvs, err_C0
 #endif
-            
+
           else
             err_pvs(rdef) = max( w_pvs**(rdef/2) * err_C0,  &
                 max(w_pvs**(rdef/2-1) * v_pvs, 1d0) * z_pvs * err_B )
-            
-#ifdef Credtest      
+
+#ifdef Credtest
             write(*,*) 'CalcCred w_pvs', w_pvs,err_C0,sqrt(w_pvs)
             write(*,*) 'CalcCred w_pvs', (maxZadjfshift/adetZshift)**2,  &
                 abs(mm02shift)*maxZshift/adetZshift, maxZshift*aZadjffshift/adetZshift**2
             write(*,*) 'CalcCred err_pvs', w_pvs**(rdef/2) * err_C0, &
                 w_pvs**(rdef/2-1) * v_pvs * z_pvs * err_B, z_pvs * err_B, err_C0,err_B
 #endif
-            
+
           end if
         end if
       end if
 
 #ifdef Credtest
       write(*,*) 'CalcCred use_pvs',use_pvs,err_pvs(rdef).lt.err_pv(rdef),i
-      write(*,*) 'CalcCred err_pvs',err_pvs(rdef),err_pv(rdef),i      
+      write(*,*) 'CalcCred err_pvs',err_pvs(rdef),err_pv(rdef),i
 #endif
 
       if(use_pvs.and.err_pvs(rdef).lt. min(err_pv(rdef),err_pv2(rdef),err_g(rdef)  &
@@ -1877,7 +1898,7 @@ contains
           Ctyp =  abs(C(0,0,0))
         end if
         err_req_Cr = acc_req_Cr * Ctyp
-      
+
 #ifdef Credtest
         write(*,*) 'CalcCred C0est after PVS=',abs(C(0,0,0)),Ctyp
         write(*,*) 'CalcCred Cerr1 after PVS =',Cerr1
@@ -1924,7 +1945,7 @@ contains
         write(nerrout_coli,fmt10) ' CalcCred: p20 = ',p20
         write(nerrout_coli,fmt10) ' CalcCred: m02 = ',m02
         write(nerrout_coli,fmt10) ' CalcCred: m12 = ',m12
-        write(nerrout_coli,fmt10) ' CalcCred: m22 = ',m22   
+        write(nerrout_coli,fmt10) ' CalcCred: m22 = ',m22
       end if
       C = 0d0
       Cuv = 0d0
@@ -1946,9 +1967,9 @@ contains
     ! use the least problematic (for each rank)
 
     do r=rmax,0,-1
-     
 
-      if(use_pv.and.mod(CrCalc(r),2).ne.1) then   
+
+      if(use_pv.and.mod(CrCalc(r),2).ne.1) then
     ! estimate accuracy of PV-reduction if not yet calculated
         if (use_pv) then
 
@@ -1964,7 +1985,7 @@ contains
           else if (r.ne.0) then
             err_pv(r) = max( w_pv**(r/2) * err_C0,  &
                 max(w_pv**(r/2-1) * v_pv , 1d0) * z_pv * err_B )
-                
+
 !          write(*,*) 'CalcCred err_pv', w_pv**(rmax/2) * err_C0, &
 !                        w_pv**(rmax/2-1) * v_pv * z_pv * err_B, err_C0,err_B
           else
@@ -1984,18 +2005,18 @@ contains
 ! change 21.10.15 for PVEST2
 !            err_pv2(r) = max( err_C0 * max(w_pv2**r,w_pv2*v_pv2**((r-1)/2) ),  &
 !                err_B * z_pv2 * max(w_pv2**(r+1),w_pv2, &
-!                                    w_pv2*v_pv2**((r-1)/2),w_pv2**2, & 
+!                                    w_pv2*v_pv2**((r-1)/2),w_pv2**2, &
 !                                    v_pv2**((r+1)/2),v_pv2) )
             err_pv2(r) = max( err_C0 * max(hw_pv2**r,hw_pv2*v_pv2**((r-1)/2) ),  &
                 err_B * z_pv2 * max(w_pv2*hw_pv2**(r),hw_pv2, &
-                                    hw_pv2*v_pv2**((r-1)/2),w_pv2*hw_pv2, & 
-                                    w_pv2*hw_pv2*v_pv2**((r-1)/2), & 
+                                    hw_pv2*v_pv2**((r-1)/2),w_pv2*hw_pv2, &
+                                    w_pv2*hw_pv2*v_pv2**((r-1)/2), &
                                     v_pv2**((r+1)/2),v_pv2) )
 
 !            write(*,*) 'CalcC err_pv2 ',r, err_pv2(r), &
 !                 err_C0 * max(1d0,w_pv2**r,v_pv2**((r-1)/2),w_pv2*v_pv2**((r-1)/2) )  ,  &
 !                 err_B * max(1d0,z_pv2*w_pv2**(r+1),z_pv2*w_pv2, &
-!                z_pv2*w_pv2*v_pv2**((r-1)/2),z_pv2*w_pv2**2, & 
+!                z_pv2*w_pv2*v_pv2**((r-1)/2),z_pv2*w_pv2**2, &
 !                z_pv2*v_pv2**((r+1)/2),z_pv2*v_pv2)
 
           else
@@ -2013,16 +2034,16 @@ contains
           err_pv2(r) = err_inf
         end if
       ! scale estimates down to allow trying other methods
-        err_pv2(r) = err_pv2(r)/impest_C     
+        err_pv2(r) = err_pv2(r)/impest_C
       end if
 
       if (use_g.and.mod(CrCalc(r),8)-mod(CrCalc(r),4).ne.4) then
       ! estimate accuracy of alternative Gram expansion if not yet calculated
         err_g_B(r) = err_B * u_g**r * z_g
         err_g_exp = u_g**(r-1) * Ctyp
-        err_g(r) = err_inf 
+        err_g(r) = err_inf
 
-      ! determine optimal order of expansion 
+      ! determine optimal order of expansion
         do i=0,rmax_C-r
           g = i
           err_g_exp = err_g_exp*fac_g
@@ -2043,7 +2064,7 @@ contains
         err_gy_B(r) = err_B * b_gy*v1_gy
         err_gy_exp = 1d0 * Ctyp
 
-      ! determine optimal order of expansion 
+      ! determine optimal order of expansion
         gy = 0
         do i=0,rmax_C-r
           if (mod(i,2).eq.1) then
@@ -2056,15 +2077,15 @@ contains
       ! increase gy by 2 to account for bad estimates
         gy = min(max(gy+4,2*gy),(rmax_C-r)/2)
       ! scale estimates down to allow trying other methods
-        err_gy(r) =  err_gy(r)/impest_C     
+        err_gy(r) =  err_gy(r)/impest_C
       end if
 
       if (use_gp.and.mod(CrCalc(r),32)-mod(CrCalc(r),16).ne.16) then
       ! estimate accuracy of small momentum expansion if not yet calculated
         err_gp_B(r) = err_B * z_gp*v_gp**r
-        err_gp_exp = v_gp**(r-1) * Ctyp 
+        err_gp_exp = v_gp**(r-1) * Ctyp
 
-      ! determine optimal order of expansion 
+      ! determine optimal order of expansion
         do i=0,rmax_C-r
           gp = i
           err_gp_exp = err_gp_exp*fac_gp
@@ -2082,7 +2103,7 @@ contains
         err_gr_B(r) = err_B * a_gr
         err_gr_exp = y1_gr * Ctyp
 
-      ! determine optimal order of expansion 
+      ! determine optimal order of expansion
         gr = 0
         do i=0,rmax_C-r
           if (mod(i,2).eq.1) then
@@ -2102,7 +2123,7 @@ contains
 !       gr = min(max(gr+2,2*gr),(rmax_C-r)/2)
         gr = min(max(gr+2,2*gr),rmax_C-r,max(0,(rmax_B-2*r)/2))
       ! scale estimates down to allow trying other methods
-        err_gr(r) =  err_gr(r)/impest_C     
+        err_gr(r) =  err_gr(r)/impest_C
 
       end if
 
@@ -2111,7 +2132,7 @@ contains
         err_gpf_B(r) = err_B * b_gpf*v1_gpf
         err_gpf_exp = 1d0 * Ctyp
 
-      ! determine optimal order of expansion 
+      ! determine optimal order of expansion
         gpf = 0
         do i=0,rmax_C-r
           if (mod(i,2).eq.1) then
@@ -2124,7 +2145,7 @@ contains
       ! increase gpf by 2 to account for bad estimates
         gpf = min(max(gpf+4,2*gpf),(rmax_C-r)/2)
       ! scale estimates down to allow trying other methods
-        err_gpf(r) =  err_gpf(r)/impest_C     
+        err_gpf(r) =  err_gpf(r)/impest_C
       end if
 
 
@@ -2174,7 +2195,7 @@ contains
           CCalc=CCalc+1
           Crmethod_alt(0:r)=1
           checkest=Cerr_alt(r)/(err_pv(r)*abs(C_alt(0,0,0)))
-          
+
 #ifdef Credtest
           if(checkest.gt.1d2*impest_C.or.checkest.lt.1d-2*impest_C) then
             write(*,*) 'CalcCred: estimate acc_pv imprecise',err_pv(r),Cerr_alt(r)/abs(C_alt(0,0,0))
@@ -2183,7 +2204,7 @@ contains
 
           err_pv(0:r)=Cerr_alt(0:r)
 
-          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &   
+          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &
               Cerr2,Cerr2_alt(0:r),Crmethod,Crmethod_alt(0:r),rmax,r)
 
           if (rmax.ge.1) then
@@ -2200,7 +2221,7 @@ contains
 #endif
 
           if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods
-          
+
         elseif (use_pv2.and.err_pv2(r).le.err_pv(r).and.mod(CrCalc(r),4)-mod(CrCalc(r),2).ne.2) then
 
 !          deallocate(C_alt)
@@ -2229,7 +2250,7 @@ contains
           CCalc=CCalc+2
           Crmethod_alt(0:r)=2
           checkest=Cerr_alt(r)/(err_pv(r)*abs(C_alt(0,0,0)))
-          
+
 #ifdef Credtest
           if(checkest.gt.1d2*impest_C.or.checkest.lt.1d-2*impest_C) then
             write(*,*) 'CalcCred: estimate err_pv2 imprecise',err_pv2(r),Cerr_alt(r)
@@ -2238,7 +2259,7 @@ contains
 
           err_pv2(0:r)=Cerr_alt(0:r)
 
-          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &   
+          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &
               Cerr2,Cerr2_alt(0:r),Crmethod,Crmethod_alt(0:r),rmax,r)
 
           if (rmax.ge.1) then
@@ -2253,12 +2274,12 @@ contains
           write(*,*) 'CalcCred: after pv 2nd try Cerr(r)',Cerr
           write(*,*) 'CalcCred: after pv 2nd try Cacc(r)',Cerr/Ctyp
 #endif
-          
+
           if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods
 
         end if
 
-      else 
+      else
 
 #ifdef Credtest
         write(*,*) 'CalcCred: explore exps once more'
@@ -2300,10 +2321,10 @@ contains
             write(*,*) 'CalcCred: estimate err_g imprecise ',err_g(r),Cerr_alt(r)
           end if
 #endif
-          
+
           err_g(0:r)=Cerr_alt(0:r)
 
-          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &   
+          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &
               Cerr2,Cerr2_alt(0:r),Crmethod,Crmethod_alt(0:r),rmax,r)
 
           if (rmax.ge.1) then
@@ -2320,7 +2341,7 @@ contains
 #endif
 
           if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods
-          
+
         else if (use_gy.and.err_gy(r).le.min(err_g(r),err_gp(r),err_gr(r),err_gpf(r))        &
             .and.mod(CrCalc(r),16)-mod(CrCalc(r),8).ne.8) then
 !          deallocate(C_alt)
@@ -2357,10 +2378,10 @@ contains
           end if
 #endif
           err_gy(0:r)=Cerr_alt(0:r)
-          
-          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &   
+
+          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &
               Cerr2,Cerr2_alt(0:r),Crmethod,Crmethod_alt(0:r),rmax,r)
-  
+
           if (rmax.ge.1) then
             Ctyp =  max(abs(C(0,0,0)),abs(C(0,1,0)),abs(C(0,0,1)))
           else
@@ -2375,7 +2396,7 @@ contains
 #endif
 
           if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods
-          
+
         elseif (use_gp.and.err_gp(r).le.min(err_g(r),err_gy(r),err_gr(r),err_gpf(r))        &
             .and.mod(CrCalc(r),32)-mod(CrCalc(r),16).ne.16) then
 
@@ -2414,8 +2435,8 @@ contains
 #endif
 
           err_gp(0:r)=Cerr_alt(0:r)
-          
-          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &   
+
+          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &
               Cerr2,Cerr2_alt(0:r),Crmethod,Crmethod_alt(0:r),rmax,r)
 
           if (rmax.ge.1) then
@@ -2431,7 +2452,7 @@ contains
           write(*,*) 'CalcCred: after exps 2nd try Cacc(r)',Cerr/Ctyp
 #endif
 
-          if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods          
+          if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods
 
         elseif (use_gr.and.err_gr(r).le.min(err_g(r),err_gy(r),err_gp(r),err_gpf(r))   &
             .and.mod(CrCalc(r),64)-mod(CrCalc(r),32).ne.32) then
@@ -2470,8 +2491,8 @@ contains
 #endif
 
           err_gr(0:r)=Cerr_alt(0:r)
-          
-          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &   
+
+          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &
               Cerr2,Cerr2_alt(0:r),Crmethod,Crmethod_alt(0:r),rmax,r)
 
           if (rmax.ge.1) then
@@ -2487,7 +2508,7 @@ contains
           write(*,*) 'CalcCred: after exps 2nd try Cacc(r)',Cerr/Ctyp
 #endif
 
-          if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods          
+          if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods
 
         else if (use_gpf.and.err_gpf(r).le.min(err_g(r),err_gy(r),err_gp(r),err_gr(r))        &
             .and.mod(CrCalc(r),128)-mod(CrCalc(r),64).ne.64) then
@@ -2525,10 +2546,10 @@ contains
           end if
 #endif
           err_gpf(0:r)=Cerr_alt(0:r)
-          
-          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &   
+
+          call CopyCimp3(C,C_alt(0:r,0:r,0:r),Cerr,Cerr_alt(0:r),Cerr1,Cerr1_alt(0:r),   &
               Cerr2,Cerr2_alt(0:r),Crmethod,Crmethod_alt(0:r),rmax,r)
-  
+
           if (rmax.ge.1) then
             Ctyp =  max(abs(C(0,0,0)),abs(C(0,1,0)),abs(C(0,0,1)))
           else
@@ -2543,7 +2564,7 @@ contains
 #endif
 
           if(checkest.gt.impest_C.and.Mode_coli.lt.1) goto 100     ! error larger than expected: try other methods
-          
+
         end if
 
       end if
@@ -2588,10 +2609,10 @@ contains
       CCount(CCalc+CCountoffset1) = CCount(CCalc+CCountoffset1)+1
     end if
 
-#ifdef Credtest              
+#ifdef Credtest
     write(*,*) 'CalcCred final acc_C=',Cerr/norm,critacc_coli
     write(*,*) 'CalcCred final method C=',Crmethod
-#endif              
+#endif
 
     if (maxval(acc_C(0:rdef)-critacc_coli).gt.0) then
 
@@ -2600,14 +2621,14 @@ contains
 #ifdef Credtest
       write(*,*) 'CritPoint C',critacc_coli,acc_C
       write(*,*) 'CritPoint C',maxval(acc_C(0:rdef)-critacc_coli),maxval(acc_C(0:rdef)),rdef,acc_C(rdef)
-#endif      
+#endif
 
 !      call SetErrFlag_coli(-5)
 !      call ErrOut_coli('CalcCred',' critical accuracy not reached', &
 !           errorwriteflag)
 
-#ifdef CritPointsCOLI 
-      CritPointCntC = CritPointCntC + 1    
+#ifdef CritPointsCOLI
+      CritPointCntC = CritPointCntC + 1
 
       if (CritPointCntC.le.MaxCritPointC.and.Monitoring) then
         call CritPointsOut_coli('C_coli',acc_C(rdef))
@@ -2637,7 +2658,7 @@ contains
 #endif
 
   end subroutine CalcCred
- 
+
 
 
 
@@ -2645,19 +2666,19 @@ contains
   !  subroutine CalcCuv(Cuv,Buv_0,m02,f,rmax,id)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCuv(Cuv,Buv_0,m02,f,rmax,id)
-  
+
     integer, intent(in) :: rmax,id
     double complex, intent(in) :: m02,f(2)
 !   double complex, intent(inout) :: Cuv(0:rmax,0:rmax,0:rmax)
     double complex, intent(out) :: Cuv(0:rmax,0:rmax,0:rmax)
     double complex, intent(in) :: Buv_0(0:rmax-1,0:rmax-1,0:rmax-1)
     integer :: r,n0,n1,n2,r0
-        
+
     ! C_(0,n1,n2) UV-finite
     Cuv(0,:,:) = 0d0
-    
+
 !    do r=2,rmax
 !      do n0=1,rmax/2
 !        do n1=0,r-2*n0
@@ -2666,15 +2687,15 @@ contains
       do n0=max(1,r-rmax),r/2
         do n1=0,r-2*n0
           n2 = r-2*n0-n1
-        
+
           Cuv(n0,n1,n2) = (Buv_0(n0-1,n1,n2) + 2*m02*Cuv(n0-1,n1,n2)  &
-                          + f(1)*Cuv(n0-1,n1+1,n2)  & 
-                          + f(2)*Cuv(n0-1,n1,n2+1)) / (2*r) 
+                          + f(1)*Cuv(n0-1,n1+1,n2)  &
+                          + f(2)*Cuv(n0-1,n1,n2+1)) / (2*r)
 
         end do
       end do
     end do
-    
+
   end subroutine CalcCuv
 
 
@@ -2687,14 +2708,14 @@ contains
   !
   !  new version 10.02.2016 (5.10) with (5.11) inserted
   !              27.09.2016    prefactors of B_0 improved
-  !              02.09.2017    allocate and q1q2 removed  
+  !              02.09.2017    allocate and q1q2 removed
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCpv1(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: Cuv(0:rmax,0:rmax,0:rmax)
@@ -2730,11 +2751,11 @@ contains
     Cuv(0,0,0) = 0d0
 
     ! accuracy estimate for C0 function
-    Cerr(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))   
-    Cerr2(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))   
+    Cerr(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))
+    Cerr2(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))
 
     if (rmax.eq.0) return
-    
+
     ! allocation and calculation of B functions
     rmaxB = rmax-1
     ! rmaxB = max(rmax-1,0)
@@ -2748,7 +2769,7 @@ contains
 !   allocate(Cij_err(0:rmax))
 !   allocate(C00_err2(0:rmax))
 !   allocate(Cij_err2(0:rmax))
-    
+
     ! determine binaries for B-coefficients
     k=0
     bin = 1
@@ -2799,8 +2820,8 @@ contains
 
 #ifdef Cpv1test
 !    write(*,*) 'CalcCpv1: B_err= ',B_err,acc_def_B,B_max
-    write(*,*) 'CalcDpv1 Cij_err(0)=',Cij_err(0)
-!    write(*,*) 'CalcCpv1 test :', & 
+    write(*,*) 'CalcCpv1 Cij_err(0)=',Cij_err(0)
+!    write(*,*) 'CalcCpv1 test :', &
 !            (1d0 - (Zadjf(1)+Zadjf(2))/detZ), &
 !            (detZmZadjf + Zadjs(1)*(mm12-mm02) + Zadjs(2)*(mm22-mm02)) /detZ
 #endif
@@ -2823,19 +2844,19 @@ contains
             if (n1.ge.1) then
               C(n0,n1,n2) = C(n0,n1,n2) &
                   - 2*n1*Zadjf(1)/detZ*C(n0,n1-1,n2)
-            else            
+            else
               C(n0,n1,n2) = C(n0,n1,n2) &
                   + Zadjf(1)/detZ* B_i(n0-1,n2,1)
             end if
             if (n2.ge.1) then
               C(n0,n1,n2) = C(n0,n1,n2) &
                   - 2*n2*Zadjf(2)/detZ*C(n0,n1,n2-1)
-            else            
+            else
               C(n0,n1,n2) = C(n0,n1,n2) &
                   + Zadjf(2)/detZ * B_i(n0-1,n1,2)
             end if
 
-            C(n0,n1,n2) = C(n0,n1,n2)  / (2*r) 
+            C(n0,n1,n2) = C(n0,n1,n2)  / (2*r)
 
 !        if(n0.eq.1) then
 !          write(*,*) 'Ca(1,n1,n2)=',n1,n2, 4*Cuv(n0,n1,n2) + detX/detZ*C(n0-1,n1,n2)
@@ -2853,7 +2874,7 @@ contains
 
     ! reduction formula (5.11) with (5.10) inserted for n0 = 0
 !     do n0=(r-1)/2,0,-1
-      n0=0 
+      n0=0
         do n1=0,r-2*n0
           n2 = r-2*n0-n1
 
@@ -2866,15 +2887,15 @@ contains
             nn2 = n2-1
             j = 2
           end if
-         
+
 !          do i=1,2
 !            Smod(i) = -B_0(n0,nn1,nn2)
 !          end do
           Smod = 0d0
-          
+
           if (nn1.ge.1) then
             Smod(1) = Smod(1) - 2d0*nn1*C(n0+1,nn1-1,nn2)
-          else          
+          else
             Smod(1) = Smod(1) + B_i(n0,nn2,1)
           end if
 
@@ -2883,7 +2904,7 @@ contains
           else
             Smod(2) = Smod(2) + B_i(n0,nn1,2)
           end if
-          
+
           C(n0,n1,n2) = (Zadj(1,j)*Smod(1) + Zadj(2,j)*Smod(2)  &
                            - Zadjs(j)*B_0(n0,nn1,nn2) &
                            - Zadjf(j)*C(n0,nn1,nn2))/detZ
@@ -2896,12 +2917,12 @@ contains
           write(*,*) 'Ca(0,n1,n2)=',Zadj(1,j)*Smod(1),Zadj(2,j)*Smod(2)
           write(*,*) 'Ca(0,n1,n2)=',-Zadjs(j)*B_0(n0,nn1,nn2),-Zadjf(j)*C(n0,nn1,nn2)
         end if
-#endif 
+#endif
 
         end do
 !      end do
 
-      ! determine error from symmetry for n0=0 and n1>=1, n2>=1 
+      ! determine error from symmetry for n0=0 and n1>=1, n2>=1
       Cerr(r)=Cerr(r-1)
       Cerr2(r)=Cerr2(r-1)
 
@@ -2921,15 +2942,15 @@ contains
           nn1 = n1
           nn2 = n2-1
           j = 2
-         
+
 !          do i=1,2
 !            Smod(i) = -B_0(n0,nn1,nn2)
 !          end do
           Smod = 0
-          
+
           if (nn1.ge.1) then
             Smod(1) = Smod(1) - 2d0*nn1*C(n0+1,nn1-1,nn2)
-          else          
+          else
             Smod(1) = Smod(1) + B_i(n0,nn2,1)
           end if
 
@@ -2938,11 +2959,11 @@ contains
           else
             Smod(2) = Smod(2) + B_i(n0,nn1,2)
           end if
-           
+
           C_alt(n0,n1,n2) = (Zadj(1,j)*Smod(1) + Zadj(2,j)*Smod(2)  &
                            - Zadjs(j)*B_0(n0,nn1,nn2) &
                            - Zadjf(j)*C(n0,nn1,nn2))/detZ
- 
+
           Cerr(r)=max(Cerr(r),abs(C(n0,n1,n2)-C_alt(n0,n1,n2)))
           Cerr2(r)=max(Cerr2(r),abs(C(n0,n1,n2)-C_alt(n0,n1,n2)))
 
@@ -2952,7 +2973,7 @@ contains
           write(*,*) 'Cb(0,n1,n2)=',Zadj(1,j),Smod(1),Zadj(2,j),Smod(2)
           write(*,*) 'Cb(0,n1,n2)=',Zadjs(j),B_0(n0,nn1,nn2),Zadjf(j),C(n0,nn1,nn2)
         end if
-#endif 
+#endif
 !            write(*,*) 'CalcCpv1 Cerr',n0,n1,n2, Cerr(r), abs(C(n0,n1,n2)),abs(C_alt(n0,n1,n2))
 
         end do
@@ -2974,7 +2995,7 @@ contains
 ! estimate using insertions of (5.10) in (5.11)
       Cij_err(r) = max(maxZadjf*Cij_err(r-1),   &
               maxZadj*max(2*C00_err(r),B_err))/adetZ
- 
+
       if(r.ge.2)then
         C00_err2(r) = max(2*abs(m02)*Cij_err2(r-2), B_err,    &
               aZadjff/adetZ*Cij_err2(r-2),             &
@@ -2991,7 +3012,7 @@ contains
       Cij_err2(r) = max((maxZadjf/maxZadj)*Cij_err2(r-1),max(2*C00_err2(r),B_err))/sqrt(adetZ)
     end do
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -3006,7 +3027,7 @@ contains
 #ifdef Cpv1test
     write(*,*) 'CalcCpv1 Cerrsym',Cerr
     write(*,*) 'CalcCpv1 Caccsym',Cerr/abs(C(0,0,0))
- 
+
     write(*,*) 'CalcCpv1 Cijerr',Cij_err(1:rmax)
     write(*,*) 'CalcCpv1 Cijacc',Cij_err(1:rmax)/abs(C(0,0,0))
 #endif
@@ -3039,11 +3060,11 @@ contains
   !  subroutine CalcCpv1o(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,Cerr,Cerr2)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCpv1o(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: Cuv(0:rmax,0:rmax,0:rmax)
@@ -3072,11 +3093,11 @@ contains
     Cuv(0,0,0) = 0d0
 
     ! accuracy estimate for C0 function
-    Cerr(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))   
-    Cerr2(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))   
+    Cerr(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))
+    Cerr2(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))
 
     if (rmax.eq.0) return
-    
+
     ! allocation and calculation of B functions
     rmaxB = rmax-1
     ! rmaxB = max(rmax-1,0)
@@ -3090,7 +3111,7 @@ contains
     allocate(Cij_err(0:rmax))
     allocate(C00_err2(0:rmax))
     allocate(Cij_err2(0:rmax))
-    
+
     ! determine binaries for B-coefficients
     k=0
     bin = 1
@@ -3128,7 +3149,7 @@ contains
 !    q10  = elimminf2_coli(p10)
 !    q21  = elimminf2_coli(p21)
 !    q20  = elimminf2_coli(p20)
-! 
+!
 !    q1q2 = (q10+q20-q21)
 !    detZ = 4d0*q10*q20-q1q2*q1q2
 !    Zinv(1,1) = 2d0*q20/detZ
@@ -3145,7 +3166,7 @@ contains
     call CalcCuv(Cuv,Buv_0,mm02,f,rmax,id)
 
     ! initialization of error propagation
-!    Zadj=Zinv*detZ    
+!    Zadj=Zinv*detZ
 
 !    maxZadj = max(abs(Zadj(1,1)),abs(Zadj(2,1)),abs(Zadj(2,2)))
 
@@ -3187,7 +3208,7 @@ contains
       end do
 
 !     do n0=(r-1)/2,0,-1
-      n0=0 
+      n0=0
         do n1=0,r-2*n0
           n2 = r-2*n0-n1
 
@@ -3200,15 +3221,15 @@ contains
             nn2 = n2-1
             j = 2
           end if
-         
+
           ! reduction formula (5.11) for C(n0,n1,n2), n1+n2=/=0
           do i=1,2
             Smod(i) = -B_0(n0,nn1,nn2)-f(i)*C(n0,nn1,nn2)
           end do
-          
+
           if (nn1.ge.1) then
             Smod(1) = Smod(1) - 2d0*nn1*C(n0+1,nn1-1,nn2)
-          else          
+          else
             Smod(1) = Smod(1) + B_i(n0,nn2,1)
           end if
 
@@ -3217,18 +3238,18 @@ contains
           else
             Smod(2) = Smod(2) + B_i(n0,nn1,2)
           end if
-          
+
           C(n0,n1,n2) = Zinv(1,j)*Smod(1) + Zinv(2,j)*Smod(2)
 
 !        if(n0.eq.0) then
 !          write(*,*) 'Ca(0,n1,n2)=',n1,n2,C(0,n1,n2),nn1,nn2,j
 !          write(*,*) 'Ca(0,n1,n2)=',Zinv(1,j),Smod(1),Zinv(2,j),Smod(2)
 !        end if
- 
+
         end do
 !      end do
 
-      ! determine error from symmetry for n0=0 and n1>=1, n2>=1 
+      ! determine error from symmetry for n0=0 and n1>=1, n2>=1
       Cerr(r)=Cerr(r-1)
       Cerr2(r)=Cerr2(r-1)
       n0=0
@@ -3238,15 +3259,15 @@ contains
           nn1 = n1
           nn2 = n2-1
           j = 2
-         
+
           ! reduction formula (5.11) for C(n0,n1,n2), n1+n2=/=0
           do i=1,2
             Smod(i) = -B_0(n0,nn1,nn2)-f(i)*C(n0,nn1,nn2)
           end do
-          
+
           if (nn1.ge.1) then
             Smod(1) = Smod(1) - 2d0*nn1*C(n0+1,nn1-1,nn2)
-          else          
+          else
             Smod(1) = Smod(1) + B_i(n0,nn2,1)
           end if
 
@@ -3255,9 +3276,9 @@ contains
           else
             Smod(2) = Smod(2) + B_i(n0,nn1,2)
           end if
-           
+
           C_alt(n0,n1,n2) = Zinv(1,j)*Smod(1) + Zinv(2,j)*Smod(2)
- 
+
           Cerr(r)=max(Cerr(r),abs(C(n0,n1,n2)-C_alt(n0,n1,n2)))
           Cerr2(r)=max(Cerr2(r),abs(C(n0,n1,n2)-C_alt(n0,n1,n2)))
 
@@ -3284,7 +3305,7 @@ contains
       end if
       Cij_err(r) = max(maxZadjf*Cij_err(r-1),   &
               maxZadj*max(2*C00_err(r),B_err))/adetZ
- 
+
       if(r.ge.2)then
         C00_err2(r) = max(2*abs(m02)*Cij_err2(r-2), B_err,    &
               aZadjff/adetZ*Cij_err2(r-2),             &
@@ -3301,7 +3322,7 @@ contains
       Cij_err2(r) = max((maxZadjf/maxZadj)*Cij_err2(r-1),max(2*C00_err2(r),B_err))/sqrt(adetZ)
     end do
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -3316,7 +3337,7 @@ contains
 #ifdef Cpv1otest
     write(*,*) 'CalcCpv1o Cerrsym',Cerr
     write(*,*) 'CalcCpv1o Caccsym',Cerr/abs(C(0,0,0))
- 
+
     write(*,*) 'CalcCpv1o Cijerr',Cij_err(1:rmax)
     write(*,*) 'CalcCpv1o Cijacc',Cij_err(1:rmax)/abs(C(0,0,0))
 #endif
@@ -3334,7 +3355,7 @@ contains
 !    write(*,*) 'CalcCpv1o Cerr ',Cerr
 !    write(*,*) 'CalcCpv1o Cerr2',Cerr2
 
-  end subroutine CalcCpv1o   
+  end subroutine CalcCpv1o
 
 
 
@@ -3343,11 +3364,11 @@ contains
   !  subroutine CalcCpv(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,Cerr,Cerr2)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCpv(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: Cuv(0:rmax,0:rmax,0:rmax)
@@ -3376,13 +3397,13 @@ contains
     Cuv(0,0,0) = 0d0
 
     ! accuracy estimate for C0 function
-    Cerr(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))   
-    Cerr2(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))   
+    Cerr(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))
+    Cerr2(0) = acc_def_C0*max(1d0/sqrt(adetZ),abs(C(0,0,0)))
 
 !    write(*,*) 'CalcCpv: Cerr(0)= ',Cerr(0),Cerr(0)/abs(C(0,0,0)),abs(C(0,0,0))
 
     if (rmax.eq.0) return
-    
+
     ! allocation and calculation of B functions
     rmaxB = rmax-1
     ! rmaxB = max(rmax-1,0)
@@ -3396,7 +3417,7 @@ contains
     allocate(Cij_err(0:rmax))
     allocate(C00_err2(0:rmax))
     allocate(Cij_err2(0:rmax))
-    
+
     ! determine binaries for B-coefficients
     k=0
     bin = 1
@@ -3434,7 +3455,7 @@ contains
 !    q10  = elimminf2_coli(p10)
 !    q21  = elimminf2_coli(p21)
 !    q20  = elimminf2_coli(p20)
-! 
+!
 !    q1q2 = (q10+q20-q21)
 !    detZ = 4d0*q10*q20-q1q2*q1q2
 !    Zinv(1,1) = 2d0*q20/detZ
@@ -3451,7 +3472,7 @@ contains
     call CalcCuv(Cuv,Buv_0,mm02,f,rmax,id)
 
     ! initialization of error propagation
-!    Zadj=Zinv*detZ    
+!    Zadj=Zinv*detZ
 
 !    maxZadj = max(abs(Zadj(1,1)),abs(Zadj(2,1)),abs(Zadj(2,2)))
 
@@ -3485,7 +3506,7 @@ contains
 
       if (mod(r,2).eq.0) then
         ! reduction formula (5.10) for C(r/2,0,0)
-        n0 = r/2        
+        n0 = r/2
         C(n0,0,0) = (B_0(n0-1,0,0) + 2*mm02*C(n0-1,0,0) + 4*Cuv(n0,0,0) &
                         + f(1)*C(n0-1,1,0) + f(2)*C(n0-1,0,1)) / (2*r)
       end if
@@ -3503,15 +3524,15 @@ contains
             nn2 = n2-1
             j = 2
           end if
-         
+
           ! reduction formula (5.11) for C(n0,n1,n2), n1+n2=/=0
           do i=1,2
             Smod(i) = -B_0(n0,nn1,nn2)-f(i)*C(n0,nn1,nn2)
           end do
-          
+
           if (nn1.ge.1) then
             Smod(1) = Smod(1) - 2d0*nn1*C(n0+1,nn1-1,nn2)
-          else          
+          else
             Smod(1) = Smod(1) + B_i(n0,nn2,1)
           end if
 
@@ -3520,18 +3541,18 @@ contains
           else
             Smod(2) = Smod(2) + B_i(n0,nn1,2)
           end if
-          
+
           C(n0,n1,n2) = Zinv(1,j)*Smod(1) + Zinv(2,j)*Smod(2)
 
 !        if(n0.eq.0) then
 !          write(*,*) 'Ca(0,n1,n2)=',n1,n2,C(0,n1,n2),nn1,nn2
 !          write(*,*) 'Ca(0,n1,n2)=',Zinv(1,j),Smod(1),Zinv(2,j),Smod(2)
 !        end if
- 
+
         end do
       end do
 
-      ! determine error from symmetry for n0=0 and n1>1, n2>1 
+      ! determine error from symmetry for n0=0 and n1>1, n2>1
       Cerr(r)=Cerr(r-1)
       Cerr2(r)=Cerr2(r-1)
       n0=0
@@ -3542,15 +3563,15 @@ contains
             nn1 = n1
             nn2 = n2-1
             j = 2
-         
+
             ! reduction formula (5.11) for C(n0,n1,n2), n1+n2=/=0
             do i=1,2
               Smod(i) = -B_0(n0,nn1,nn2)-f(i)*C(n0,nn1,nn2)
             end do
-          
+
             if (nn1.ge.1) then
               Smod(1) = Smod(1) - 2d0*nn1*C(n0+1,nn1-1,nn2)
-            else          
+            else
               Smod(1) = Smod(1) + B_i(n0,nn2,1)
             end if
 
@@ -3559,9 +3580,9 @@ contains
             else
               Smod(2) = Smod(2) + B_i(n0,nn1,2)
             end if
-           
+
             C_alt(n0,n1,n2) = Zinv(1,j)*Smod(1) + Zinv(2,j)*Smod(2)
- 
+
             Cerr(r)=max(Cerr(r),abs(C(n0,n1,n2)-C_alt(n0,n1,n2)))
             Cerr2(r)=max(Cerr2(r),abs(C(n0,n1,n2)-C_alt(n0,n1,n2)))
 
@@ -3583,7 +3604,7 @@ contains
       end if
       Cij_err(r) = max(maxZadjf*Cij_err(r-1),   &
               maxZadj*max(C00_err(r),B_err))/adetZ
- 
+
       if(r.ge.2)then
         C00_err2(r) = max(abs(m02)*Cij_err(r-2), B_err,    &
               aZadjff/adetZ*Cij_err2(r-2),             &
@@ -3599,15 +3620,15 @@ contains
       end if
       Cij_err2(r) = max((maxZadjf/maxZadj)*Cij_err2(r-1),   &
                         max(C00_err2(r),B_err))/sqrt(adetZ)
- 
+
 !      write(*,*) 'CalcCpv r',r, Cij_err(r),maxZadjf*Cij_err(r-1)/adetZ,  &
-!              maxZadj*(C00_err(r))/adetZ,  &          
+!              maxZadj*(C00_err(r))/adetZ,  &
 !              maxZadj*(B_err)/adetZ
 
     end do
 
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     ! PV reduction (5.10)
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
@@ -3622,7 +3643,7 @@ contains
 #ifdef Cpvtest
     write(*,*) 'CalcCpv Cerrsym',Cerr
     write(*,*) 'CalcCpv Caccsym',Cerr/abs(C(0,0,0))
- 
+
     write(*,*) 'CalcCpv Cijerr',Cij_err(1:rmax)
     write(*,*) 'CalcCpv Cijacc',Cij_err(1:rmax)/abs(C(0,0,0))
 #endif
@@ -3647,11 +3668,11 @@ contains
   !  subroutine CalcCpv2(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr,Cerr2)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCpv2(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,id,Cerr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: C(0:rmax,0:rmax,0:rmax)
@@ -3703,7 +3724,7 @@ contains
     allocate(Cij_err(0:rmax))
     allocate(C00_err2(0:rmax+1))
     allocate(Cij_err2(0:rmax))
-    
+
     ! determine binaries for B-coefficients
     k=0
     bin = 1
@@ -3730,7 +3751,7 @@ contains
       end do
     end do
     B_max=max(B_max,maxval(abs(B_i(0,0:rmaxB,1:2))))
-    
+
     ! determine inverse modified Cayley matrix
 !    mm02 = elimminf2_coli(m02)
 !    mm12 = elimminf2_coli(m12)
@@ -3764,7 +3785,7 @@ contains
 !    write(*,*) 'CalcCpv: B_err= ',B_err,acc_B,B_max
 
     allocate(C_alt(0:rmax,0:rmax,0:rmax))
-    
+
     ! alternative PV-like reduction
     do r=1,rmax
 
@@ -3795,20 +3816,20 @@ contains
         end do
       end do
 
-      
+
       do n0=1,r/2
         do n1=0,r-2*n0
           n2 = r-2*n0-n1
 
           C(n0,n1,n2) = (Caux(n0,n1,n2) + 4d0*Cuv(n0,n1,n2)  &
-                         + B_0(n0-1,n1,n2))/r/2d0    
+                         + B_0(n0-1,n1,n2))/r/2d0
 
         end do
       end do
 
-      
-      ! calculate C for n0=0 and n1>0, n2>0 from (5.15) with (5.14) inserted 
-      ! and determine error from symmetry  
+
+      ! calculate C for n0=0 and n1>0, n2>0 from (5.15) with (5.14) inserted
+      ! and determine error from symmetry
       Cerr(r)=Cerr(r-1)
       Cerr2(r)=Cerr2(r-1)
 
@@ -3840,7 +3861,7 @@ contains
                        + mxinv(1,2)*Smod(1) + mxinv(2,2)*Smod(2)
 
         if(n1.eq.0) then
-          C(0,0,r) = C_alt(0,0,r)          
+          C(0,0,r) = C_alt(0,0,r)
 
 ! use error on detX for r=1 (enters r>1 implicitly)
 ! added 13.09.2022
@@ -3856,7 +3877,7 @@ contains
           Cerr2(r)=max(Cerr2(r),abs(C(0,n1,n2+1)-C_alt(0,n1,n2+1)))
         end if
 
-      end do 
+      end do
 
       C00_err(r+1) = max(B_err,adetX/adetZ*Cij_err(r-1),      &
               maxZadjf/adetZ*max(B_err,C00_err(r)))/(2*(r+1))
@@ -3878,11 +3899,11 @@ contains
 
 !      write(*,*) 'CalcCpv2 ij r',r, maxZadjf*C00_err(r+1)/adetX,B_err*maxZadjf/adetX, &
 !               maxXadj*C00_err(r)/adetX, maxXadj*B_err/adetX
-      
-    end do
-    
 
-    ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+    end do
+
+
+    ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
 
 #ifdef Cpv2test
@@ -3928,13 +3949,13 @@ contains
         end do
       end do
 
-      
+
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
           n2 = r-2*n0-n1
 
           C(n0,n1,n2) = (Caux(n0,n1,n2) + 4d0*Cuv(n0,n1,n2)  &
-                         + B_0(n0-1,n1,n2))/r/2d0    
+                         + B_0(n0-1,n1,n2))/r/2d0
 
 #ifdef Cpv2test
           write(*,*) 'C2(n0+1)',n0,n1,n2
@@ -3954,7 +3975,7 @@ contains
     write(*,*) 'CalcCpv2 Cijerr',Cij_err
     write(*,*) 'CalcCpv2 Cijacc',Cij_err/abs(C(0,0,0))
 #endif
-    
+
     Cerr2 = max(Cerr2,Cij_err2(0:rmax))
     Cerr = max(Cerr,Cij_err(0:rmax))
 
@@ -3979,11 +4000,11 @@ contains
   !  uses shifted momenta and global shifted quantities
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!7!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCpvshift(Cshift,Cuvshift,p10shift,p21shift,p20shift,m02shift,m12shift,m22shift,rmax,id,Cerr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,id
     double complex, intent(in) :: p10shift,p21shift,p20shift,m02shift,m12shift,m22shift
     double complex, intent(out) :: Cuvshift(0:rmax,0:rmax,0:rmax)
@@ -4015,11 +4036,11 @@ contains
     Cuvshift(0,0,0) = 0d0
 
     ! accuracy estimate for C0 function
-    Cerr(0) = acc_def_C0*max(1d0/sqrt(adetZshift),abs(Cshift(0,0,0)))   
-    Cerr2(0) = acc_def_C0*max(1d0/sqrt(adetZshift),abs(Cshift(0,0,0)))   
+    Cerr(0) = acc_def_C0*max(1d0/sqrt(adetZshift),abs(Cshift(0,0,0)))
+    Cerr2(0) = acc_def_C0*max(1d0/sqrt(adetZshift),abs(Cshift(0,0,0)))
 
     if (rmax.eq.0) return
-    
+
     ! allocation and calculation of B functions
     rmaxB = rmax-1
     ! rmaxB = max(rmax-1,0)
@@ -4033,7 +4054,7 @@ contains
     allocate(Cij_err(0:rmax))
     allocate(C00_err2(0:rmax))
     allocate(Cij_err2(0:rmax))
-    
+
     ! determine binaries for B-coefficients
     k=0
     bin = 1
@@ -4092,7 +4113,7 @@ contains
 #ifdef Cpvshifttest
 !    write(*,*) 'CalcCpvshift: B_err= ',B_err,acc_def_B,B_max
     write(*,*) 'CalcDpvshift Cij_err(0)=',Cij_err(0)
-!    write(*,*) 'CalcCpvshift test :', & 
+!    write(*,*) 'CalcCpvshift test :', &
 !            (1d0 - (Zadjf(1)+Zadjf(2))/detZshift), &
 !            (detZmZadjf + Zadjs(1)*(mm12shift-mm02shift) + Zadjs(2)*(mm22shift-mm02shift)) /detZshift
 #endif
@@ -4115,19 +4136,19 @@ contains
             if (n1.ge.1) then
               Cshift(n0,n1,n2) = Cshift(n0,n1,n2) &
                   - 2*n1*Zadjfshift(1)/detZshift*Cshift(n0,n1-1,n2)
-            else            
+            else
               Cshift(n0,n1,n2) = Cshift(n0,n1,n2) &
                   + Zadjfshift(1)/detZshift* B_i(n0-1,n2,1)
             end if
             if (n2.ge.1) then
               Cshift(n0,n1,n2) = Cshift(n0,n1,n2) &
                   - 2*n2*Zadjfshift(2)/detZshift*Cshift(n0,n1,n2-1)
-            else            
+            else
               Cshift(n0,n1,n2) = Cshift(n0,n1,n2) &
                   + Zadjfshift(2)/detZshift * B_i(n0-1,n1,2)
             end if
 
-            Cshift(n0,n1,n2) = Cshift(n0,n1,n2)  / (2*r) 
+            Cshift(n0,n1,n2) = Cshift(n0,n1,n2)  / (2*r)
 
 !        if(n0.eq.1) then
 !          write(*,*) 'Cas(1,n1,n2)=',n1,n2, 4*Cuvshift(n0,n1,n2) + detXshift/detZshift*Cshift(n0-1,n1,n2)
@@ -4145,7 +4166,7 @@ contains
 
     ! reduction formula (5.11) with (5.10) inserted for n0 = 0
 !     do n0=(r-1)/2,0,-1
-      n0=0 
+      n0=0
         do n1=0,r-2*n0
           n2 = r-2*n0-n1
 
@@ -4158,15 +4179,15 @@ contains
             nn2 = n2-1
             j = 2
           end if
-         
+
 !          do i=1,2
 !            Smod(i) = -B_0(n0,nn1,nn2)
 !          end do
           Smod = 0d0
-          
+
           if (nn1.ge.1) then
             Smod(1) = Smod(1) - 2d0*nn1*Cshift(n0+1,nn1-1,nn2)
-          else          
+          else
             Smod(1) = Smod(1) + B_i(n0,nn2,1)
           end if
 
@@ -4175,7 +4196,7 @@ contains
           else
             Smod(2) = Smod(2) + B_i(n0,nn1,2)
           end if
-          
+
           Cshift(n0,n1,n2) = (Zadjshift(1,j)*Smod(1) + Zadjshift(2,j)*Smod(2)  &
                            - Zadjsshift(j)*B_0(n0,nn1,nn2) &
                            - Zadjfshift(j)*Cshift(n0,nn1,nn2))/detZshift
@@ -4187,11 +4208,11 @@ contains
 !            write(*,*) 'Cas(0,n1,n2)=',Zadjshift(1,j)*Smod(1),Zadjshift(2,j)*Smod(2)
 !            write(*,*) 'Cas(0,n1,n2)=',-Zadjsshift(j)*B_0(n0,nn1,nn2),-Zadjfshift(j)*Cshift(n0,nn1,nn2)
 !          end if
-          
+
         end do
 !      end do
 
-      ! determine error from symmetry for n0=0 and n1>=1, n2>=1 
+      ! determine error from symmetry for n0=0 and n1>=1, n2>=1
       Cerr(r)=Cerr(r-1)
       Cerr2(r)=Cerr2(r-1)
 
@@ -4211,15 +4232,15 @@ contains
           nn1 = n1
           nn2 = n2-1
           j = 2
-         
+
 !          do i=1,2
 !            Smod(i) = -B_0(n0,nn1,nn2)
 !          end do
           Smod = 0
-          
+
           if (nn1.ge.1) then
             Smod(1) = Smod(1) - 2d0*nn1*Cshift(n0+1,nn1-1,nn2)
-          else          
+          else
             Smod(1) = Smod(1) + B_i(n0,nn2,1)
           end if
 
@@ -4228,11 +4249,11 @@ contains
           else
             Smod(2) = Smod(2) + B_i(n0,nn1,2)
           end if
-           
+
           Cshift_alt(n0,n1,n2) = (Zadjshift(1,j)*Smod(1) + Zadjshift(2,j)*Smod(2)  &
                            - Zadjsshift(j)*B_0(n0,nn1,nn2) &
                            - Zadjfshift(j)*Cshift(n0,nn1,nn2))/detZshift
- 
+
           Cerr(r)=max(Cerr(r),abs(Cshift(n0,n1,n2)-Cshift_alt(n0,n1,n2)))
           Cerr2(r)=max(Cerr2(r),abs(Cshift(n0,n1,n2)-Cshift_alt(n0,n1,n2)))
 
@@ -4257,7 +4278,7 @@ contains
 ! estimate using insertions of (5.10) in (5.11)
       Cij_err(r) = max(maxZadjfshift*Cij_err(r-1),   &
               maxZadjshift*max(2*C00_err(r),B_err))/adetZshift
- 
+
       if(r.ge.2)then
         C00_err2(r) = max(2*abs(m02shift)*Cij_err2(r-2), B_err,    &
               aZadjffshift/adetZshift*Cij_err2(r-2),             &
@@ -4269,7 +4290,7 @@ contains
       Cij_err2(r) = max((maxZadjfshift/maxZadjshift)*Cij_err2(r-1),max(2*C00_err2(r),B_err))/sqrt(adetZshift)
     end do
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -4284,7 +4305,7 @@ contains
 #ifdef Cpvshifttest
     write(*,*) 'CalcCpvshift Cerrsym',Cerr
     write(*,*) 'CalcCpvshift Caccsym',Cerr/abs(Cshift(0,0,0))
- 
+
     write(*,*) 'CalcCpvshift Cijerr',Cij_err(1:rmax)
     write(*,*) 'CalcCpvshift Cijacc',Cij_err(1:rmax)/abs(Cshift(0,0,0))
 #endif
@@ -4323,9 +4344,9 @@ contains
   !  subroutine CalcCgn(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordg_min,ordg_max,id,Cerr,acc_req_Cr,Cerr2)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCgn(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordg_min,ordg_max,id,Cerr,acc_req_Cr,Cerr2)
-  
+
     use globalC
 
     integer, intent(in) :: rmax,ordg_min,ordg_max,id
@@ -4363,7 +4384,7 @@ contains
     allocate(Buv_0(0:rmaxB,0:rmaxB,0:rmaxB))
     allocate(B_i(0:rmaxB,0:rmaxB,2))
     allocate(Buv_i(0:rmaxB,0:rmaxB,2))
-    
+
 
     ! determine binaries for B-coefficients
     k=0
@@ -4449,7 +4470,7 @@ contains
     ! choose reduction formulas with biggest denominators
     if (abs(Zadjf(1)).ge.abs(Zadjf(2))) then
       j = 1
-    else 
+    else
       j = 2
     end if
 
@@ -4491,7 +4512,7 @@ contains
     allocate(Cij_err(0:rmaxExp))
     allocate(C00_err2(0:rmaxExp))
     allocate(Cij_err2(0:rmaxExp))
-     
+
     ! initialize accuracy estimates
     Cerr = acc_inf
     Cij_err =0d0
@@ -4503,7 +4524,7 @@ contains
 
 #ifdef Cgntest
     write(*,*) 'CalcCgn rmax = ',rmax,rmaxExp
-    write(*,*) 'CalcCgn Cij_err = ',Cij_err 
+    write(*,*) 'CalcCgn Cij_err = ',Cij_err
     write(*,*) 'CalcCgn B0 = ', B_0(0,0,0),B_i(0,0,1),B_i(0,0,2)
 #endif
 
@@ -4513,7 +4534,7 @@ contains
     ! truncation of expansion if calculated term larger than truncfacexp * previous term
     ! crucial for expansion parameters between 0.1 and 1 !!!
     truncfacexp = sqrt(fac_g) * truncfacC
-    gtrunc = ordg_max 
+    gtrunc = ordg_max
 
 ! calculate C(n0,n1,n2) up to rank r for n0>0 and up to rank r-1 for n0=0
     rloop: do r=1,rmaxExp
@@ -4542,28 +4563,28 @@ contains
 
           inds0(1) = n1
           inds0(2) = n2
-          
-          CexpgAux = 2d0*Zadj(k,l)*B_0(n0-1,n1,n2)  & 
+
+          CexpgAux = 2d0*Zadj(k,l)*B_0(n0-1,n1,n2)  &
               + Xtilde*Cexpg(n0-1,n1,n2,0)  &
               + 4d0*Zadj(k,l)*CuvExpg(n0,n1,n2)
-          
+
           inds = inds0
           inds(k) = inds(k)+1
           do i=1,2
             CexpgAux = CexpgAux + Zadj(i,l)*Shat(n0-1,inds(1),inds(2),i)
           end do
-          
+
           do i=1,2
             inds = inds0
             inds(i) = inds(i)+1
             CexpgAux = CexpgAux - Zadj(k,l)*Shat(n0-1,inds(1),inds(2),i)
           end do
-          
+
           n = inds2(1)
           m = inds2(2)
-          
+
           Skl = f(n)*Shat(n0-1,inds0(1),inds0(2),m)
-          
+
           inds = inds0
           if (inds(m).ge.1) then
             inds(m) = inds(m)-1
@@ -4579,15 +4600,15 @@ contains
             Skl = Skl + 2d0*inds0(n)*Shat(n0,inds(1),inds(2),m)  &
                 - 2d0*f(m)*inds0(n)*Cexpg(n0,inds(1),inds(2),0)
           end if
-          
+
           CexpgAux = CexpgAux - Zadj2*Skl
-          
+
           Cexpg(n0,n1,n2,0) = CexpgAux/(2d0*Zadjkl)/(2d0*(r-n0)+1)
-          
+
           if (n0.eq.1) then
             maxCexpg(1,r,0) =  maxCexpg(1,r,0) + abs(Cexpg(n0,n1,n2,0) )
           end if
-          
+
           if (r-n0.le.rmax) then
             C(n0,n1,n2) = Cexpg(n0,n1,n2,0)
           end if
@@ -4617,7 +4638,7 @@ contains
           end if
 
 #ifdef Cgntest
-!          if(n0.eq.0.and.n1.eq.0.and.n2.eq.3) then 
+!          if(n0.eq.0.and.n1.eq.0.and.n2.eq.3) then
 !            write(*,*) 'C2(0,0,3,0)= ',0,C(n0,n1,n2)
 !          end if
 #endif
@@ -4635,11 +4656,11 @@ contains
 
       ! error propagation from B's
       C00_err(r) = max(max(maxZadj*B_err,fmax*B_err)/abs(Zadjkl),B_err)  &
-                   /(2*(2*r-1))        
+                   /(2*(2*r-1))
       Cij_err(r-1)=maxZadj*max(B_err,2*C00_err(r))/abs(Zadjfj)
 
       C00_err2(r) = max(max(maxZadj*B_err,fmax*B_err)/abs(Zadjkl),B_err)  &
-                   /(2*(2*r-1))        
+                   /(2*(2*r-1))
       Cij_err2(r-1)=maxZadj*max(B_err,2*C00_err2(r))/abs(Zadjfj)
 
 #ifdef Cgntest
@@ -4667,19 +4688,19 @@ contains
 
             inds0(1) = n1
             inds0(2) = n2
-            
+
             inds = inds0
             inds(k) = inds(k)+1
             inds(l) = inds(l)+1
             CexpgAux = Xtilde*Cexpg(n0-1,n1,n2,g)  &
                 - detZ*Cexpg(n0-1,inds(1),inds(2),g-1)
-            
-            
+
+
             n = inds2(1)
             m = inds2(2)
-            
+
             Skl = 0d0
-            
+
             inds = inds0
             if (inds(m).ge.1) then
               inds(m) = inds(m)-1
@@ -4694,29 +4715,29 @@ contains
               inds(n) = inds(n)-1
               Skl = Skl - 2d0*f(m)*inds0(n)*Cexpg(n0,inds(1),inds(2),g)
             end if
-            
+
             CexpgAux = CexpgAux - Zadj2*Skl
-            
+
             Cexpg(n0,n1,n2,g) = CexpgAux/(2d0*Zadjkl)/(2d0*(rg-n0)+1)
-            
-            
+
+
             if(n0.eq.1) then
               maxCexpg(1,rg,g) =  maxCexpg(1,rg,g) + abs(Cexpg(n0,n1,n2,g))
-              
-              if (g.eq.1.and.abs(Cexpg(n0,n1,n2,g)).gt.          & 
+
+              if (g.eq.1.and.abs(Cexpg(n0,n1,n2,g)).gt.          &
                   truncfacexp*max(1d0,maxCexpg(1,rg,g-1)) .or.   &
                   g.ge.2.and.abs(Cexpg(n0,n1,n2,g)).gt.          &
                   truncfacexp*maxCexpg(1,rg,g-1)) then
 
 #ifdef Cgntest
                 write(*,*) 'CalcCgn exit gloop',n0,n1,n2,g,abs(Cexpg(n0,n1,n2,g)),maxCexpg(1,rg,g-1),truncfacexp
-#endif      
-                
+#endif
+
                 gtrunc = g-1
                 exit gloop
               end if
             end if
-            
+
           end do
         end do
 
@@ -4749,33 +4770,33 @@ contains
           if (n2.ge.1) then
             Smod(2) = Smod(2) - 2d0*n2*Cexpg(1,n1,n2-1,g)
           end if
-          
+
           inds(1) = n1
           inds(2) = n2
           inds(j) = inds(j)+1
           Cexpg(0,n1,n2,g) = (Zadj(1,j)*Smod(1) +  Zadj(2,j)*Smod(2)  &
               - detZ*Cexpg(0,inds(1),inds(2),g-1))/Zadjfj
-          
+
           maxCexpg(0,rg-1,g) =  maxCexpg(0,rg-1,g) + abs(Cexpg(0,n1,n2,g))
-          
-!              if(n1.eq.0.and.n2.eq.1) then 
+
+!              if(n1.eq.0.and.n2.eq.1) then
 !                write(*,*) 'C2(2,3)= ',g,Cexpg(0,n1,n2,g)
 !                write(*,*) 'C2(2,3)= ',Zadj(1,j)*Smod(1)/Zadjfj,  Zadj(2,j)*Smod(2)/Zadjfj,  &
 !                                - detZ*Cexpg(0,inds(1),inds(2),inds(3),g-1)/Zadjfj
 !                write(*,*) 'C2(2,3)= ',inds(1),inds(2),         &
 !                                - detZ/Zadjfj,Cexpg(0,inds(1),inds(2),g-1)
 !              end if
-          
+
           if (g.eq.1.and.abs(Cexpg(0,n1,n2,g)).gt.                     &
-!     corrected 02.07.2018      
+!     corrected 02.07.2018
               truncfacexp*max(1/m2scale,maxCexpg(0,rg-1,g-1))    .or.    &
 !              truncfacexp*max(1/m2max,maxCexpg(0,rg-1,g-1))    .or.    &
               g.ge.2.and.abs(Cexpg(0,n1,n2,g)).gt.                     &
               truncfacexp*maxCexpg(0,rg-1,g-1)) then
-            
+
 #ifdef Cgntest
             write(*,*) 'CalcCgn exit gloop',0,n1,n2,g,abs(Cexpg(0,n1,n2,g)),maxCexpg(0,rg-1,g-1),truncfacexp
-#endif      
+#endif
             gtrunc = g-1
             exit gloop
           end if
@@ -4787,17 +4808,17 @@ contains
           C00_err(rg) = max(C00_err(rg),                    &
               max( abs(m02)*Cij_err(rg-2),                             &
               max(adetZ*Cij_err(rg),fmax**2*Cij_err(rg-2),fmax*C00_err(rg-1))/abs(Zadjkl) ) &
-                   /(2*(2*rg-1))     )   
+                   /(2*(2*rg-1))     )
         end if
-        Cij_err(rg-1) = max(Cij_err(rg-1),max(2*maxZadj*C00_err(rg),adetZ*Cij_err(rg))/abs(Zadjfj) ) 
+        Cij_err(rg-1) = max(Cij_err(rg-1),max(2*maxZadj*C00_err(rg),adetZ*Cij_err(rg))/abs(Zadjfj) )
 
         if(rg.gt.1)then
           C00_err2(rg) = max(C00_err2(rg),                    &
               max( abs(m02)*Cij_err2(rg-2),                             &
               max(adetZ*Cij_err2(rg),fmax**2*Cij_err2(rg-2),fmax*C00_err2(rg-1))/abs(Zadjkl) ) &
-                   /(2*(2*rg-1))     )   
+                   /(2*(2*rg-1))     )
         end if
-        Cij_err2(rg-1) = max(Cij_err2(rg-1),max(2*maxZadj*C00_err2(rg),adetZ*Cij_err2(rg))/abs(Zadjfj) ) 
+        Cij_err2(rg-1) = max(Cij_err2(rg-1),max(2*maxZadj*C00_err2(rg),adetZ*Cij_err2(rg))/abs(Zadjfj) )
 
 !      write(*,*) 'CalcCg g: ',r,adetZ/abs(Zadjfj),C00_err(rg),B_err
 !      write(*,*) 'CalcCg g: Cij_err=',rg-1,Cij_err(rg-1)
@@ -4834,7 +4855,7 @@ contains
           ! if error from B's larger than error from expansion stop expansion
           if(Cij_err(rg-1).gt.Cerr(rg-1)) then
              gtrunc = min(g,gtrunc)
-             
+
 #ifdef Cgtest
              write(*,*) 'CalcCgn exit err',r,g,gtrunc  &
              ,Cij_err(rg-1),Cerr(rg-1)
@@ -4907,7 +4928,7 @@ contains
 
     end do rloop
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -4927,8 +4948,8 @@ contains
 
     write(*,*) 'CalcCgn final err',Cerr
     write(*,*) 'CalcCgn final acc',Cerr/abs(C(0,0,0))
-#endif      
-                           
+#endif
+
 !   write(*,*) 'CalcCgn out',(((C((r-n1-n2)/2,n1,n2),n2=0,r-n1),n1=0,r),r=0,rmax)
 #ifdef TRACECout
     write(*,*) 'CalcCgn rmax',rmax
@@ -4938,7 +4959,7 @@ contains
     write(*,*) 'CalcCgn out',r,n0,n1,r-2*n0-n1,C(n0,n1,r-2*n0-n1)
     end do
     end do
-    end do   
+    end do
 #endif
 
 !    write(*,*) 'CalcCgn Cerr ',Cerr
@@ -4953,11 +4974,11 @@ contains
   !  subroutine CalcCg(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordg_min,ordg_max,id,Cerr,acc_req_Cr,Cerr2)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCg(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordg_min,ordg_max,id,Cerr,acc_req_Cr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,ordg_min,ordg_max,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: C(0:rmax,0:rmax,0:rmax)
@@ -4986,7 +5007,7 @@ contains
 !   write(*,*) 'CalcCg in acc',acc_req_Cr
 #endif
 
-    ! write(*,*) 'LH: CalcCg, ord', ordg_min 
+    ! write(*,*) 'LH: CalcCg, ord', ordg_min
     ! calculation B-coefficients
     rmaxB = rmax + ordg_min
     allocate(B_0(0:rmaxB,0:rmaxB,0:rmaxB))
@@ -5022,7 +5043,7 @@ contains
     ! error estimate for B's
     B_max = max(B_max,maxval(abs(B_i(0,0:rmaxB,1:2))))
     B_err = acc_def_B*B_max
-    
+
     ! determine (adjugated) Gram matrix
 !    mm02 = elimminf2_coli(m02)
 !    mm12 = elimminf2_coli(m12)
@@ -5079,7 +5100,7 @@ contains
     ! choose reduction formulas with biggest denominators
     if (abs(Zadjf(1)).ge.abs(Zadjf(2))) then
       j = 1
-    else 
+    else
       j = 2
     end if
 
@@ -5095,13 +5116,13 @@ contains
         sgn = -1
         ktlt = (/ 1,1 /)
       end if
-    else        
+    else
       if (abs(Z(2,2)).ge.abs(Z(1,2))) then
         k = 2
         l = 2
         sgn = 1
         ktlt = (/ 2,0 /)
-      else 
+      else
         k = 1
         l = 2
         sgn = -1
@@ -5124,7 +5145,7 @@ contains
     ! allocation of array for det(Z)-expanded C-coefficients
     rmaxExp = rmaxB+1
     allocate(Cexpg(0:rmaxExp/2,0:rmaxExp-1,0:rmaxExp-1,0:ordg_max))
-   
+
 
     ! calculate Cuv
     allocate(CuvExpg(0:rmaxExp,0:rmaxExp,0:rmaxExp))
@@ -5136,7 +5157,7 @@ contains
     allocate(Cij_err(0:rmaxExp))
     allocate(C00_err2(0:rmaxExp))
     allocate(Cij_err2(0:rmaxExp))
-    
+
     ! initialize accuracy estimates
     Cerr = acc_inf
     Cij_err = 0d0
@@ -5150,7 +5171,7 @@ contains
     ! crucial for expansion parameters between 0.1 and 1 !!!
 !    truncfacexp = sqrt(abs(detZ/Zadjfj)) * truncfacC
     truncfacexp = sqrt(fac_g) * truncfacC
-    gtrunc = ordg_max 
+    gtrunc = ordg_max
 
 ! calculate C(n0,n1,n2) up to rank r for n0>0 and up to rank r-1 for n0=0
     rloop: do r=1,rmaxExp
@@ -5222,7 +5243,7 @@ contains
         end if
 
         Cexpg(0,n1,n2,0) = (Zadj(1,j)*Smod(1) +  Zadj(2,j)*Smod(2))/Zadjfj
-        
+
         maxCexpg(0,r-1,0) =  maxCexpg(0,r-1,0) + abs(Cexpg(0,n1,n2,0))
         if (r-n0.le.rmax+1) then
           C(0,n1,n2) = Cexpg(0,n1,n2,0)
@@ -5237,11 +5258,11 @@ contains
 
       ! error propagation from B's
       C00_err(r) = max(max(maxZadj*B_err,fmax*B_err)/abs(Zkl),B_err)  &
-                   /(2*(2*r-1))        
+                   /(2*(2*r-1))
       Cij_err(r-1)=maxZadj*max(B_err,2*C00_err(r))/abs(Zadjfj)
 
       C00_err2(r) = max(max(maxZadj*B_err,fmax*B_err)/abs(Zkl),B_err)  &
-                   /(2*(2*r-1))        
+                   /(2*(2*r-1))
       Cij_err2(r-1)=maxZadj*max(B_err,2*C00_err2(r))/abs(Zadjfj)
 
 !      write(*,*) 'CalcCg after 0: ',maxZadj/abs(Zadjfj),C00_err(r),B_err
@@ -5282,17 +5303,17 @@ contains
               inds(l) = inds(l)-1
               Skl = Skl - 2d0*f(k)*inds0(l)*Cexpg(n0,inds(1),inds(2),g)
             end if
-         
+
             inds = inds0 + ktlt
             Cexpg(n0,n1,n2,g) = (Xtilde*Cexpg(n0-1,n1,n2,g) + Skl  &
                                    - detZ*sgn*Cexpg(n0-1,inds(1),inds(2),g-1))  &
-                                     /(2d0*Zkl)/(2d0*(rg-n0)+1d0)           
+                                     /(2d0*Zkl)/(2d0*(rg-n0)+1d0)
             if(n0.eq.1) then
               maxCexpg(1,rg,g) =  maxCexpg(1,rg,g) + abs(Cexpg(n0,n1,n2,g))
-              
+
               if (g.eq.1.and.abs(Cexpg(n0,n1,n2,g)).gt.        &
                   truncfacexp*max(1d0,maxCexpg(1,rg,g-1)).or.  &
-                  g.ge.2.and.abs(Cexpg(n0,n1,n2,g)).gt.        &  
+                  g.ge.2.and.abs(Cexpg(n0,n1,n2,g)).gt.        &
                   truncfacexp*maxCexpg(1,rg,g-1)) then
 
 #ifdef Cgtest
@@ -5326,7 +5347,7 @@ contains
         maxCexpg(0,rg-1,g) = 0d0
         do n1=0,rg-1
           n2 = rg-1-n1
-          
+
           Smod = 0d0
           if (n1.ge.1) then
             Smod(1) = Smod(1) - 2d0*n1*Cexpg(1,n1-1,n2,g)
@@ -5334,14 +5355,14 @@ contains
           if (n2.ge.1) then
             Smod(2) = Smod(2) - 2d0*n2*Cexpg(1,n1,n2-1,g)
           end if
-          
+
           inds(1) = n1
           inds(2) = n2
           inds(j) = inds(j)+1
-          
+
           Cexpg(0,n1,n2,g) = (Zadj(1,j)*Smod(1) +  Zadj(2,j)*Smod(2)  &
               - detZ*Cexpg(0,inds(1),inds(2),g-1))/Zadjfj
-          
+
           maxCexpg(0,rg-1,g) =  maxCexpg(0,rg-1,g) + abs(Cexpg(0,n1,n2,g))
 
           if (g.eq.1.and.abs(Cexpg(0,n1,n2,g)).gt.                     &
@@ -5357,7 +5378,7 @@ contains
             write(*,*) 'CalcCg exit gloop',Zadj(1,j)*Smod(1)/Zadjfj ,  Zadj(2,j)*Smod(2)/Zadjfj,  &
                 - detZ*Cexpg(0,inds(1),inds(2),g-1)/Zadjfj
 #endif
-            
+
             gtrunc = g-1
 
 #ifdef Cgtest
@@ -5373,27 +5394,27 @@ contains
         ! error propagation from B's
         if(rg.gt.1)then
 !          C00_err(rg) = max(C00_err(rg),                    &
-!              max( abs(m02)*Cij_err(rg-2),             &     
+!              max( abs(m02)*Cij_err(rg-2),             &
 !              max(adetZ*Cij_err(rg),fmax**2*Cij_err(rg-2),fmax*C00_err(rg-1))/abs(Zkl) ) &
-!                   /(2*(2*rg-1))     )   
+!                   /(2*(2*rg-1))     )
 !24.04.15 ->
 !          C00_err(rg) = max(C00_err(rg),                    &
-!              max( abs(m02)*Cij_err(rg-2),             &     
+!              max( abs(m02)*Cij_err(rg-2),             &
 !              max(adetZ*Cij_err(rg),abs(Xtilde)*Cij_err(rg-2),fmax*C00_err(rg-1))/abs(Zkl) ) &
-!                   /(2*(2*rg-1))     )   
-!06.05.15 -> 
+!                   /(2*(2*rg-1))     )
+!06.05.15 ->
           C00_err(rg) = max(C00_err(rg),                    &
               max(adetZ*Cij_err(rg),abs(Xtilde)*Cij_err(rg-2),fmax*C00_err(rg-1))/abs(Zkl)  &
-                   /(2*(2*rg-1))     )   
+                   /(2*(2*rg-1))     )
         end if
-        Cij_err(rg-1) = max(Cij_err(rg-1),max(2*maxZadj*C00_err(rg),adetZ*Cij_err(rg))/abs(Zadjfj) ) 
+        Cij_err(rg-1) = max(Cij_err(rg-1),max(2*maxZadj*C00_err(rg),adetZ*Cij_err(rg))/abs(Zadjfj) )
 
         if(rg.gt.1)then
           C00_err2(rg) = max(C00_err2(rg),                    &
               max(adetZ*Cij_err2(rg),abs(Xtilde)*Cij_err2(rg-2),fmax*C00_err2(rg-1))/abs(Zkl)  &
-                   /(2*(2*rg-1))     )   
+                   /(2*(2*rg-1))     )
         end if
-        Cij_err2(rg-1) = max(Cij_err2(rg-1),max(2*maxZadj*C00_err2(rg),adetZ*Cij_err2(rg))/abs(Zadjfj) ) 
+        Cij_err2(rg-1) = max(Cij_err2(rg-1),max(2*maxZadj*C00_err2(rg),adetZ*Cij_err2(rg))/abs(Zadjfj) )
 
 !      write(*,*) 'CalcCg g: ',r,adetZ/abs(Zadjfj),C00_err(rg),B_err
 !      write(*,*) 'CalcCg g: Cij_err=',rg-1,Cij_err(rg-1)
@@ -5430,7 +5451,7 @@ contains
           ! if error from B's larger than error from expansion stop expansion
           if(Cij_err(rg-1).gt.Cerr(rg-1)) then
              gtrunc = min(g,gtrunc)
-             
+
 #ifdef Cgtest
              write(*,*) 'CalcCg exit err',r,g,gtrunc
 #endif
@@ -5446,7 +5467,7 @@ contains
       write(*,*) 'CalcCg C(2,0,0) = ',r,C(1,0,0)
       write(*,*) 'CalcCg C(0,1,0) = ',r,C(0,1,0)
       write(*,*) 'CalcCg C(0,0,1) = ',r,C(0,0,1)
-      if(r.ge.5.and.rmax.ge.5) then 
+      if(r.ge.5.and.rmax.ge.5) then
       write(*,*) 'CalcCg C(2,1,0) = ',r,C(2,1,0)
       endif
 #endif
@@ -5473,7 +5494,7 @@ contains
 !               write(*,*) 'CalcCg n5 order  ',r,rg,mr,n0,n1,n2
 !               write(*,*) 'CalcCg n5 order C',C(n0,n1,n2)
 !           end do
-!         end do 
+!         end do
 !       end do
 !       do mr = 15,min(r-1,rmax)
 !         n0=0
@@ -5513,7 +5534,7 @@ contains
 
     end do rloop
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -5531,7 +5552,7 @@ contains
 !               write(*,*) 'CalcCg n6 order  ',r,rg,mr,n0,n1,n2
 !               write(*,*) 'CalcCg n6 order C',C(n0,n1,n2)
 !           end do
-!         end do 
+!         end do
 !       end do
 !       do mr = 15,rmax
 !         n0=0
@@ -5546,7 +5567,7 @@ contains
     write(*,*) 'CalcCg final err',Cerr
     write(*,*) 'CalcCg final acc',Cerr/abs(C(0,0,0))
 #endif
-                 
+
 #ifdef TRACECout
     write(*,*) 'CalcCg rmax',rmax
     do r=15,rmax
@@ -5556,7 +5577,7 @@ contains
     write(*,*) 'CalcCg out C',C(n0,n1,r-2*n0-n1)
     end do
     end do
-    end do   
+    end do
 #endif
 
 !    write(*,*) 'CalcCg Cerr ',Cerr
@@ -5569,9 +5590,9 @@ contains
   !  subroutine CalcCgr(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordgr_min,ordgr_max,id,Cerr,acc_req_Cr,Cerr2)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCgr(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordgr_min,ordgr_max,id,Cerr,acc_req_Cr,Cerr2)
-  
+
     use globalC
 
     integer, intent(in) :: rmax,ordgr_min,ordgr_max,id
@@ -5609,7 +5630,7 @@ contains
     allocate(Buv_0(0:rmaxB,0:rmaxB,0:rmaxB))
     allocate(B_i(0:rmaxB,0:rmaxB,2))
     allocate(Buv_i(0:rmaxB,0:rmaxB,2))
-    
+
     ! determine binaries for B-coefficients
     k=0
     bin = 1
@@ -5678,7 +5699,7 @@ contains
 !    f(1) = q10+mm02-mm12
 !    f(2) = q20+mm02-mm22
 !    f(3) = q30+mm02-mm32
-      
+
 !    Zadjf(1) = Zadj(1,1)*f(1)+Zadj(2,1)*f(2)+Zadj(3,1)*f(3)
 !    Zadjf(2) = Zadj(1,2)*f(1)+Zadj(2,2)*f(2)+Zadj(3,2)*f(3)
 !    Zadjf(3) = Zadj(1,3)*f(1)+Zadj(2,3)*f(2)+Zadj(3,3)*f(3)
@@ -5706,7 +5727,7 @@ contains
     ! choose reduction formulas with biggest denominators
     if (abs(Zadjf(1)).ge.abs(Zadjf(2))) then
       j = 1
-    else 
+    else
       j = 2
     end if
 
@@ -5767,7 +5788,7 @@ contains
     allocate(Cij_err(0:rmaxExp))
     allocate(C00_err2(0:rmaxExp))
     allocate(Cij_err2(0:rmaxExp))
-     
+
     ! initialize accuracy estimates
     Cerr = acc_inf
     Cij_err =0d0
@@ -5783,7 +5804,7 @@ contains
     ! truncation of expansion if calculated term larger than truncfacexp * previous term
     ! crucial for expansion parameters between 0.1 and 1 !!!
     truncfacexp = sqrt(fac_gr) * truncfacC
-    gtrunc = ordgr_max 
+    gtrunc = ordgr_max
 
 ! calculate C(n0,n1,n2) up to rank r+n0
     rloop: do r=0,rmaxExp/2
@@ -5816,7 +5837,7 @@ contains
 
           inds0(n) = nn
           inds0(k) = nntt
-            
+
 #ifdef Cgrtest
           write(*,*) 'CalcCgr inds0',n0,inds0
 #endif
@@ -5845,7 +5866,7 @@ contains
           write(*,*) 'CalcCgr Caux 1c',-Zadj(k,l)*B_0(n0-1,inds1(1),inds1(2))
           write(*,*) 'CalcCgr Caux 1s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
 #endif
-          
+
           inds = inds1
           inds(k) = inds(k)+1
           do i=1,2
@@ -5877,19 +5898,19 @@ contains
 
 
 #ifdef Cgrtest
-          write(*,*) 'CalcCgr Caux 4ca', 2*(nn+1) *Zadj2(n ,m )*Shat(n0,inds0(1),inds0(2),m) 
+          write(*,*) 'CalcCgr Caux 4ca', 2*(nn+1) *Zadj2(n ,m )*Shat(n0,inds0(1),inds0(2),m)
           write(*,*) 'CalcCgr Caux 4s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
 #endif
 
-!            Caux = Caux - 2*(nn+1)* Zadj2f(k,n,l)*Cexpgr(n0,inds0(1),inds0(2),0) 
+!            Caux = Caux - 2*(nn+1)* Zadj2f(k,n,l)*Cexpgr(n0,inds0(1),inds0(2),0)
 
           inds = inds1
           if(m.eq.n) then
             if (inds(n).gt.1) then
               inds(n) = inds(n)-2
-              Caux = Caux - 4*(nn+1)*nn * Zadj2(n,m ) * Cexpgr(n0+1,inds(1),inds(2),0) 
+              Caux = Caux - 4*(nn+1)*nn * Zadj2(n,m ) * Cexpgr(n0+1,inds(1),inds(2),0)
 #ifdef Cgrtest
-              write(*,*) 'CalcCgr Caux 6c',4*(nn+1)*nn* Zadj2(n,m ) *Cexpgr(n0+1,inds(1),inds(2),0) 
+              write(*,*) 'CalcCgr Caux 6c',4*(nn+1)*nn* Zadj2(n,m ) *Cexpgr(n0+1,inds(1),inds(2),0)
               write(*,*) 'CalcCgr Caux 6s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
 #endif
             end if
@@ -5897,25 +5918,25 @@ contains
             if (inds(n).gt.0.and.inds(m).gt.0) then
               inds(n) = inds(n)-1
               inds(m) = inds(m)-1
-              Caux = Caux - 4*(nn+1)*(inds(m)+1)* Zadj2(n,m ) * Cexpgr(n0+1,inds(1),inds(2),0) 
+              Caux = Caux - 4*(nn+1)*(inds(m)+1)* Zadj2(n,m ) * Cexpgr(n0+1,inds(1),inds(2),0)
 #ifdef Cgrtest
-              write(*,*) 'CalcCgr Caux 6c',-4*(nn+1)*(inds(m)+1)* Zadj2(n,m ) *Cexpgr(n0+1,inds(1),inds(2),0) 
+              write(*,*) 'CalcCgr Caux 6c',-4*(nn+1)*(inds(m)+1)* Zadj2(n,m ) *Cexpgr(n0+1,inds(1),inds(2),0)
               write(*,*) 'CalcCgr Caux 6s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
 #endif
             end if
           end if
-          
+
           Cexpgr(n0,inds0(1),inds0(2),0) = Caux/(2*(nn+1)* Zadj2f(k,n,l))
-          
+
           if (n0.eq.1) then
             maxCexpgr(1,r,0) =  maxCexpgr(1,r,0) + abs(Cexpgr(n0,inds0(1),inds0(2),0) )
           end if
-          
+
 !          if (r+n0.le.rmax) then             !  for fixed rank
           if (r.le.rmax) then
             C(n0,inds0(1),inds0(2)) = Cexpgr(n0,inds0(1),inds0(2),0)
           end if
-          
+
         end do
       end do
 
@@ -5946,8 +5967,8 @@ contains
         if(r.le.rmax) then
           write(*,*) 'CalcCgr C(0,n1,n2,0)=',n1,n2,C(0,n1,n2)
         end if
-        
-        if(n0.eq.0.and.n1.eq.0.and.n2.eq.3) then 
+
+        if(n0.eq.0.and.n1.eq.0.and.n2.eq.3) then
           write(*,*) 'C(0,0,3)= ',0,C(n0,n1,n2)
         end if
 #endif
@@ -5995,77 +6016,77 @@ contains
             nntt = rg-n0-nn
             inds0(n) = nn
             inds0(k) = nntt
-              
+
             inds1(n) = nn+1
             inds1(k) = nntt
-              
+
 #ifdef Cgrtest
             write(*,*) 'CalcCgr Caux r inds=',n0,inds0
-#endif      
+#endif
 
             Caux = 2*Zadj(k,l) * (2+rg-n0) * Cexpgr(n0,inds1(1),inds1(2),g-1)
-              
+
 #ifdef Cgrtest
             write(*,*) 'CalcCgr Caux r1c',2*Zadj(k,l)*(2+rg-n0)* Cexpgr(n0,inds1(1),inds1(2),g-1)
             write(*,*) 'CalcCgr Caux r1c',2*Zadj(k,l)*(2+rg-n0),Cexpgr(n0,inds1(1),inds1(2),g-1) &
                 ,n0,inds1(1),inds1(2)
             write(*,*) 'CalcCgr Caux r1s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
-#endif      
+#endif
 
             if (g.gt.1) then
               inds = inds1
               inds(k) = inds(k) + 1
               inds(l) = inds(l) + 1
               Caux = Caux + detZ * Cexpgr(n0-1,inds(1),inds(2),g-2)
-                
+
 #ifdef Cgrtest
               write(*,*) 'CalcCgr Caux r2c',detZ * Cexpgr(n0-1,inds(1),inds(2),g-2)
               write(*,*) 'CalcCgr Caux r2s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
-#endif      
+#endif
             end if
 
             inds = inds1
             inds(k) = inds(k) + 1
             Caux = Caux + Zadjf(l) * Cexpgr(n0-1,inds(1),inds(2),g-1)
-            
+
 #ifdef Cgrtest
             write(*,*) 'CalcCgr Caux r3c',Zadjf(l)* Cexpgr(n0-1,inds(1),inds(2),g-1)
             write(*,*) 'CalcCgr Caux r3c',Zadjf(l),Cexpgr(n0-1,inds(1),inds(2),g-1),n0-1,inds(1),inds(2)
             write(*,*) 'CalcCgr Caux r3s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
-#endif      
+#endif
 
-!            Caux = Caux - 2*nn* Zadj2f(k,n,l)*Cexpgr(n0,inds0(1),inds0(2),g) 
+!            Caux = Caux - 2*nn* Zadj2f(k,n,l)*Cexpgr(n0,inds0(1),inds0(2),g)
 
             inds = inds1
             if(m.eq.n) then
               if (inds(n).gt.1) then
                 inds(n) = inds(n)-2
-                Caux = Caux - 4*(nn+1)*nn * Zadj2(n,m ) * Cexpgr(n0+1,inds(1),inds(2),g) 
+                Caux = Caux - 4*(nn+1)*nn * Zadj2(n,m ) * Cexpgr(n0+1,inds(1),inds(2),g)
 #ifdef Cgrtest
-                write(*,*) 'CalcCgr Caux r6c',4*(nn+1)*nn* Zadj2(n,m ) *Cexpgr(n0+1,inds(1),inds(2),g) 
+                write(*,*) 'CalcCgr Caux r6c',4*(nn+1)*nn* Zadj2(n,m ) *Cexpgr(n0+1,inds(1),inds(2),g)
                 write(*,*) 'CalcCgr Caux r6s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
-#endif      
+#endif
               end if
             else
               if (inds(n).gt.0.and.inds(m).gt.0) then
                 inds(n) = inds(n)-1
                 inds(m) = inds(m)-1
-                Caux = Caux - 4*(nn+1)*(inds(m)+1)* Zadj2(n,m ) * Cexpgr(n0+1,inds(1),inds(2),g) 
+                Caux = Caux - 4*(nn+1)*(inds(m)+1)* Zadj2(n,m ) * Cexpgr(n0+1,inds(1),inds(2),g)
 #ifdef Cgrtest
-                write(*,*) 'CalcCgr Caux r6c',4*(nn+1)*(inds(m)+1)* Zadj2(n,m ) *Cexpgr(n0+1,inds(1),inds(2),g) 
-                write(*,*) 'CalcCgr Caux r6c',n,m,nn,4*(nn+1)*(inds(m)+1),Zadj2(n,m ),Cexpgr(n0+1,inds(1),inds(2),g) 
+                write(*,*) 'CalcCgr Caux r6c',4*(nn+1)*(inds(m)+1)* Zadj2(n,m ) *Cexpgr(n0+1,inds(1),inds(2),g)
+                write(*,*) 'CalcCgr Caux r6c',n,m,nn,4*(nn+1)*(inds(m)+1),Zadj2(n,m ),Cexpgr(n0+1,inds(1),inds(2),g)
                 write(*,*) 'CalcCgr Caux r6s',Caux,Caux/(2*(nn+1)* Zadj2f(k,n,l))
-#endif      
+#endif
               end if
             end if
-              
+
 
             Cexpgr(n0,inds0(1),inds0(2),g) = Caux/(2*(nn+1)* Zadj2f(k,n,l))
-                             
+
             if(n0.eq.1) then
               maxCexpgr(1,rg,g) =  maxCexpgr(1,rg,g) + abs(Cexpgr(n0,inds0(1),inds0(2),g))
-              
-              if (g.eq.1.and.abs(Cexpgr(n0,inds0(1),inds0(2),g)).gt.   & 
+
+              if (g.eq.1.and.abs(Cexpgr(n0,inds0(1),inds0(2),g)).gt.   &
                   truncfacexp*max(1d0,maxCexpgr(1,rg,g-1)) .or.        &
                   g.ge.2.and.abs(Cexpgr(n0,inds0(1),inds0(2),g)).gt.   &
                   truncfacexp*maxCexpgr(1,rg,g-1)) then
@@ -6073,8 +6094,8 @@ contains
 #ifdef Cgrtest
                 write(*,*) 'CalcCgr exit gloop',n0,inds0(1),inds0(2),g,rg,  &
                     abs(Cexpgr(n0,inds0(1),inds0(2),g)),maxCexpgr(1,rg,g-1),truncfacexp
-#endif      
-                
+#endif
+
                 gtrunc = g-1
                 exit gloop
               end if
@@ -6107,7 +6128,7 @@ contains
         maxCexpgr(0,rg,g) = 0d0
         do n1=0,rg
           n2 = rg-n1
-          
+
           Smod = 0d0
           if (n1.ge.1) then
             Smod(1) = Smod(1) - 2d0*n1*Cexpgr(1,n1-1,n2,g)
@@ -6124,7 +6145,7 @@ contains
 
           maxCexpgr(0,rg,g) =  maxCexpgr(0,rg,g) + abs(Cexpgr(0,n1,n2,g))
 
-!              if(n1.eq.0.and.n2.eq.1) then 
+!              if(n1.eq.0.and.n2.eq.1) then
 !                write(*,*) 'C2(2,3)= ',g,Cexpgr(0,n1,n2,g)
 !                write(*,*) 'C2(2,3)= ',Zadj(1,j)*Smod(1)/Zadjfj,  Zadj(2,j)*Smod(2)/Zadjfj,  &
 !                                - detZ*Cexpgr(0,inds(1),inds(2),g-1)/Zadjfj
@@ -6139,7 +6160,7 @@ contains
 
 #ifdef Cgrtest
             write(*,*) 'CalcCgr exit gloop',0,n1,n2,g,abs(Cexpgr(0,n1,n2,g)),maxCexpgr(0,rg,g-1),truncfacexp
-#endif      
+#endif
             gtrunc = g-1
             exit gloop
           end if
@@ -6152,7 +6173,7 @@ contains
               max( maxZadj*(2+rg-2*n0)*C00_err(rg+2),       &
                     abs(detZ)*Cij_err(rg+2),                &
                     maxZadjf*Cij_err(rg+1)                   &
-                 ) / (2*maxZadj2f)  ) 
+                 ) / (2*maxZadj2f)  )
         end if
         Cij_err(rg)=max(Cij_err(rg),                &
             max(2*maxZadj*C00_err(rg+1),abs(detZ)*Cij_err(rg))/abs(Zadjfj) )
@@ -6162,7 +6183,7 @@ contains
               max( maxZadj*(2+rg-2*n0)*C00_err2(rg+2),       &
                     abs(detZ)*Cij_err2(rg+2),                &
                     maxZadjf*Cij_err2(rg+1)                   &
-                 ) / (2*maxZadj2f)  ) 
+                 ) / (2*maxZadj2f)  )
         end if
         Cij_err2(rg)=max(Cij_err2(rg),                &
             max(2*maxZadj*C00_err2(rg+1),abs(detZ)*Cij_err2(rg))/abs(Zadjfj) )
@@ -6202,7 +6223,7 @@ contains
           ! if error from B's larger than error from expansion stop expansion
           if(Cij_err(rg).gt.3d0*Cerr(rg)) then
             gtrunc = min(g,gtrunc)
-             
+
 #ifdef Cgrtest
              write(*,*) 'CalcCgr exit err',r,rg,g,gtrunc,Cij_err(rg),Cerr(rg)
 #endif
@@ -6280,8 +6301,8 @@ contains
 
     write(*,*) 'CalcCgr final err',Cerr
     write(*,*) 'CalcCgr final acc',Cerr /abs(C(0,0,0))
-#endif      
-                           
+#endif
+
 !   write(*,*) 'CalcCgr out',(((C((r-n1-n2)/2,n1,n2),n2=0,r-n1),n1=0,r),r=0,rmax)
 #ifdef TRACECout
     write(*,*) 'CalcCgr rmax',rmax
@@ -6291,7 +6312,7 @@ contains
     write(*,*) 'CalcCgr out',r,n0,n1,r-2*n0-n1,C(n0,n1,r-2*n0-n1)
     end do
     end do
-    end do   
+    end do
 #endif
 
 !    write(*,*) 'CalcCgr Cerr ',Cerr
@@ -6308,11 +6329,11 @@ contains
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! modified version of Ansgar  (similar to CalcDgy)
-  
+
   subroutine CalcCgy(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordgy_min,ordgy_max,id,Cerr,acc_req_Cr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,ordgy_min,ordgy_max,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: C(0:rmax,0:rmax,0:rmax)
@@ -6434,24 +6455,24 @@ contains
         i = 1
         j = 1
         jt = 2
-        Zadj2f = -f(2)  
+        Zadj2f = -f(2)
       else
         i = 1
         j = 2
         jt = 1
         Zadj2f = f(2)
       end if
-    else        
+    else
       if (abs(Xadj(2,2)).ge.abs(Xadj(1,2))) then
         i = 2
         j = 2
         jt = 1
         Zadj2f = -f(1)
-      else 
+      else
         i = 1
         j = 2
         jt = 2
-        Zadj2f = -f(2) 
+        Zadj2f = -f(2)
       end if
     end if
     aZadj2f = abs(Zadj2f)
@@ -6466,12 +6487,12 @@ contains
         l = 2
         lt = 1
       end if
-    else        
+    else
       if (abs(Zadj(2,2)).ge.abs(Zadj(1,2))) then
         k = 2
         l = 2
         lt = 1
-      else 
+      else
         k = 1
         l = 2
         lt = 1
@@ -6485,11 +6506,11 @@ contains
 #endif
 
 !   write(*,*)  'CalcCgy Zadj(i,j)=',i,j,Zadj(i,j),Xadj(i,j)
-        
+
     ! allocation of array for det(Z)- and det(X)-expanded C-coefficients
     rmaxExp = rmaxB+1
     allocate(Cexpgy(0:max(rmax/2,1),0:rmaxExp-2,0:rmaxExp-2,0:ordgy_max))
-   
+
     ! calculate Cuv
     allocate(CuvExpgy(0:rmaxExp,0:rmaxExp,0:rmaxExp))
     call CalcCuv(CuvExpgy,Buv_0,mm02,f,rmaxExp,id)
@@ -6517,18 +6538,18 @@ contains
     ! crucial for expansion parameters between 0.1 and 1 !!!
 !    truncfacexp = sqrt(max(maxZadjf,abs(detZ))/abs(Xadj(i,j))*max(1d0,fmax/abs(Zadj(k,l)))) * truncfacC
     truncfacexp = sqrt(fac_gy) * truncfacC
-    gtrunc = ordgy_max 
+    gtrunc = ordgy_max
 
-#ifdef Cgytest            
+#ifdef Cgytest
     write(*,*) 'CalcCgy gtrunc orig=',gtrunc
     write(*,*) 'CalcCgy rmaxExp-2=',rmaxexp-2
 #endif
 
 ! calculate C(1,n1,n2) up to rank r+2
-! calculate C(0,n1,n2) up to rank r  
+! calculate C(0,n1,n2) up to rank r
     rloop: do r=0,rmaxExp-2
 
-#ifdef Cgytest            
+#ifdef Cgytest
       write(*,*) 'CalcCgy rloop=',r,rmaxExp-2,rmax+2*gtrunc+2
       write(*,*) 'CalcCgy rloop=',rmax,gtrunc
 #endif
@@ -6571,7 +6592,7 @@ contains
         n2 = r-n1
         inds(1) = n1
         inds(2) = n2
-      
+
         Caux = (2*(2+r)*Cexpgy(1,n1,n2,0) - 4*CuvExpgy(1,n1,n2)  &
              - B_0(0,n1,n2))*Zadj(i,j)
 
@@ -6605,15 +6626,15 @@ contains
       end if
 
  ! error propagation from B's
-      C00_err(r+2) = B_err /2d0               
+      C00_err(r+2) = B_err /2d0
       Cij_err(r)=max(abs(Zadj(i,j))/abs(Xadj(i,j))*max(B_err,2*(r+2)*C00_err(r+2)),  &
                   fmax/abs(Xadj(i,j))*max(B_err,2*C00_err(r+1)))
 
-      C00_err2(r+2) = B_err /2d0               
+      C00_err2(r+2) = B_err /2d0
       Cij_err2(r)=max(abs(Zadj(i,j))/abs(Xadj(i,j))*max(B_err,2*(r+2)*C00_err2(r+2)),  &
                   fmax/abs(Xadj(i,j))*max(B_err,2*C00_err2(r+1)))
 
-      
+
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! higher order coefficients
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -6651,7 +6672,7 @@ contains
                   truncfacexp*max(1d0,maxCexpgy(1,rg,g-1))    .or.   &
                   g.ge.2.and.abs(Cexpgy(1,inds0(1),inds0(2),g)).gt.  &
                   truncfacexp*maxCexpgy(1,rg,g-1)) then
-#ifdef Cgytest            
+#ifdef Cgytest
             write(*,*) 'CalcCgy exit gloop',n1,n2,g,abs(Cexpgy(1,inds0(1),inds0(2),g)),maxCexpgy(1,rg,g-1)
             write(*,*) 'CalcCgy exit gloop',g,rg,inds0(1),inds0(2)
 #endif
@@ -6659,8 +6680,8 @@ contains
             gtrunc = g-1
             exit gloop
 
-          end if 
-        
+          end if
+
         end do
 
 #ifndef PPEXP00
@@ -6682,9 +6703,9 @@ contains
           n2 = rg-n1
           inds0(1) = n1
           inds0(2) = n2
-          
+
           Caux = 2*(2+rg)*Cexpgy(1,n1,n2,g)*Zadj(i,j)
-          
+
 !          write(*,*) 'CalcCgy g Caux 1',rg,g,Caux
 
           if (inds0(jt).ge.1) then
@@ -6692,12 +6713,12 @@ contains
             inds(jt) = inds(jt)-1
             Caux = Caux - 2d0*Zadj2f*inds0(jt)*Cexpgy(1,inds(1),inds(2),g)
           end if
-          
+
 !          write(*,*) 'CalcCgy g Caux 2',rg,g,Caux
 
           inds0(i) = inds0(i)+1
           Caux = Caux - Zadjf(j)*Cexpgy(0,inds0(1),inds0(2),g-1)
-          
+
 !          write(*,*) 'CalcCgy g Caux 3',rg,g,Caux
 
           Cexpgy(0,n1,n2,g) = Caux/Xadj(i,j)
@@ -6705,13 +6726,13 @@ contains
 !          write(*,*) 'CalcCgy g Cexpgy',rg,g,n1,n2,Cexpgy(0,n1,n2,g)
 
           maxCexpgy(0,rg,g) =  maxCexpgy(0,rg,g) + abs(Cexpgy(0,n1,n2,g))
-          
+
           if (g.eq.1.and.abs(Cexpgy(0,n1,n2,g)).gt.        &
               truncfacexp*max(1d0/m2scale,maxCexpgy(0,rg,g-1)).or.     &
               g.ge.2.and.abs(Cexpgy(0,n1,n2,g)).gt.        &
               truncfacexp*maxCexpgy(0,rg,g-1)) then
 
-#ifdef Cgytest            
+#ifdef Cgytest
             write(*,*) 'CalcCgy exit gloop',n1,n2,g,rg
             write(*,*) 'CalcCgy exit gloop',abs(Cexpgy(0,n1,n2,g)),maxCexpgy(0,rg,g-1),1d0/m2scale
             write(*,*) 'CalcCgy exit gloop',truncfacexp
@@ -6732,7 +6753,7 @@ contains
         if(rg.gt.1)then
           C00_err(rg+2) =max(C00_err(rg+2),                                       &
               max(abs(Zadjf(k))/2d0*Cij_err(rg+1),                                &
-                  abs(detZ)/2d0*Cij_err(rg+2))/abs(Zadj(k,l)))   
+                  abs(detZ)/2d0*Cij_err(rg+2))/abs(Zadj(k,l)))
         end if
 
 #ifdef Cgytest
@@ -6752,7 +6773,7 @@ contains
         if(rg.gt.1)then
           C00_err2(rg+2) =max(C00_err2(rg+2),                                       &
               max(abs(Zadjf(k))/2d0*Cij_err2(rg+1),                                &
-                  abs(detZ)/2d0*Cij_err2(rg+2))/abs(Zadj(k,l)))   
+                  abs(detZ)/2d0*Cij_err2(rg+2))/abs(Zadj(k,l)))
         end if
 
         Cij_err2(rg)= max( Cij_err2(rg),                                &
@@ -6792,7 +6813,7 @@ contains
             end if
 
 #ifdef Cgytest
-            write(*,*) 'CalcCgy test1',Cerr(rg)            
+            write(*,*) 'CalcCgy test1',Cerr(rg)
 #endif
 
           end do
@@ -6801,7 +6822,7 @@ contains
           if(Cij_err(rg).gt.Cerr(rg)) then
              gtrunc = min(g,gtrunc)
 !            gtrunc = min(g+1,gtrunc)
-             
+
 #ifdef Cgytest
              write(*,*) 'CalcCgy adjust gtrunc',r,g,gtrunc
 #endif
@@ -6809,8 +6830,8 @@ contains
           end if
 
         end if
-        
-        
+
+
       end do gloop
 
 !     write(*,*) 'CalcCgy gtrunc aft gloop=',gtrunc,r
@@ -6850,12 +6871,12 @@ contains
           do n1=0,rg
             C(0,n1,rg-n1)=0d0
           end do
-        end do   
+        end do
         do rg=r+1,rmax
           do n1=0,rg-2
             C(1,n1,rg-2-n1)=0d0
           end do
-        end do   
+        end do
 #else
       if(maxval(Cerr-acc_req_Cr*abs(C(0,0,0))).le.0d0.and.r.ge.rmax) then
 #endif
@@ -6864,7 +6885,7 @@ contains
         write(*,*) 'CalcCgy exit rloop',r,Cerr,maxval(Cerr)
 #endif
 
-        exit rloop 
+        exit rloop
 
       end if
 
@@ -6901,7 +6922,7 @@ contains
       end do
     end do
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -6926,7 +6947,7 @@ contains
     write(*,*) 'CalcCgy out',r,n0,n1,r-2*n0-n1,C(n0,n1,r-2*n0-n1)
     end do
     end do
-    end do   
+    end do
 #endif
 
 !    write(*,*) 'CalcCgy Cerr ',Cerr
@@ -6944,11 +6965,11 @@ contains
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! version of Lars
-  
+
   subroutine CalcCgyo(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordgy_min,ordgy_max,id,Cerr,acc_req_Cr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,ordgy_min,ordgy_max,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: C(0:rmax,0:rmax,0:rmax)
@@ -7078,14 +7099,14 @@ contains
         bt = 1
         sgnab = -1
       end if
-    else        
+    else
       if (abs(Xadj(2,2)).ge.abs(Xadj(1,2))) then
         a = 2
         b = 2
         at = 1
         bt = 1
         sgnab = 1
-      else 
+      else
         a = 1
         b = 2
         at = 2
@@ -7104,12 +7125,12 @@ contains
         l = 2
         lt = 1
       end if
-    else        
+    else
       if (abs(Zadj(2,2)).ge.abs(Zadj(1,2))) then
         k = 2
         l = 2
         lt = 1
-      else 
+      else
         k = 1
         l = 2
         lt = 1
@@ -7119,7 +7140,7 @@ contains
     ! allocation of array for det(Z)- and det(X)-expanded C-coefficients
     rmaxExp = rmaxB+1
     allocate(Cexpgy(0:max(rmax/2,1),0:rmaxExp-2,0:rmaxExp-2,0:ordgy_max))
-   
+
     ! calculate Cuv
     allocate(CuvExpgy(0:rmaxExp,0:rmaxExp,0:rmaxExp))
     call CalcCuv(CuvExpgy,Buv_0,mm02,f,rmaxExp,id)
@@ -7148,10 +7169,10 @@ contains
 !    truncfacexp = sqrt(max(maxZadjf,abs(detZ))/abs(Xadj(a,b))*max(1d0,fmax/abs(Zadj(k,l)))) * truncfacC
     truncfacexp = sqrt(fac_gy) * truncfacC
 
-    gtrunc = ordgy_max 
+    gtrunc = ordgy_max
 
 ! calculate C(1,n1,n2) up to rank r+2
-! calculate C(0,n1,n2) up to rank r  
+! calculate C(0,n1,n2) up to rank r
     rloop: do r=0,rmaxExp-2
 
       if (r.gt.rmax+2*gtrunc+2) exit rloop
@@ -7191,7 +7212,7 @@ contains
         n2 = r-n1
         inds(1) = n1
         inds(2) = n2
-      
+
         Caux = (2*(2+r)*Cexpgy(1,n1,n2,0) - 4*CuvExpgy(1,n1,n2)  &
              - B_0(0,n1,n2))*Z(a,b)
 
@@ -7224,15 +7245,15 @@ contains
       end if
 
  ! error propagation from B's
-      C00_err(r+2) = B_err           
+      C00_err(r+2) = B_err
       Cij_err(r)=max(abs(Zadj(a,b))/abs(Xadj(a,b))*max(B_err,C00_err(r+2)),  &
                   fmax/abs(Xadj(a,b))*max(B_err,C00_err(r+1)))
 
-      C00_err2(r+2) = B_err           
+      C00_err2(r+2) = B_err
       Cij_err2(r)=max(abs(Zadj(a,b))/abs(Xadj(a,b))*max(B_err,C00_err(r+2)),  &
                   fmax/abs(Xadj(a,b))*max(B_err,C00_err2(r+1)))
 
-      
+
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       ! higher order coefficients
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -7272,7 +7293,7 @@ contains
               g.ge.2.and.abs(Cexpgy(1,inds0(1),inds0(2),g)).gt.  &
               truncfacexp*maxCexpgy(1,rg,g-1)) then
 
-#ifdef Cgytest            
+#ifdef Cgytest
             write(*,*) 'CalcCgy cycle loop',n1,n2,g,abs(Cexpgy(1,inds0(1),inds0(2),g)),maxCexpgy(1,rg,g-1)
 #endif
 
@@ -7281,8 +7302,8 @@ contains
 !                gtrunc = g
 !                cycle gloop
 
-          end if 
-        
+          end if
+
         end do
 
 #ifndef PPEXP00
@@ -7303,9 +7324,9 @@ contains
           n2 = rg-n1
           inds0(1) = n1
           inds0(2) = n2
-          
+
           Caux = 2*(2+rg)*Cexpgy(1,n1,n2,g)*Z(a,b)
-          
+
 !         write(*,*) 'CalcCgy g Caux 1',rg,g,Caux
 
           if (inds0(a).ge.1) then
@@ -7313,12 +7334,12 @@ contains
             inds(a) = inds(a)-1
             Caux = Caux + 2d0*f(b)*inds0(a)*Cexpgy(1,inds(1),inds(2),g)
           end if
-          
+
 !         write(*,*) 'CalcCgy g Caux 2',rg,g,Caux
 
           inds0(at) = inds0(at)+1
           Caux = Caux - sgnab*Zadjf(bt)*Cexpgy(0,inds0(1),inds0(2),g-1)
-          
+
 !         write(*,*) 'CalcCgy g Caux 3',rg,g,Caux
 
           Cexpgy(0,n1,n2,g) = Caux/Xadj(a,b)
@@ -7326,13 +7347,13 @@ contains
 !         write(*,*) 'CalcCgyo g Cexpgy',rg,g,n1,n2,Cexpgy(0,n1,n2,g)
 
           maxCexpgy(0,rg,g) =  maxCexpgy(0,rg,g) + abs(Cexpgy(0,n1,n2,g))
-          
+
           if (g.eq.1.and.abs(Cexpgy(0,n1,n2,g)).gt.        &
               truncfacexp*max(1d0/m2scale,maxCexpgy(0,rg,g-1)).or.     &
               g.ge.2.and.abs(Cexpgy(0,n1,n2,g)).gt.        &
               truncfacexp*maxCexpgy(0,rg,g-1)) then
 
-#ifdef Cgytest            
+#ifdef Cgytest
             write(*,*) 'CalcCgy cycle loop',n1,n2,g,abs(Cexpgy(0,n1,n2,g)),maxCexpgy(0,rg,g-1)
 #endif
 
@@ -7351,7 +7372,7 @@ contains
         ! error propagation from B's
         if(rg.gt.1)then
           C00_err(rg+2) =max(C00_err(rg+2),                                       &
-              max(abs(Zadjf(k))*Cij_err(rg+1),abs(detZ)*Cij_err(rg+2))/abs(Zadj(k,l)))   
+              max(abs(Zadjf(k))*Cij_err(rg+1),abs(detZ)*Cij_err(rg+2))/abs(Zadj(k,l)))
         end if
         Cij_err(rg)= max( Cij_err(rg),                                          &
             max(abs(Z(a,b))*C00_err(rg+2),abs(f(b))*C00_err(rg+1),       &
@@ -7359,7 +7380,7 @@ contains
 
         if(rg.gt.1)then
           C00_err2(rg+2) =max(C00_err2(rg+2),                                       &
-              max(abs(Zadjf(k))*Cij_err2(rg+1),abs(detZ)*Cij_err2(rg+2))/abs(Zadj(k,l)))   
+              max(abs(Zadjf(k))*Cij_err2(rg+1),abs(detZ)*Cij_err2(rg+2))/abs(Zadj(k,l)))
         end if
         Cij_err2(rg)= max( Cij_err2(rg),                                          &
             max(abs(Z(a,b))*C00_err2(rg+2),abs(f(b))*C00_err2(rg+1),       &
@@ -7393,7 +7414,7 @@ contains
           if(Cij_err(rg).gt.Cerr(rg)) then
              gtrunc = min(g,gtrunc)
 !            gtrunc = min(g+1,gtrunc)
-             
+
 #ifdef Cgytest
              write(*,*) 'CalcCgy exit err',r,g,gtrunc
 #endif
@@ -7401,8 +7422,8 @@ contains
           end if
 
         end if
-        
-        
+
+
       end do gloop
 
 !     write(*,*) 'CalcCgy gtrunc after gloop=',gtrunc,r
@@ -7473,7 +7494,7 @@ contains
       end do
     end do
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -7498,7 +7519,7 @@ contains
     write(*,*) 'CalcCgyo out',r,n0,n1,r-2*n0-n1,C(n0,n1,r-2*n0-n1)
     end do
     end do
-    end do   
+    end do
 #endif
 
 
@@ -7512,11 +7533,11 @@ contains
   !  subroutine CalcCgp(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordgp_min,ordgp_max,id,Cerr,acc_req_Cr,Cerr2)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CalcCgp(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordgp_min,ordgp_max,id,Cerr,acc_req_Cr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,ordgp_min,ordgp_max,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: C(0:rmax,0:rmax,0:rmax)
@@ -7533,7 +7554,7 @@ contains
     double precision :: maxCexpgp(0:1,0:rmax+ordgp_min+1,0:ordgp_max),truncfacexp
     integer :: rmaxB,rmaxExp,gtrunc,r,n0,n1,n2,k,l,g,rg
     integer :: bin,nid(0:2),i
- 
+
 #ifdef Cgptest
     write(*,*) 'CalcCgp in ',rmax,ordgp_min,ordgp_max,id
 #endif
@@ -7562,7 +7583,7 @@ contains
     ! choose reduction formulas with biggest denominators
     if (abs(f(1)).ge.abs(f(2))) then
       k = 1
-    else 
+    else
       k = 2
     end if
     fk = f(k)
@@ -7631,11 +7652,11 @@ contains
       end do
     end do
 
-        
+
     ! allocation of array for det(Z)-expanded C-coefficients
     rmaxExp = rmaxB+1
     allocate(Cexpgp(0:rmaxExp/2,0:rmaxExp-1,0:rmaxExp-1,0:ordgp_max))
-   
+
 
     ! calculate Cuv
     allocate(CuvExpgp(0:rmaxExp,0:rmaxExp,0:rmaxExp))
@@ -7664,7 +7685,7 @@ contains
     ! crucial for expansion parameters between 0.1 and 1 !!!
 !    truncfacexp = sqrt(abs(maxZ/abs(fk))) * truncfacC
     truncfacexp = sqrt(fac_gp) * truncfacC
-    gtrunc = ordgp_max 
+    gtrunc = ordgp_max
 
 #ifdef Cgptest
     write(*,*) 'CalcCgp rmaxExp',rmaxExp,rmax,gtrunc
@@ -7722,7 +7743,7 @@ contains
 
         Cexpgp(0,n1,n2,0) = Smod/fk
         maxCexpgp(0,r-1,0) =  maxCexpgp(0,r-1,0) + abs(Cexpgp(0,n1,n2,0))
-        
+
         if (r.le.rmax+1) then
           C(0,n1,n2) = Cexpgp(0,n1,n2,0)
         end if
@@ -7771,7 +7792,7 @@ contains
 
             if(n0.eq.1) then
               maxCexpgp(1,rg,g) =  maxCexpgp(1,rg,g) + abs(Cexpgp(n0,n1,n2,g))
-              
+
 
               if (g.eq.1.and.abs(Cexpgp(1,n1,n2,g)).gt.          &
                   truncfacexp*max(1d0,maxCexpgp(1,rg,g-1)) .or.  &
@@ -7811,7 +7832,7 @@ contains
         maxCexpgp(0,rg-1,g) = 0d0
         do n1=0,rg-1
           n2 = rg-1-n1
-          
+
           Smod = -Z(1,k)*Cexpgp(0,n1+1,n2,g-1)  &
               -Z(2,k)*Cexpgp(0,n1,n2+1,g-1)
           if ((k.eq.1).and.(n1.ge.1)) then
@@ -7819,11 +7840,11 @@ contains
           else if ((k.eq.2).and.(n2.ge.1)) then
             Smod = Smod - 2d0*n2*Cexpgp(1,n1,n2-1,g)
           end if
-          
+
           Cexpgp(0,n1,n2,g) = Smod/fk
-          
+
           maxCexpgp(0,rg-1,g) =  maxCexpgp(0,rg-1,g) + abs(Cexpgp(0,n1,n2,g))
-          
+
           if (g.eq.1.and.abs(Cexpgp(0,n1,n2,g)).gt.                     &
 !     corrected 02.07.2018
               truncfacexp*max(1/m2scale,maxCexpgp(0,rg-1,g-1))   .or.    &
@@ -7837,7 +7858,7 @@ contains
             gtrunc = g-1
             exit gloop
           end if
-          
+
         end do
 
         ! error propagation from B's
@@ -7878,7 +7899,7 @@ contains
           ! if error from B's larger than error from expansion stop expansion
           if(Cij_err(rg-1).gt.Cerr(rg-1)) then
              gtrunc = min(g,gtrunc)
-             
+
 #ifdef Cgptest
              write(*,*) 'CalcCgp exit err',r,g,gtrunc
 #endif
@@ -7897,7 +7918,7 @@ contains
 
       Cerr2 = max(Cerr,Cij_err2(0:rmax))
       Cerr = max(Cerr,Cij_err(0:rmax))
-      
+
 #ifdef Cgptest
       write(*,*) 'CalcCgp Cerr =',r,Cerr,maxval(Cerr)
       write(*,*) 'CalcCgp accr =',r,acc_req_Cr*abs(C(0,0,0)),maxval(acc_req_Cr*abs(C(0,0,0)))
@@ -7919,7 +7940,7 @@ contains
           do n1=0,r
             C(0,n1,r-n1)=0d0
           end do
-        end if   
+        end if
 #else
       if(maxval(Cerr-acc_req_Cr*abs(C(0,0,0))).le.0d0.and.r.gt.rmax) then
 #endif
@@ -7932,7 +7953,7 @@ contains
 
     end do rloop
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -7947,7 +7968,7 @@ contains
     write(*,*) 'CalcCgp final err',Cerr
     write(*,*) 'CalcCgp final acc',Cerr/abs(C(0,0,0))
 #endif
-              
+
 #ifdef TRACECout
     write(*,*) 'CalcCgp rmax',rmax
     do r=14,rmax
@@ -7956,7 +7977,7 @@ contains
     write(*,*) 'CalcCgp out',r,n0,n1,r-2*n0-n1,C(n0,n1,r-2*n0-n1)
     end do
     end do
-    end do   
+    end do
 #endif
 
 !   write(*,*) 'CalcCgp rmax',rmax
@@ -7983,9 +8004,9 @@ contains
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine CalcCgpf(C,Cuv,p10,p21,p20,m02,m12,m22,rmax,ordgpf_min,ordgpf_max,id,Cerr,acc_req_Cr,Cerr2)
-  
+
     use globalC
-  
+
     integer, intent(in) :: rmax,ordgpf_min,ordgpf_max,id
     double complex, intent(in) :: p10,p21,p20,m02,m12,m22
     double complex, intent(out) :: C(0:rmax,0:rmax,0:rmax)
@@ -8001,7 +8022,7 @@ contains
     double precision, allocatable :: C00_err2(:),Cij_err2(:)
     double precision :: B_err,B_max,aZadj2f
     double precision :: maxCexpgpf(0:1,0:rmax+2*ordgpf_min,0:ordgpf_max),truncfacexp
-    double precision :: minZk 
+    double precision :: minZk
     integer :: rmaxB,rmaxExp,gtrunc,r,n0,n1,n2,i,j,jt,g,rg
     integer :: inds0(2),inds(2),k,l,lt,nl,nlt
     integer :: bin,nid(0:2)
@@ -8114,7 +8135,7 @@ contains
       minZk = maxval(abs(Z(2,1:2)))
       k = 2
       l = 2
-      lt = 1 
+      lt = 1
     end if
 
 #ifdef Cgpftest
@@ -8122,11 +8143,11 @@ contains
 #endif
 
 !   write(*,*)  'CalcCgpf Zadj(i,j)=',i,j,Zadj(i,j),Xadj(i,j)
-        
+
     ! allocation of array for det(Z)- and det(X)-expanded C-coefficients
     rmaxExp = rmaxB+1
     allocate(Cexpgpf(0:max(rmax/2,1),0:rmaxExp-2,0:rmaxExp-2,0:ordgpf_max))
-   
+
     ! calculate Cuv
     allocate(CuvExpgpf(0:rmaxExp,0:rmaxExp,0:rmaxExp))
     call CalcCuv(CuvExpgpf,Buv_0,mm02,f,rmaxExp,id)
@@ -8154,18 +8175,18 @@ contains
     ! crucial for expansion parameters between 0.1 and 1 !!!
 !    truncfacexp = sqrt(max(maxZadjf,abs(detZ))/abs(Xadj(i,j))*max(1d0,fmax/abs(Zadj(k,l)))) * truncfacC
     truncfacexp = sqrt(fac_gpf) * truncfacC
-    gtrunc = ordgpf_max 
+    gtrunc = ordgpf_max
 
-#ifdef Cgpftest            
+#ifdef Cgpftest
     write(*,*) 'CalcCgpf: gtrunc orig=',gtrunc
     write(*,*) 'CalcCgpf: rmaxExp-2=',rmaxexp-2
 #endif
 
 ! calculate C(1,n1,n2) up to rank r+2
-! calculate C(0,n1,n2) up to rank r  
+! calculate C(0,n1,n2) up to rank r
     rloop: do r=0,rmaxExp-2
 
-#ifdef Cgpftest            
+#ifdef Cgpftest
       write(*,*) 'CalcCgpf: rloop=',r,rmaxExp-2,rmax+2*gtrunc+2
       write(*,*) 'CalcCgpf: rloop=',rmax,gtrunc
 #endif
@@ -8203,7 +8224,7 @@ contains
         n2 = r-n1
         inds(1) = n1
         inds(2) = n2
-      
+
         Caux = 2*(4+r+r)*Cexpgpf(1,n1,n2,0) - 4*CuvExpgpf(1,n1,n2)  &
              - 2*B_0(0,n1,n2)
 
@@ -8225,12 +8246,12 @@ contains
       end if
 
  ! error propagation from B's
-      C00_err(r+2) = B_err /2d0               
+      C00_err(r+2) = B_err /2d0
       Cij_err(r) = max(B_err,2*(r+2)*C00_err(r+2))/abs(m02)
 
-      C00_err2(r+2) = B_err /2d0               
+      C00_err2(r+2) = B_err /2d0
       Cij_err2(r) = max(B_err,2*(r+2)*C00_err2(r+2))/abs(m02)
-      
+
 
 #ifdef Cgpftest
       write(*,*) 'CalcCgpf leading terms r =',r
@@ -8276,7 +8297,7 @@ contains
                   truncfacexp*max(1d0,maxCexpgpf(1,rg,g-1))    .or.   &
                   g.ge.2.and.abs(Cexpgpf(1,inds0(1),inds0(2),g)).gt.  &
                   truncfacexp*maxCexpgpf(1,rg,g-1)) then
-#ifdef Cgpftest            
+#ifdef Cgpftest
             write(*,*) 'CalcCgpf exit gloop',n1,n2,g,abs(Cexpgpf(1,inds0(1),inds0(2),g)),maxCexpgpf(1,rg,g-1)
             write(*,*) 'CalcCgpf exit gloop',g,rg,inds0(1),inds0(2)
 #endif
@@ -8284,8 +8305,8 @@ contains
             gtrunc = g-1
             exit gloop
 
-          end if 
-        
+          end if
+
         end do
 
 #ifndef PPEXP00
@@ -8307,29 +8328,29 @@ contains
           n2 = rg-n1
           inds(1) = n1
           inds(2) = n2
-          
+
           Caux = 2*(4+rg+rg)*Cexpgpf(1,n1,n2,g)
-          
+
           do i=1,2
           do j=1,2
             inds(i)=inds(i)+1
-            inds(j)=inds(j)+1 
+            inds(j)=inds(j)+1
             Caux = Caux + Z(i,j)*Cexpgpf(0,inds(1),inds(2),g-1)
             inds(i)=inds(i)-1
-            inds(j)=inds(j)-1  
+            inds(j)=inds(j)-1
           end do
           end do
 
           Cexpgpf(0,n1,n2,g) = Caux/(2*m02)
 
           maxCexpgpf(0,rg,g) =  maxCexpgpf(0,rg,g) + abs(Cexpgpf(0,n1,n2,g))
-          
+
           if (g.eq.1.and.abs(Cexpgpf(0,n1,n2,g)).gt.        &
               truncfacexp*max(1d0/m2scale,maxCexpgpf(0,rg,g-1)).or.     &
               g.ge.2.and.abs(Cexpgpf(0,n1,n2,g)).gt.        &
               truncfacexp*maxCexpgpf(0,rg,g-1)) then
 
-#ifdef Cgpftest            
+#ifdef Cgpftest
             write(*,*) 'CalcCgpf exit gloop',n1,n2,g,rg
             write(*,*) 'CalcCgpf exit gloop',abs(Cexpgpf(0,n1,n2,g)),maxCexpgpf(0,rg,g-1),1d0/m2scale
             write(*,*) 'CalcCgpf exit gloop',truncfacexp
@@ -8357,7 +8378,7 @@ contains
         if(rg.gt.1)then
           C00_err(rg+2) =max(C00_err(rg+2),                           &
               fmax/2d0*Cij_err(rg+1),                                 &
-              maxZ/2d0*Cij_err(rg+2))   
+              maxZ/2d0*Cij_err(rg+2))
         end if
 
 #ifdef Cgpftest
@@ -8372,7 +8393,7 @@ contains
         if(rg.gt.1)then
           C00_err2(rg+2) =max(C00_err2(rg+2),                         &
               fmax/2d0*Cij_err(rg+1),                                 &
-              maxZ/2d0*Cij_err(rg+2))   
+              maxZ/2d0*Cij_err(rg+2))
         end if
 
         Cij_err2(rg)= max( Cij_err2(rg),                              &
@@ -8411,7 +8432,7 @@ contains
             end if
 
 #ifdef Cgpftest
-            write(*,*) 'CalcCgpf test1',Cerr(rg)            
+            write(*,*) 'CalcCgpf test1',Cerr(rg)
 #endif
 
 #ifdef Cgpftest
@@ -8428,7 +8449,7 @@ contains
           if(Cij_err(rg).gt.Cerr(rg)) then
              gtrunc = min(g,gtrunc)
 !            gtrunc = min(g+1,gtrunc)
-             
+
 #ifdef Cgpftest
              write(*,*) 'CalcCgpf adjust gtrunc',r,g,gtrunc
 #endif
@@ -8436,7 +8457,7 @@ contains
           end if
 
         end if
-        
+
       end do gloop
 
 !     write(*,*) 'CalcCgpf gtrunc aft gloop=',gtrunc,r
@@ -8477,12 +8498,12 @@ contains
           do n1=0,rg
             C(0,n1,rg-n1)=0d0
           end do
-        end do   
+        end do
         do rg=r+1,rmax
           do n1=0,rg-2
             C(1,n1,rg-2-n1)=0d0
           end do
-        end do   
+        end do
 #else
       if(maxval(Cerr-acc_req_Cr*abs(C(0,0,0))).le.0d0.and.r.ge.rmax) then
 #endif
@@ -8491,7 +8512,7 @@ contains
         write(*,*) 'CalcCgpf exit rloop',r,Cerr,maxval(Cerr)
 #endif
 
-        exit rloop 
+        exit rloop
 
       end if
 
@@ -8512,7 +8533,7 @@ contains
           Caux = Shat(n0-1,inds(1),inds(2),k)            &
                  - f(k)*C(n0-1,inds(1),inds(2))          &
                  - Z(k,1)*C(n0-1,inds(1)+1,inds(2))      &
-                 - Z(k,2)*C(n0-1,inds(1),inds(2)+1)        
+                 - Z(k,2)*C(n0-1,inds(1),inds(2)+1)
 
           C(n0,inds0(1),inds0(2)) = Caux/(2*(nl+1))
 
@@ -8520,7 +8541,7 @@ contains
       end do
     end do
 
-      ! reduction formula (5.10) for n0+n1+n2=r, n0>0 
+      ! reduction formula (5.10) for n0+n1+n2=r, n0>0
     do r=rmax+1,2*rmax
       do n0=r-rmax,r/2
         do n1=0,r-2*n0
@@ -8545,7 +8566,7 @@ contains
     write(*,*) 'CalcCgpf out',r,n0,n1,r-2*n0-n1,C(n0,n1,r-2*n0-n1)
     end do
     end do
-    end do   
+    end do
 #endif
 
 !    write(*,*) 'CalcCgpf Cerr ',Cerr
@@ -8564,7 +8585,7 @@ contains
   !  subroutine CopyCimp3(C,C_alt,Cerr,Cerr_alt,Cerr1,Cerr1_alt,Cerr2,Cerr2_alt,Crmethod,Crmethod_alt,rmax)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine CopyCimp3(C,C_alt,Cerr,Cerr_alt,Cerr1,Cerr1_alt,Cerr2,Cerr2_alt,Crmethod,Crmethod_alt,rmax,r_alt)
 
     integer,   intent(in) :: rmax,r_alt

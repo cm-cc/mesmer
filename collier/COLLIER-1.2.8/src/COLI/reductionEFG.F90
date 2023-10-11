@@ -329,9 +329,12 @@ contains
       do n2=0,rmaxD-n1
         do n3=0,rmaxD-n1-n2
           do n4=0,rmaxD-n1-n2-n3
-            n0 = (rmaxD-n1-n2-n3-n4)
+! changed 7.08.2023 to avoid NaN
+!            n0 = (rmaxD-n1-n2-n3-n4)
+            n0 = (rmaxD-n1-n2-n3-n4+1)/2
             Duv_0(0:n0,n1,n2,n3,n4) = -Duv_0(0:n0,n1-1,n2,n3,n4)-Duv_0(0:n0,n1-1,n2+1,n3,n4) &
                                       -Duv_0(0:n0,n1-1,n2,n3+1,n4)-Duv_0(0:n0,n1-1,n2,n3,n4+1)
+            
             D_0(0:n0,n1,n2,n3,n4) = -D_0(0:n0,n1-1,n2,n3,n4)-D_0(0:n0,n1-1,n2+1,n3,n4) &
                                     -D_0(0:n0,n1-1,n2,n3+1,n4)-D_0(0:n0,n1-1,n2,n3,n4+1)
           end do

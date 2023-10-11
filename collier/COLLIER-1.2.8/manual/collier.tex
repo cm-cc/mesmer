@@ -571,7 +571,7 @@
 
 \title{\collier: {a fortran-based  Complex One-Loop LIbrary in
   Extended Regularizations}\\
-  version 1.2}
+  version 1.2.8}
 \tnotetext[mytitlenote]{The program is available from  
   \href{http://collier.hepforge.org/}{\mbox{http://collier.hepforge.org}}.}
 
@@ -2568,6 +2568,22 @@ tensor reduction, while the subroutine
 }
 switches it off completely. The default setting corresponds to maximal tensor reduction $N_{\rm tenred}=6$, 
 which is favoured compared to other choices regarding run time.
+
+As of \collier\ version 1.2.8 a new option for the calculation of
+high-rank tensor integrals via {\tt TNten\_cll} is provided. It
+improves the accuracy of some critical tensor integrals but does not
+work with the global cache of collier. This feature is disabled by default
+but can be switched on upon calling 
+\cpcsub{
+{\tt subroutine  SwitchOnArgPerm\_cll},
+}
+which switches of the global cache system (see \refse{subsec:cache}).
+It can be switched off via the subroutine
+\cpcsub{
+{\tt subroutine  SwitchOffArgPerm\_cll}.
+}
+
+
 
 \subsection{Using the cache system}
 \label{subsec:cache} 

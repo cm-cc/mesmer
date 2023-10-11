@@ -12,8 +12,8 @@
 !  ***********************
 !  *  module coli_aux2   *
 !  *   by Lars Hofer     *
-!  *********************** 
-! 
+!  ***********************
+!
 !  functions and subroutines:
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -27,9 +27,9 @@ module coli_aux2
   implicit none
 
   integer :: nerrout_coli=6,ninfout_coli=6,ncpout_coli,nstatsout_coli
-  integer :: errflag_coli,ErrCnt_coli,CritPointsCnt_coli,erroutlev_coli
+  integer :: errflag_coli=0,ErrCnt_coli,CritPointsCnt_coli,erroutlev_coli
   integer :: MaxErrOut_coli=100
-  integer :: stdout_coli=6,mode_coli=0,closed_coli=-999    
+  integer :: stdout_coli=6,mode_coli=0,closed_coli=-999
   double precision :: dprec_coli, reqacc_coli, critacc_coli
 
   double precision :: acc_inf, acc_def_B, acc_def_C0, acc_def_D0
@@ -44,7 +44,7 @@ contains
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !    subroutine initcoli_in_collier
   !    fixing of default values for various variables                       *
-  ! 
+  !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initcoli_in_collier
@@ -54,10 +54,10 @@ contains
 !
 !    data init /.false./
 !    save init
-!    
+!
 !    if (init) return
 !    init = .true.
-    
+
   ! scale factor for *small* masses masses
     call setminfscale2_coli(1d0)
 #ifdef SING
@@ -65,8 +65,8 @@ contains
     call setshiftms2_coli(0d0)
 #endif
 
-  
-  ! estimate of CPU precision 
+
+  ! estimate of CPU precision
   !    calacc = dprec_coli
   ! infinitesimal parameter
   !    eps    = dprec_coli/4d0
@@ -75,7 +75,7 @@ contains
   !  done via GetCPUprec_cll
   !  call setprecpars_coli(dprec_coli)
 
-  ! infinitesimal accuracy 
+  ! infinitesimal accuracy
     acc_inf = 1d40
 
 !    acc_min_C = 1d0
@@ -129,7 +129,7 @@ contains
   !  -6 No reduction method works
   !  -6 momenta not 4-dimensional
   !  -7 specific numerical problem
-  !  
+  !
   ! -10 Case not supported/implemented
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -174,7 +174,8 @@ contains
 
     nerrout_coli = nerrout
 
-    if(InfLev_coli.and.ninfout_coli.ne.closed_coli)then
+    if(InfLev_coli.and.ninfout_coli.ne.closed_coli .and. &
+      nerrout_coli.ne.closed_coli)then
       write(ninfout_coli,*)  'COLI: nerrout_coli set to = ',nerrout_coli
     endif
 
@@ -199,7 +200,7 @@ contains
       write(ninfout_coli,*)  'COLI: ncpout_coli set to = ',ncpout_coli
     endif
 
-  end subroutine setncpout_coli 
+  end subroutine setncpout_coli
 
 
 
@@ -227,7 +228,7 @@ contains
 
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !  subroutine setnstatsout_coli(nstatsout) 
+  !  subroutine setnstatsout_coli(nstatsout)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -248,7 +249,7 @@ contains
 
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  !  subroutine SetMaxErrOut_coli(errmax) 
+  !  subroutine SetMaxErrOut_coli(errmax)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -278,11 +279,11 @@ contains
     integer, intent(in) :: erroutlev
 
     erroutlev_coli = erroutlev
-    
+
 
   end subroutine SetErroutlev_coli
-  
-  
+
+
 
 
 
@@ -298,11 +299,11 @@ contains
     character(len=*), intent(in) :: sub, err
 !    integer, parameter :: maxErrOut=100
     logical, intent(out) :: flag
-  
+
     flag = .false.
     if(erroutlev_coli.eq.0) return
 
-    ErrCnt_coli = ErrCnt_coli + 1  
+    ErrCnt_coli = ErrCnt_coli + 1
     if (ErrCnt_coli.le.maxErrOut_coli) then
       write(nerrout_coli,*)
       write(nerrout_coli,*)
@@ -342,7 +343,7 @@ contains
 
 #include "common_coli.h"
 
-    CritPointsCnt_coli = CritPointsCnt_coli + 1    
+    CritPointsCnt_coli = CritPointsCnt_coli + 1
 
     write(ncpout_coli,*)
     write(ncpout_coli,*)
@@ -384,13 +385,13 @@ contains
   !  subroutine SetMode_coli(mode)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine SetMode_coli(mode)
 
     integer, intent(in) :: mode
 
     Mode_coli = mode
-    if(mode.lt.1) then 
+    if(mode.lt.1) then
       impest_C = 1d1
       impest_D = 1d1
       impest_Dgy = 1d2
@@ -414,7 +415,7 @@ contains
   !  subroutine setprec_coli(dprec)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine setprec_coli(dprec)
 
     double precision, intent(in) :: dprec
@@ -442,7 +443,7 @@ contains
   !  subroutine SetAcc_coli(reqacc,critacc)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine SetAcc_coli(reqacc,critacc)
 
     double precision, intent(in) :: reqacc,critacc
@@ -469,7 +470,7 @@ contains
   !  subroutine SetReqAcc_coli(reqacc)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine SetReqAcc_coli(reqacc)
 
     double precision, intent(in) :: reqacc
@@ -493,7 +494,7 @@ contains
   !  subroutine SetCritAcc_coli(critacc)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine SetCritAcc_coli(critacc)
 
     double precision, intent(in) :: critacc
@@ -514,7 +515,7 @@ contains
   !  subroutine SetRitmax_coli(ritmax_B,ritmax_C,ritmax_D)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  
+
   subroutine SetRitmax_coli(ritmax_B,ritmax_C,ritmax_D)
 
     integer, intent(in) :: ritmax_B,ritmax_C, ritmax_D
@@ -561,5 +562,5 @@ contains
 
   end subroutine SetRitmax_coli
 
- 
+
 end module coli_aux2

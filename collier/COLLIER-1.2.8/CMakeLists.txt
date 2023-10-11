@@ -71,7 +71,7 @@ set(CMAKE_CACHEFILE_DIR  CMakeFiles/)
 
 cmake_minimum_required (VERSION 2.8.7)
 project (collier)
-set(COLLIER_VERSION 1.2.5)
+set(COLLIER_VERSION 1.2.8)
 enable_language(Fortran)
 
 #================#

@@ -11,6 +11,8 @@
 
 #define QCONT
 
+!#define TESTC0REG
+
 ************************************************************************
 ************************************************************************
 *                                                                      *
@@ -80,7 +82,6 @@
  100  format(((a)))
  101  format(a22,g24.17)
  111  format(a22,2('(',g24.17,',',g24.17,') ':))
-
 
       C0_coli = undefined
 
@@ -172,7 +173,6 @@ c determine soft singularities
           endif
         enddo
       enddo
-
 
 c regular cases
       if(ncoll.eq.0.and.nsoft.eq.0)then
@@ -307,7 +307,6 @@ c double collinear case
 #endif
       endif
 
-
       end
 
 ************************************************************************
@@ -343,7 +342,7 @@ c double collinear case
       complex*16 q2(5)
       complex*16 a,b(3),y(3,4),yh,yh0,yh1,yh2,yh3,yh4,yh5
       complex*16 x0(3,2),x1(3,2),deleta
-      real*8     iy(3,4),ix0(3,2),iy1y3,iy2y3,iy1y4,iy2y4
+      real*8     iy(3,4),ix0(3,2),ix1(3,2)
       complex*16 cspenc_coli,cspcon_coli,eta2s_coli,eta2_coli,cln_coli
       complex*16 C0reg_coli,C0reg_check
 
@@ -362,6 +361,7 @@ c double collinear case
 
 #include "params_coli.h"
 #include "checkparams_coli.h"
+
 
  100  format(((a)))
  111  format(a22,2('(',g24.17,',',g24.17,') ':))
@@ -382,8 +382,8 @@ c double collinear case
      &      .or.ms12.eq.cd0.and.ps12.eq.ms22.and.ps13.eq.ms32
      &      .or.ms22.eq.cd0.and.ps12.eq.ms12.and.ps23.eq.ms32
      &      .or.ms32.eq.cd0.and.ps13.eq.ms12.and.ps23.eq.ms22
-     &      .or.aimag(p12).ne.0d0.or.aimag(p13).ne.0d0
-     &      .or.aimag(p23).ne.0d0
+     &      .or.imag(p12).ne.0d0.or.imag(p13).ne.0d0
+     &      .or.imag(p23).ne.0d0
      &   ) then
           call setErrFlag_coli(-10)
           call ErrOut_coli('C0reg_coli',' wrong arguments',
@@ -469,7 +469,6 @@ c in the would-be IR limit
           y(i,3)=(yh+a*b(i))/(2d0*a*q2(i))
           y(i,4)=(yh-a*b(i))/(2d0*a*q2(i))
 
-
           yh0 = q2(i)*q2(j)*q2(k) + q2(i)*(q2(i)-q2(j)-q2(k))*mi2(k)
      &         + q2(i)*(mi2(k)-mi2(i))*(mi2(k)-mi2(j))
      &         - (q2(j)-q2(k))*mi2(k)*(mi2(i)-mi2(j))
@@ -482,8 +481,18 @@ c in the would-be IR limit
             y(i,4) = yh3/(a*a*q2(i)*y(i,3))
           endif
           if(real(b(i)).ne.0d0) then
-            iy(i,3) = real(b(i))
-            iy(i,4) = -iy(i,3)
+            iy(i,3) = real(2d0*q2(i))*imag(mi2(k))
+     &          + real(q2(k)-q2(i)-q2(j))*imag(mi2(i))
+     &          + real(q2(j)-q2(i)-q2(k))*imag(mi2(j))
+     &          + real(mi2(i)-mi2(j)-q2(i))*imag(mi2(i))
+     &          + real(mi2(j)-mi2(i)-q2(i))*imag(mi2(j))
+            iy(i,4) = real(2d0*q2(i))*imag(mi2(k))
+     &          + real(q2(k)-q2(i)-q2(j))*imag(mi2(i))
+     &          + real(q2(j)-q2(i)-q2(k))*imag(mi2(j))
+     &          - real(mi2(i)-mi2(j)-q2(i))*imag(mi2(i))
+     &          - real(mi2(j)-mi2(i)-q2(i))*imag(mi2(j))
+            if (iy(i,3) == 0d0)  iy(i,3) = real(b(i))
+            if (iy(i,4) == 0d0)  iy(i,4) = -real(b(i))
           else
             iy(i,3) =  1d0
             iy(i,4) = -1d0
@@ -519,50 +528,53 @@ c in the would-be IR limit
           endif
 
 
-          if(abs(aimag(x0(i,1))).lt.impacc*abs(real(x0(i,1))).or.
-     &        abs(aimag(x1(i,1))).lt.impacc*abs(real(x1(i,1)))) then
+          if(abs(imag(x0(i,1))).lt.impacc*abs(real(x0(i,1))).or.
+     &        abs(imag(x1(i,1))).lt.impacc*abs(real(x1(i,1)))) then
             x0(i,1)=real(x0(i,1))
             x1(i,1)=real(x1(i,1))
+            if(real(b(i)).ne.0d0) then
+              ix0(i,1) = (-imag(mi2(i))*real(x0(i,2))
+     &            + imag(mi2(j))*real(x1(i,2)))/real(b(i))
+              ix1(i,1) = ix0(i,1)
+              if (ix0(i,1) == 0d0) then
+                ix0(i,1) = 1d0/real(b(i))
+                ix1(i,1) = ix0(i,1)
+              endif
+            else
+              ix0(i,1) = iy(i,3)
+              ix1(i,1) = iy(i,3)
+            endif
           endif
-          if(abs(aimag(x0(i,2))).lt.impacc*abs(real(x0(i,2))).or.
-     &        abs(aimag(x1(i,2))).lt.impacc*abs(real(x1(i,2)))) then
+          if(abs(imag(x0(i,2))).lt.impacc*abs(real(x0(i,2))).or.
+     &        abs(imag(x1(i,2))).lt.impacc*abs(real(x1(i,2)))) then
             x0(i,2)=real(x0(i,2))
             x1(i,2)=real(x1(i,2))
+            if(real(b(i)).ne.0d0) then
+              ix0(i,2) = (imag(mi2(i))*real(x0(i,1))
+     &            - imag(mi2(j))*real(x1(i,1)))/real(b(i))
+              ix1(i,2) = ix0(i,2)
+              if (ix0(i,2) == 0d0) then
+                ix0(i,2) = -1d0/real(b(i))
+                ix1(i,2) = ix0(i,2)
+              endif
+            else
+              ix0(i,2) = iy(i,4)
+              ix1(i,2) = iy(i,4)
+            endif
           endif
 
 
-c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
-          if(y(i,2).ne.0d0)then
-            iy2y3=iy(i,3)/real(y(i,2))
-          else
-            iy2y3=0d0
-          endif
-          if(y(i,2).ne.0d0)then
-            iy2y4=iy(i,4)/real(y(i,2))
-          else
-            iy2y3=0d0
-          endif
-          if(y(i,1).ne.0d0)then
-            iy1y3=iy(i,3)/real(y(i,1))
-          else
-            iy1y3=0d0
-          endif
-          if(y(i,1).ne.0d0)then
-            iy1y4=iy(i,4)/real(y(i,1))
-          else
-            iy1y4=0d0
-          endif
           C0reg_coli = C0reg_coli
      &        +cspcon_coli(x1(i,1),1d0/y(i,3),x1(i,1)/y(i,3),
-     &                          y(i,2)/y(i,3),iy(i,3),-iy(i,3))
+     &                          y(i,2)/y(i,3),ix1(i,1),-iy(i,3))
      &         -cspcon_coli(x0(i,1),1d0/y(i,3),x0(i,1)/y(i,3),
-     &                          y(i,1)/y(i,3),iy(i,3),-iy(i,3))
+     &                          y(i,1)/y(i,3),ix0(i,1),-iy(i,3))
      &         +cspcon_coli(x1(i,2),1d0/y(i,4),x1(i,2)/y(i,4),
-     &                          y(i,2)/y(i,4),iy(i,4),-iy(i,4))
+     &                          y(i,2)/y(i,4),ix1(i,2),-iy(i,4))
      &         -cspcon_coli(x0(i,2),1d0/y(i,4),x0(i,2)/y(i,4),
-     &                          y(i,1)/y(i,4),iy(i,4),-iy(i,4))
+     &                          y(i,1)/y(i,4),ix0(i,2),-iy(i,4))
      &        -(eta2_coli(x0(i,1),x0(i,2),mi2(j)/q2(i)
-     &           ,iy(i,3),iy(i,4),-real(1d0/q2(i)))
+     &           ,ix0(i,1),ix0(i,2),-real(1d0/q2(i)))
      &         - eta2_coli(y(i,3),y(i,4), yh3/(a*a*q2(i))
      &           ,iy(i,3),iy(i,4),-real(1d0/q2(i))))
      &         * cln_coli(y(i,2)/y(i,1),1d0)
@@ -570,7 +582,7 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
 
 
 
-          if(aimag(yh3/(a*a*q2(i))).lt.0d0.and.real(q2(i)).lt.0d0)
+          if(imag(yh3/(a*a*q2(i))).lt.0d0.and.real(q2(i)).lt.0d0)
      &         C0reg_coli=C0reg_coli+2d0*pi*dcmplx(0d0,1d0)
      &         *cln_coli(y(i,2)/y(i,1),1d0)
 
@@ -621,6 +633,7 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
           q2(5)=q2(2)
         endif
 
+
         a=q2(2)-q2(3)
 
         if(a.ne.0d0)then
@@ -643,6 +656,7 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
             y(i,4) = (yh-a*b(i))/(2d0*a*q2(i))
 
 
+
             yh0 = q2(i)*q2(j)*q2(k) + q2(i)*(q2(i)-q2(j)-q2(k))*mi2(k)
             if(.not.((mi2(k).eq.mi2(i).and.q2(k).eq.cd0).or.
      &               (mi2(k).eq.mi2(j).and.q2(j).eq.cd0))) then
@@ -662,10 +676,19 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
               y(i,4) = yh3/(a*a*q2(i)*y(i,3))
             endif
 
-
             if(real(b(i)).ne.0d0) then
-              iy(i,3) = real(b(i))
-              iy(i,4) = -iy(i,3)
+              iy(i,3) = real(2d0*q2(i))*imag(mi2(k))
+     &            + real(q2(k)-q2(i)-q2(j))*imag(mi2(i))
+     &            + real(q2(j)-q2(i)-q2(k))*imag(mi2(j))
+     &            + real(mi2(i)-mi2(j)-q2(i))*imag(mi2(i))
+     &            + real(mi2(j)-mi2(i)-q2(i))*imag(mi2(j))
+              iy(i,4) = real(2d0*q2(i))*imag(mi2(k))
+     &            + real(q2(k)-q2(i)-q2(j))*imag(mi2(i))
+     &            + real(q2(j)-q2(i)-q2(k))*imag(mi2(j))
+     &            - real(mi2(i)-mi2(j)-q2(i))*imag(mi2(i))
+     &            - real(mi2(j)-mi2(i)-q2(i))*imag(mi2(j))
+              if (iy(i,3) == 0d0)  iy(i,3) = real(b(i))
+              if (iy(i,4) == 0d0)  iy(i,4) = -real(b(i))
             else
               iy(i,3) =  1d0
               iy(i,4) = -1d0
@@ -687,55 +710,61 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
               x1(i,2) =  mi2(i)/(q2(i)* x1(i,1))
             endif
 
-            if(abs(aimag(x0(i,1))).lt.impacc*abs(real(x0(i,1))).or.
-     &          abs(aimag(x1(i,1))).lt.impacc*abs(real(x1(i,1)))) then
+
+            if(abs(imag(x0(i,1))).lt.impacc*abs(real(x0(i,1))).or.
+     &          abs(imag(x1(i,1))).lt.impacc*abs(real(x1(i,1)))) then
               x0(i,1)=real(x0(i,1))
               x1(i,1)=real(x1(i,1))
+              if(real(b(i)).ne.0d0) then
+                ix0(i,1) = (-imag(mi2(i))*real(x0(i,2))
+     &              + imag(mi2(j))*real(x1(i,2)))/real(b(i))
+                ix1(i,1) = ix0(i,1)
+                if (ix0(i,1) == 0d0) then
+                  ix0(i,1) = 1d0/real(b(i))
+                  ix1(i,1) = ix0(i,1)
+                endif
+              else
+                ix0(i,1) = iy(i,3)
+                ix1(i,1) = iy(i,3)
+              endif
             endif
-            if(abs(aimag(x0(i,2))).lt.impacc*abs(real(x0(i,2))).or.
-     &          abs(aimag(x1(i,2))).lt.impacc*abs(real(x1(i,2)))) then
+            if(abs(imag(x0(i,2))).lt.impacc*abs(real(x0(i,2))).or.
+     &          abs(imag(x1(i,2))).lt.impacc*abs(real(x1(i,2)))) then
               x0(i,2)=real(x0(i,2))
               x1(i,2)=real(x1(i,2))
+              if(real(b(i)).ne.0d0) then
+                ix0(i,2) = (imag(mi2(i))*real(x0(i,1))
+     &              - imag(mi2(j))*real(x1(i,1)))/real(b(i))
+                ix1(i,2) = ix0(i,2)
+                if (ix0(i,2) == 0d0) then
+                  ix0(i,2) = -1d0/real(b(i))
+                  ix1(i,2) = ix0(i,2)
+                endif
+              else
+                ix0(i,2) = iy(i,4)
+                ix1(i,2) = iy(i,4)
+              endif
             endif
 
-            if(y(i,2).ne.0d0)then
-              iy2y3=iy(i,3)/real(y(i,2))
-            else
-              iy2y3=0d0
-            endif
-            if(y(i,2).ne.0d0)then
-              iy2y4=iy(i,4)/real(y(i,2))
-            else
-              iy2y3=0d0
-            endif
-            if(y(i,1).ne.0d0)then
-              iy1y3=iy(i,3)/real(y(i,1))
-            else
-              iy1y3=0d0
-            endif
-            if(y(i,1).ne.0d0)then
-              iy1y4=iy(i,4)/real(y(i,1))
-            else
-              iy1y4=0d0
-            endif
 
 
 
             C0reg_coli = C0reg_coli
      &         +cspcon_coli(x1(i,1),1d0/y(i,3),x1(i,1)/y(i,3)
-     &                          ,y(i,2)/y(i,3),iy(i,3),-iy(i,3))
+     &                          ,y(i,2)/y(i,3),ix1(i,1),-iy(i,3))
      &         +cspcon_coli(x1(i,2),1d0/y(i,4),x1(i,2)/y(i,4)
-     &                          ,y(i,2)/y(i,4),iy(i,4),-iy(i,4))
+     &                          ,y(i,2)/y(i,4),ix1(i,2),-iy(i,4))
      &         -cspcon_coli(x0(i,1),1d0/y(i,3),x0(i,1)/y(i,3)
-     &                          ,y(i,1)/y(i,3),iy(i,3),-iy(i,3))
+     &                          ,y(i,1)/y(i,3),ix0(i,1),-iy(i,3))
      &         -cspcon_coli(x0(i,2),1d0/y(i,4),x0(i,2)/y(i,4)
-     &                          ,y(i,1)/y(i,4),iy(i,4),-iy(i,4))
+     &                          ,y(i,1)/y(i,4),ix0(i,2),-iy(i,4))
 
 
             deleta = eta2_coli(x0(i,1),x0(i,2),mi2(j)/q2(i)
-     &           ,iy(i,3),iy(i,4),-real(1d0/q2(i)))
+     &           ,ix0(i,1),ix0(i,2),-real(1d0/q2(i)))
      &         - eta2_coli(y(i,3),y(i,4), yh3/(a*a*q2(i))
      &           ,iy(i,3),iy(i,4),-real(1d0/q2(i)))
+
 
             if(deleta.ne.0d0)then
               C0reg_coli = C0reg_coli
@@ -745,11 +774,10 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
             endif
 
 
-            if(aimag(yh3/(a*a*q2(i))).lt.-abs(yh3/(a*a*q2(i)))*impacc
+            if(imag(yh3/(a*a*q2(i))).lt.-abs(yh3/(a*a*q2(i)))*impacc
      &          .and.real(q2(i)).lt.0d0)
      &          C0reg_coli=C0reg_coli+2d0*pi*dcmplx(0d0,1d0)
      &          *cln_coli(y(i,2)/y(i,1),1d0)
-
 
 
  30       continue
@@ -806,13 +834,13 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
               x1(i,2) =  mi2(i)/(q2(i)* x1(i,1))
             endif
 
-            if(abs(aimag(x0(i,1))).lt.impacc*abs(real(x0(i,1))).or.
-     &          abs(aimag(x1(i,1))).lt.impacc*abs(real(x1(i,1)))) then
+            if(abs(imag(x0(i,1))).lt.impacc*abs(real(x0(i,1))).or.
+     &          abs(imag(x1(i,1))).lt.impacc*abs(real(x1(i,1)))) then
               x0(i,1)=real(x0(i,1))
               x1(i,1)=real(x1(i,1))
             endif
-            if(abs(aimag(x0(i,2))).lt.impacc*abs(real(x0(i,2))).or.
-     &          abs(aimag(x1(i,2))).lt.impacc*abs(real(x1(i,2)))) then
+            if(abs(imag(x0(i,2))).lt.impacc*abs(real(x0(i,2))).or.
+     &          abs(imag(x1(i,2))).lt.impacc*abs(real(x1(i,2)))) then
               x0(i,2)=real(x0(i,2))
               x1(i,2)=real(x1(i,2))
             endif
@@ -895,7 +923,7 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
 
 
 #ifdef WARN
-        if(aimag(a).ne.0d0) then
+        if(imag(a).ne.0d0) then
           call setErrFlag_coli(-4)
           call ErrOut_coli('C0reg_coli',' imaginary a not supported',
      &          errorwriteflag)
@@ -950,16 +978,6 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
           x0(2,1) = mi2(3)/(mi2(2)-mi2(3))
 
 
-          if(y(2,2).ne.0d0)then
-            iy2y3=iy(2,3)/real(y(2,2))
-          else
-            iy2y3=0d0
-          endif
-          if(y(2,2).ne.0d0)then
-            iy2y4=iy(2,4)/real(y(2,2))
-          else
-            iy2y4=0d0
-          endif
 
           C0reg_coli =
      &       cspcon_coli(x1(2,1),1d0/y(2,3),x1(2,1)/y(2,3),y(2,2)/y(2,3)
@@ -1026,36 +1044,15 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
           x1(3,2) =  mi2(3)/(q2(3)* x1(3,1))
         endif
 
-        if(abs(aimag(x0(3,1))).lt.impacc*abs(real(x0(3,1))).or.
-     &      abs(aimag(x1(3,1))).lt.impacc*abs(real(x1(3,1)))) then
+        if(abs(imag(x0(3,1))).lt.impacc*abs(real(x0(3,1))).or.
+     &      abs(imag(x1(3,1))).lt.impacc*abs(real(x1(3,1)))) then
           x0(3,1)=real(x0(3,1))
           x1(3,1)=real(x1(3,1))
         endif
-        if(abs(aimag(x0(3,2))).lt.impacc*abs(real(x0(3,2))).or.
-     &      abs(aimag(x1(3,2))).lt.impacc*abs(real(x1(3,2)))) then
+        if(abs(imag(x0(3,2))).lt.impacc*abs(real(x0(3,2))).or.
+     &      abs(imag(x1(3,2))).lt.impacc*abs(real(x1(3,2)))) then
           x0(3,2)=real(x0(3,2))
           x1(3,2)=real(x1(3,2))
-        endif
-
-        if(y(3,2).ne.0d0)then
-          iy2y3=iy(3,3)/real(y(3,2))
-        else
-          iy2y3=0d0
-        endif
-        if(y(3,2).ne.0d0)then
-          iy2y4=iy(3,4)/real(y(3,2))
-        else
-          iy2y3=0d0
-        endif
-        if(y(3,1).ne.0d0)then
-          iy1y3=iy(3,3)/real(y(3,1))
-        else
-          iy1y3=0d0
-        endif
-        if(y(3,1).ne.0d0)then
-          iy1y4=iy(3,4)/real(y(3,1))
-        else
-          iy1y4=0d0
         endif
 
 
@@ -1083,7 +1080,7 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
 
         endif
 
-        if(aimag(yh3/(a*a*q2(3))).lt.0d0.and.real(q2(3)).lt.0d0)
+        if(imag(yh3/(a*a*q2(3))).lt.0d0.and.real(q2(3)).lt.0d0)
      &      C0reg_coli=C0reg_coli+2d0*pi*dcmplx(0d0,1d0)
      &      *cln_coli(y(3,2)/y(3,1),1d0)
 
@@ -1873,8 +1870,8 @@ c-> 15.01.07:  iy2y3,iy2y4,iy1y3,iy1y4 introduced
         if(ms12.ne.cd0.or.p12.ne.m22.or.p13.ne.m32
      &      .or.ms22.eq.cd0.or.ms32.eq.cd0
      &      .or.ps23.eq.cd0.and.ms32.eq.cd0.and.ms22.eq.cd0
-     &      .or.aimag(p12).ne.0d0.or.aimag(p13).ne.0d0
-     &      .or.aimag(p23).ne.0d0) then
+     &      .or.imag(p12).ne.0d0.or.imag(p13).ne.0d0
+     &      .or.imag(p23).ne.0d0) then
           call setErrFlag_coli(-10)
           call ErrOut_coli('C0ms0ir1_coli',' wrong arguments',
      &          errorwriteflag)
@@ -2098,8 +2095,8 @@ c according to Dittmaier Nucl. Phys. B675 (2003) 447   (B.5,B.6)
      &      ps13.eq.cd0.and.ms32.eq.cd0.or.
      &      ps23.eq.cd0.and.ms32.eq.cd0.or.
      &      ps23.eq.ps13
-     &      .or.aimag(p12).ne.0d0.or.aimag(p23).ne.0d0
-     &      .or.aimag(p13).ne.0d0) then
+     &      .or.imag(p12).ne.0d0.or.imag(p23).ne.0d0
+     &      .or.imag(p13).ne.0d0) then
           call setErrFlag_coli(-10)
           call ErrOut_coli('C0ms1ir0_coli',' wrong arguments',
      &          errorwriteflag)
@@ -2404,8 +2401,8 @@ c     Dittmaier Nucl. Phys. B675 (2003) 447   (B.2)
         if(ms12.ne.cd0.or.ms22.ne.cd0.or.ps12.ne.cd0
      &        .or.ms32.eq.cd0.or.p13.ne.m32.or.p23.eq.m32
      &        .or.ps23.eq.ms32
-     &        .or.aimag(p12).ne.0d0.or.aimag(p23).ne.0d0
-     &        .or.aimag(p13).ne.0d0) then
+     &        .or.imag(p12).ne.0d0.or.imag(p23).ne.0d0
+     &        .or.imag(p13).ne.0d0) then
           call setErrFlag_coli(-10)
           call ErrOut_coli('C0ms1ir1_coli',' wrong arguments',
      &          errorwriteflag)
@@ -2422,8 +2419,8 @@ c     Dittmaier Nucl. Phys. B675 (2003) 447   (B.2)
      &          ms12.ne.cd0,ms22.ne.cd0,ps12.ne.cd0
      &          ,ms32.eq.cd0,p13.ne.m32,p23.eq.m32
      &          ,ps23.eq.ms32
-     &          ,aimag(p12).ne.0d0,aimag(p23).ne.0d0
-     &          ,aimag(p13).ne.0d0
+     &          ,imag(p12).ne.0d0,imag(p23).ne.0d0
+     &          ,imag(p13).ne.0d0
           endif
           C0ms1ir1_coli = undefined
           return
@@ -2777,8 +2774,8 @@ c case: Dittmaier Nucl. Phys. B675 (2003) 447  (B.10)
 
         if(ms12.ne.cd0.or.ms22.ne.cd0.or.ms32.ne.cd0
      &        .or.ps12.ne.cd0.or.ps13.ne.cd0.or.ps23.eq.cd0
-     &        .or.aimag(p12).ne.0d0.or.aimag(p23).ne.0d0
-     &        .or.aimag(p13).ne.0d0) then
+     &        .or.imag(p12).ne.0d0.or.imag(p23).ne.0d0
+     &        .or.imag(p13).ne.0d0) then
           call setErrFlag_coli(-10)
           call ErrOut_coli('C0ms2ir1_coli',' wrong arguments',
      &          errorwriteflag)

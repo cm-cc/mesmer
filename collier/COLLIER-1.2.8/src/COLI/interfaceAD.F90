@@ -60,7 +60,7 @@
 #ifdef COLLIERTEST  
     double precision, optional, intent(out) :: Berr(0:6)
 #endif
-    double complex, intent(out) :: B0,B1,B2(0:1,0:1),B3(0:1,0:1,0:1),B4(0:1,0:1,0:1,0:1)
+    double complex, intent(out) :: B0,B1(1),B2(0:1,0:1),B3(0:1,0:1,0:1),B4(0:1,0:1,0:1,0:1)
     double complex, intent(out) :: B5(0:1,0:1,0:1,0:1,0:1),B6(0:1,0:1,0:1,0:1,0:1,0:1)
     double complex :: B0123456(0:rank/2,0:rank), B0123456uv(0:rank/2,0:rank)
 
@@ -91,7 +91,7 @@
     B0 = B0123456(0,0)
     if (rank.eq.0) return
 
-    B1 = B0123456(0,1)
+    B1(1) = B0123456(0,1)
     if (rank.eq.1) return
 
     B2(0,0) = B0123456(1,0)

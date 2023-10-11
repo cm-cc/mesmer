@@ -51,6 +51,22 @@ contains
 
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !  function IsInitialized_cll()
+  !
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  function IsInitialized_cll()
+
+    logical :: IsInitialized_cll
+
+    IsInitialized_cll = initialized_cll
+
+  end function IsInitialized_cll
+
+
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   !  subroutine Init_cll(Nmax,rmax,folder_name,noreset)
   !
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -155,7 +171,7 @@ contains
     
     if (reset) then
       call InitOutChan_cp_cll
-      call InitOutChan_cll      
+      call InitOutChan_cll      !  produces output for nerrout_coli = closed_coli
       
       call InitCheckCntDB_cll
       call InitMaxCheckDB_cll
@@ -192,7 +208,6 @@ contains
       end if
     end if
 
-      
     ! default values.
     mode = 1
 
@@ -227,7 +242,6 @@ contains
     acc1 = 1d-1  !CritPoints
 ! check accuracy  
     acc2 = 1d-2   
-
 
     ! COLLIER mode
     call SetMode_cll(mode)
@@ -290,7 +304,6 @@ contains
     ! stop if fatal error occurs
     call SetErrStop_cll(-8)
 
-
 !    call AddMinf2_cll(dcmplx(0.001d0))
 
     ! COLLIER has been initialized
@@ -301,16 +314,16 @@ contains
     if (reset) then
 
     ! set standard output for infos
-    call WriteIntro_cll(stdout_cll)
+!    call WriteIntro_cll(stdout_cll)
     if (infoutlev.ge.1) then
-      write(unit=stdout_cll,fmt=*) '                                                          '
-      write(unit=stdout_cll,fmt=*) '***********************************************************'
-      write(unit=stdout_cll,fmt=*) '                                                           '
-      write(unit=stdout_cll,fmt=*) '  COLLIER: information on settings and internal parameters '
-      write(unit=stdout_cll,fmt=*) '    is written to the file ',trim(foldername_cll)//'/InfOut.cll'
-      write(unit=stdout_cll,fmt=*) '                                                           '
-      write(unit=stdout_cll,fmt=*) '***********************************************************'
-      write(unit=stdout_cll,fmt=*) '                                                           '
+!      write(unit=stdout_cll,fmt=*) '                                                          '
+!      write(unit=stdout_cll,fmt=*) '***********************************************************'
+!      write(unit=stdout_cll,fmt=*) '                                                           '
+!      write(unit=stdout_cll,fmt=*) '  COLLIER: information on settings and internal parameters '
+!      write(unit=stdout_cll,fmt=*) '    is written to the file ',trim(foldername_cll)//'/InfOut.cll'
+!      write(unit=stdout_cll,fmt=*) '                                                           '
+!      write(unit=stdout_cll,fmt=*) '***********************************************************'
+!      write(unit=stdout_cll,fmt=*) '                                                           '
 
       ! add here all the output for the default initialisation
       write(unit=ninfout_cll,fmt=*) '                                                          '
@@ -567,7 +580,7 @@ contains
 
   subroutine GetEventCnt_cll(event)
 
-    integer :: event
+    integer(kind=long_int) :: event
     
     event = EventCnt_cll
 
@@ -1320,6 +1333,65 @@ contains
     tenred = tenred_cll
 
   end subroutine GetTenRed_cll
+
+
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !  subroutine SwitchOnTenArgPerm_cll()
+  !
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine SwitchOnArgPerm_cll()
+
+    logical :: infwri
+  
+    argperm_cll = .true.
+    if (infoutlev_cll.ge.1) then 
+       call InfOut_cll('SwitchOnArgPerm_cll','permutation of tensor-integral arguments switched on in TNten'// &
+       & ' Cache will be switched off!',infwri)     
+!       if(infwri)  write(ninfout_cache,*) ' Cache will be switched off!'
+    endif
+
+    call SwitchOffCacheSystem_cll
+
+  end subroutine SwitchOnArgPerm_cll
+
+
+
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !  subroutine SwitchOffArgPerm_cll()
+  !
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine SwitchOffArgPerm_cll()
+  
+    logical :: infwri
+
+    argperm_cll = .false.
+    infwri = .false.
+    if (infoutlev_cll.ge.2) call InfOut_cll('SwitchOffArgPerm_cll','permutation of tensor-integral arguments switched off',infwri)    
+
+  end subroutine SwitchOffArgPerm_cll
+
+
+
+
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !  subroutine GetArgPerm_cll()
+  !
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine GetArgPerm_cll(argperm)
+
+    logical, intent(out) :: argperm
+
+    argperm = argperm_cll
+
+  end subroutine GetArgPerm_cll
 
 
 
@@ -2524,7 +2596,7 @@ contains
 
     logical, optional :: noreset
     integer :: Nold
-    integer, allocatable :: saveCnt(:)
+    integer(kind=long_int), allocatable :: saveCnt(:)
 
 
     if (present(noreset)) then
@@ -3733,7 +3805,7 @@ contains
   subroutine InitCheckCnt_cll(noreset)
     logical, optional :: noreset
     integer :: Nold
-    integer, allocatable :: saveCnt(:)
+    integer(kind=long_int), allocatable :: saveCnt(:)
 
 
     if (present(noreset).and.noreset) then

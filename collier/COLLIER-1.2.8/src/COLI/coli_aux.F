@@ -1335,14 +1335,14 @@ c determination of matrix R
       do i=1,n
       do k=1,n
         cr(i,k) = 0d0
-      end do
-      end do
+      enddo
+      enddo
       do i=1,n
         cr(i,i) = cd(i)
       do k=i+1,n
         cr(i,k) = ca(i,k)
-      end do
-      end do
+      enddo
+      enddo
 
 c check of unitarity of Q
 
@@ -1351,9 +1351,9 @@ c check of unitarity of Q
         catest(i,k) = 0d0
       do j=1,n
         catest(i,k) = catest(i,k) + cq(i,j)*conjg(cq(k,j))
-      end do
-      end do
-      end do
+      enddo
+      enddo
+      enddo
 
 c check of decomposition
       do i=1,n
@@ -1361,9 +1361,9 @@ c check of decomposition
         catest(i,k) = 0d0
       do j=1,k
         catest(i,k) = catest(i,k) + cq(i,j)*cr(j,k)
-      end do
-      end do
-      end do
+      enddo
+      enddo
+      enddo
 
       end
 
@@ -1408,7 +1408,7 @@ c check of decomposition
  20     continue
  10   continue
 
-!      if(n.eq.4) then  
+!      if(n.eq.4) then
 !      write(*,2) cai(1,1:4)
 !      write(*,2) cai(2,1:4)
 !      write(*,2) cai(3,1:4)
@@ -1447,7 +1447,7 @@ c check of decomposition
           cs = rs* (ca(j,j)/aabs)
 #ifdef ERREST
 !          csaccloss = caaccloss(j)
-!  propagation of error of ca(j,j)     
+!  propagation of error of ca(j,j)
           if (imag(ca(j,j))*real(ca(j,j)).ne.0d0) then
             csaccloss = min(1d0, caaccloss(j)*sigma/aabs**2,
      &          caaccloss(j)*aabs**2/abs(imag(ca(j,j))*real(ca(j,j))))
@@ -1480,16 +1480,16 @@ c check of decomposition
           do 500 i=j,n
             canew = ca(i,k) - ca(i,j) * csum
 #ifdef ERREST
-!  estimate error of ca(k,k)      
-            if (i.eq.k) then 
-              if(ca(i,k).ne.0d0) then 
+!  estimate error of ca(k,k)
+            if (i.eq.k) then
+              if(ca(i,k).ne.0d0) then
                 if(ca(i,j)*csum.ne.0d0) then
-                  caaccloss(i) = min(1d0,  
+                  caaccloss(i) = min(1d0,
      &                caaccloss(i)* abs(canew/abs(ca(i,k))),
      &                abs(canew/abs(ca(i,j)*csum)))
                 else
-                  caaccloss(i) = min(1d0,  
-     &                caaccloss(i)* abs(canew/abs(ca(i,k)))) 
+                  caaccloss(i) = min(1d0,
+     &                caaccloss(i)* abs(canew/abs(ca(i,k))))
                 endif
               else
                 caaccloss(i) = 1d0
@@ -1757,30 +1757,30 @@ c determination of matrix R
       do i=1,n
       do k=1,n
         cr(i,k) = 0d0
-      end do
-      end do
+      enddo
+      enddo
       do i=1,n
         cr(i,i) = cd(i)
       do k=i+1,n
         cr(i,k) = ca(i,k)
-      end do
-      end do
+      enddo
+      enddo
 
 c determination of inverse of R
 
       do i=1,n
       do k=1,n
         crinv(i,k) = 0d0
-      end do
-      end do
+      enddo
+      enddo
       do k=1,n
         crinv(k,k) = 1d0/cr(k,k)
       do i=1,k-1
       do 2200 j=i,k-1
         crinv(i,k) = crinv(i,k) - crinv(i,j)* cr(j,k)/cr(k,k)
  2200 continue
-      end do
-      end do
+      enddo
+      enddo
 
 c determination of inverse of A
 
@@ -1789,9 +1789,9 @@ c determination of inverse of A
         cainv(i,k) = 0d0
       do j=1,n
         cainv(i,k) = cainv(i,k) + crinv(i,j)*conjg(cq(k,j))
-      end do
-      end do
-      end do
+      enddo
+      enddo
+      enddo
 
       return
 
@@ -1802,9 +1802,9 @@ c check of unitarity of Q
         catest(i,k) = 0d0
       do j=1,n
         catest(i,k) = catest(i,k) + cq(i,j)*conjg(cq(k,j))
-      end do
-      end do
-      end do
+      enddo
+      enddo
+      enddo
 
 
 c check of decomposition
@@ -1814,9 +1814,10 @@ c check of decomposition
         catest(i,k) = 0d0
       do j=1,k
         catest(i,k) = catest(i,k) + cq(i,j)*cr(j,k)
-      end do
-      end do
-      end do
+      enddo
+      enddo
+      enddo
+
 
 c check of inverse of Q
       do i=1,n
@@ -1824,9 +1825,9 @@ c check of inverse of Q
         crtest(i,k) = 0d0
       do j=1,n
         crtest(i,k) = crtest(i,k) + cr(i,j)*crinv(j,k)
-      end do
-      end do
-      end do
+      enddo
+      enddo
+      enddo
 
 c check of inverse of A
 
@@ -1835,9 +1836,9 @@ c check of inverse of A
         catest(i,k) = 0d0
       do j=1,n
         catest(i,k) = catest(i,k) + cai(i,j)*cainv(j,k)
-      end do
-      end do
-      end do
+      enddo
+      enddo
+      enddo
 
       end
 

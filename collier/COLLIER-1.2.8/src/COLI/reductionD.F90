@@ -4756,7 +4756,7 @@ contains
     allocate(D00_err2(0:rmaxExp))
     allocate(Dij_err2(0:rmaxExp))
     allocate(Cij_err2(0:rmaxC))
-     
+
     ! initialize accuracy estimates
     Derr = acc_inf
     Dij_err =0d0
@@ -8437,15 +8437,25 @@ contains
       ! higher order coefficients
       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!      write(*,*) 'gloop start',r,gtrunc,min(gtrunc,r/2)
+!      write(*,*) 'before gloop',r,gtrunc,min(gtrunc,r/2)
 
       rg = r
       gloop: do g=1,min(gtrunc,r/2)
         rg = rg-2
 
-        if(rg.le.rtrunc) exit gloop
+! changed 7.08.2023 to avoid NaN => used in Dexpgy(1,n1,n2,n3-1,g) below for r -> r+1
+!        if(rg.le.rtrunc) exit gloop
+        if(rg.le.rtrunc) then
+           do nl=rg,0,-1
+              do nlt=rg-nl,0,-1
+                 nltt = rg-nl-nlt
+                 Dexpgy(1,nl,nlt,nltt,g) = 0d0
+              enddo
+           enddo
+          exit gloop
+        endif
 
-!      write(*,*) 'gloop start',r,rg,g
+!        write(*,*) 'gloop start',r,rg,g
 
         ! calculating D_00ijk.. exploiting eq. (5.49)
         maxDexpgy(1,rg,g) = 0d0
@@ -8811,21 +8821,21 @@ contains
 #endif
 
 #ifdef Dgytest
-      if(rmax.ge.2) then
+    if(rmax.ge.2) then
       write(*,*) 'CalcDgy D(1,0,0,0) fin',D(1,0,0,0)
       write(*,*) 'CalcDgy D(0,0,2,0) fin',D(0,0,2,0)
       write(*,*) 'CalcDgy D(0,0,0,2) fin',D(0,0,0,2)
       if(rmax.ge.3) then
-      write(*,*) 'CalcDgy D(1,0,1,0) fin',D(1,0,1,0)
-      write(*,*) 'CalcDgy D(0,1,1,1) fin',D(0,1,1,1)
-      write(*,*) 'CalcDgy D(0,0,3,0) fin',D(0,0,3,0)
+         write(*,*) 'CalcDgy D(1,0,1,0) fin',D(1,0,1,0)
+         write(*,*) 'CalcDgy D(0,1,1,1) fin',D(0,1,1,1)
+         write(*,*) 'CalcDgy D(0,0,3,0) fin',D(0,0,3,0)
       endif
       if(rmax.ge.4) then
-      write(*,*) 'CalcDgy D(0,4,0,0) fin',D(0,4,0,0),Derr(4)
-      write(*,*) 'CalcDgy D(0,0,4,0) fin',D(0,0,4,0),Derr(4)
+         write(*,*) 'CalcDgy D(0,4,0,0) fin',D(0,4,0,0),Derr(4)
+         write(*,*) 'CalcDgy D(0,0,4,0) fin',D(0,0,4,0),Derr(4)
       endif
-      endif
-
+    endif
+      
     write(*,*) 'CalcDgy final err',Derr
     write(*,*) 'CalcDgy final acc',Derr/abs(D(0,0,0,0))
 #endif
@@ -9303,7 +9313,8 @@ contains
           end do
           if(r.le.rmax) then
             do n1=0,r
-              do n2=0,rg-n1
+!              do n2=0,rg-n1      ! corrected 11.04.2023 AD
+              do n2=0,r-n1
                 D(0,n1,n2,r-n1-n2)=0d0
               end do
             end do

@@ -211,8 +211,8 @@ contains
     character(len=*),parameter :: fmt9 = "(A9,i2,A6,'dcmplx(',d25.18,' ,',d25.18,' )')"
     character(len=*),parameter :: fmt11 = "(A9,i2,A6,'dcmplx(',d25.18,' ,',d25.18,' )')"
     character(len=*),parameter :: fmt12 = "(A8,i1,A2,i2,A4,'dcmplx(',d25.18,' ,',d25.18,' )')"
-    character(len=*),parameter :: fmt26 = "(A26,i2)"
-    character(len=*),parameter :: fmt29 = "(A29,i2)"
+    character(len=*),parameter :: fmt26 = "(A26,i0)"
+    character(len=*),parameter :: fmt29 = "(A29,i0)"
 
     write(nout,*) '-----------------------------------------------------------'
     select case(trim(masterFname_cll))

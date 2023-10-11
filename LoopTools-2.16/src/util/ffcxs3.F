@@ -201,6 +201,7 @@
 *  #[ get ieps:
 	ip = ii+3
 	call ffieps(ieps,cz(1),cpi(ip),cpiDpj(ip,ii),isoort)
+	ieps0 = 99
 *  #] get ieps:
 *  #[ special case |cz| >> |cy|:
 	if ( isoort(2) .ne. 0 .and. max(absc(cy(2)),absc(cy(4))) .lt.
